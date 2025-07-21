@@ -10,7 +10,12 @@
     "start": "node crawler.js",
     "crawl": "node crawler.js",
     "example": "node crawler.js \"https://rent.591.com.tw/list?region=1&kind=0\" 3",
-    "test": "echo \"No tests specified\" && exit 0"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:unit": "jest tests/unit",
+    "test:integration": "jest tests/integration",
+    "test:verbose": "VERBOSE_TESTS=1 jest --verbose"
   },
   "keywords": [
     "591",
@@ -43,5 +48,11 @@
     "cheerio": "^1.1.2",
     "dotenv": "^17.2.0",
     "fs-extra": "^11.3.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "jest": "^30.0.4",
+    "jsdom": "^26.1.0",
+    "nock": "^14.0.6"
   }
 }

@@ -1,0 +1,256 @@
+/**
+ * Unit tests for notification.js
+ */
+
+const {
+  sendToDiscord,
+  createPropertyEmbed,
+  createErrorEmbed,
+  sendDiscordNotifications,
+  sendErrorNotification
+} = require('../../lib/notification');
+
+// Mock the utils module
+jest.mock('../../lib/utils', () => ({
+  logWithTimestamp: jest.fn(),
+  sleep: jest.fn(() => Promise.resolve())
+}));
+
+const { logWithTimestamp, sleep } = require('../../lib/utils');
+
+describe('notification', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('sendToDiscord', () => {
+    it('should send embed successfully and return true', async () => {
+      const mockAxios = {
+        post: jest.fn().mockResolvedValue({ data: 'success' })
+      };
+      const embed = { title: 'Test Property' };
+      const webhookUrl = 'https://discord.com/api/webhooks/test';
+
+      const result = await sendToDiscord(embed, webhookUrl, mockAxios);
+
+      expect(mockAxios.post).toHaveBeenCalledWith(webhookUrl, { embeds: [embed] });
+      expect(result).toBe(true);
+      expect(logWithTimestamp).not.toHaveBeenCalled();
+    });
+
+    it('should return false and log warning when webhook URL is not provided', async () => {
+      const mockAxios = { post: jest.fn() };
+      const embed = { title: 'Test Property' };
+
+      const result = await sendToDiscord(embed, null, mockAxios);
+
+      expect(mockAxios.post).not.toHaveBeenCalled();
+      expect(result).toBe(false);
+      expect(logWithTimestamp).toHaveBeenCalledWith('Discord webhook URL not configured, skipping notification', 'WARN');
+    });
+
+    it('should return false and log error when Discord API call fails', async () => {
+      const mockAxios = {
+        post: jest.fn().mockRejectedValue(new Error('Network error'))
+      };
+      const embed = { title: 'Test Property' };
+      const webhookUrl = 'https://discord.com/api/webhooks/test';
+
+      const result = await sendToDiscord(embed, webhookUrl, mockAxios);
+
+      expect(mockAxios.post).toHaveBeenCalledWith(webhookUrl, { embeds: [embed] });
+      expect(result).toBe(false);
+      expect(logWithTimestamp).toHaveBeenCalledWith('Discord notification failed: Network error', 'ERROR');
+    });
+  });
+
+  describe('createPropertyEmbed', () => {
+    it('should create a properly formatted property embed', () => {
+      const property = {
+        title: 'Beautiful Apartment',
+        link: 'https://rent.591.com.tw/12345',
+        rooms: '1房1廳1衛',
+        metroTitle: '文湖線 大直站',
+        metroValue: '3分鐘',
+        tags: ['電梯大樓', '可養寵物', '近捷運'],
+        imgUrls: ['https://example.com/image1.jpg', 'https://example.com/image2.jpg']
+      };
+
+      const embed = createPropertyEmbed(property, 1, 3);
+
+      expect(embed).toMatchObject({
+        title: 'Beautiful Apartment',
+        url: 'https://rent.591.com.tw/12345',
+        color: 0x00ff00,
+        fields: [
+          { name: '🏠 房型', value: '1房1廳1衛', inline: true },
+          { name: '🚇 捷運距離', value: '文湖線 大直站 3分鐘', inline: true },
+          { name: '🏷️ 標籤', value: '電梯大樓, 可養寵物, 近捷運', inline: false }
+        ],
+        footer: { text: '1/3 - 591房源通知' },
+        image: { url: 'https://example.com/image1.jpg' }
+      });
+      expect(embed.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+    });
+
+    it('should handle missing property fields gracefully', () => {
+      const property = {
+        title: null,
+        link: 'https://rent.591.com.tw/12345',
+        rooms: null,
+        metroTitle: null,
+        metroValue: null,
+        tags: [],
+        imgUrls: []
+      };
+
+      const embed = createPropertyEmbed(property, 2, 5);
+
+      expect(embed.title).toBe('無標題');
+      expect(embed.fields[0].value).toBe('N/A'); // rooms
+      expect(embed.fields[1].value).toBe('N/A'); // metro
+      expect(embed.fields[2].value).toBe('N/A'); // tags
+      expect(embed.footer.text).toBe('2/5 - 591房源通知');
+      expect(embed.image).toBeUndefined();
+    });
+
+    it('should handle partial metro information', () => {
+      const property = {
+        title: 'Test Property',
+        rooms: '1房',
+        metroTitle: '信義線',
+        metroValue: null,
+        tags: ['test'],
+        imgUrls: []
+      };
+
+      const embed = createPropertyEmbed(property, 1, 1);
+
+      expect(embed.fields[1].value).toBe('信義線 N/A');
+    });
+  });
+
+  describe('createErrorEmbed', () => {
+    it('should create a properly formatted error embed', () => {
+      const originalUrl = 'https://rent.591.com.tw/list/1';
+      const error = 'Failed to fetch data: Network timeout';
+
+      const embed = createErrorEmbed(originalUrl, error);
+
+      expect(embed).toMatchObject({
+        title: '591 爬蟲執行錯誤',
+        color: 0xff0000,
+        fields: [
+          { name: '錯誤訊息', value: 'Failed to fetch data: Network timeout', inline: false },
+          { name: '目標URL', value: 'https://rent.591.com.tw/list/1', inline: false }
+        ]
+      });
+      expect(embed.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+    });
+  });
+
+  describe('sendDiscordNotifications', () => {
+    it('should send notifications for all properties with delays', async () => {
+      const mockAxios = {
+        post: jest.fn().mockResolvedValue({ data: 'success' })
+      };
+      const properties = [
+        { title: 'Property 1', tags: [], imgUrls: [] },
+        { title: 'Property 2', tags: [], imgUrls: [] },
+        { title: 'Property 3', tags: [], imgUrls: [] }
+      ];
+      const webhookUrl = 'https://discord.com/api/webhooks/test';
+      const config = { notificationDelay: 500 };
+
+      await sendDiscordNotifications(properties, 'https://test.com', webhookUrl, mockAxios, config);
+
+      expect(mockAxios.post).toHaveBeenCalledTimes(3);
+      expect(sleep).toHaveBeenCalledTimes(2); // n-1 delays
+      expect(sleep).toHaveBeenCalledWith(500);
+      expect(logWithTimestamp).toHaveBeenCalledWith('Sending 3 Discord notifications...');
+      expect(logWithTimestamp).toHaveBeenCalledWith('✓ Sent notification 1/3: Property 1');
+      expect(logWithTimestamp).toHaveBeenCalledWith('✓ Sent notification 2/3: Property 2');
+      expect(logWithTimestamp).toHaveBeenCalledWith('✓ Sent notification 3/3: Property 3');
+    });
+
+    it('should return early when no properties provided', async () => {
+      const mockAxios = { post: jest.fn() };
+      const properties = [];
+      const webhookUrl = 'https://discord.com/api/webhooks/test';
+
+      await sendDiscordNotifications(properties, 'https://test.com', webhookUrl, mockAxios);
+
+      expect(mockAxios.post).not.toHaveBeenCalled();
+      expect(sleep).not.toHaveBeenCalled();
+      expect(logWithTimestamp).not.toHaveBeenCalled();
+    });
+
+    it('should use default delay when config not provided', async () => {
+      const mockAxios = {
+        post: jest.fn().mockResolvedValue({ data: 'success' })
+      };
+      const properties = [
+        { title: 'Property 1', tags: [], imgUrls: [] },
+        { title: 'Property 2', tags: [], imgUrls: [] }
+      ];
+      const webhookUrl = 'https://discord.com/api/webhooks/test';
+
+      await sendDiscordNotifications(properties, 'https://test.com', webhookUrl, mockAxios);
+
+      expect(sleep).toHaveBeenCalledWith(1000); // Default delay
+    });
+
+    it('should continue sending even if some notifications fail', async () => {
+      const mockAxios = {
+        post: jest.fn()
+          .mockResolvedValueOnce({ data: 'success' })
+          .mockRejectedValueOnce(new Error('Failed'))
+          .mockResolvedValueOnce({ data: 'success' })
+      };
+      const properties = [
+        { title: 'Property 1', tags: [], imgUrls: [] },
+        { title: 'Property 2', tags: [], imgUrls: [] },
+        { title: 'Property 3', tags: [], imgUrls: [] }
+      ];
+      const webhookUrl = 'https://discord.com/api/webhooks/test';
+
+      await sendDiscordNotifications(properties, 'https://test.com', webhookUrl, mockAxios);
+
+      expect(mockAxios.post).toHaveBeenCalledTimes(3);
+      // Should log success for property 1 and 3, but not for property 2 (failed)
+      expect(logWithTimestamp).toHaveBeenCalledWith('✓ Sent notification 1/3: Property 1');
+      expect(logWithTimestamp).toHaveBeenCalledWith('✓ Sent notification 3/3: Property 3');
+    });
+  });
+
+  describe('sendErrorNotification', () => {
+    it('should send error notification successfully', async () => {
+      const mockAxios = {
+        post: jest.fn().mockResolvedValue({ data: 'success' })
+      };
+      const originalUrl = 'https://test.com';
+      const error = 'Test error';
+      const webhookUrl = 'https://discord.com/api/webhooks/test';
+
+      await sendErrorNotification(originalUrl, error, webhookUrl, mockAxios);
+
+      expect(mockAxios.post).toHaveBeenCalledTimes(1);
+      expect(logWithTimestamp).toHaveBeenCalledWith('Discord error notification sent successfully');
+    });
+
+    it('should not log success message when notification fails', async () => {
+      const mockAxios = {
+        post: jest.fn().mockRejectedValue(new Error('Network error'))
+      };
+      const originalUrl = 'https://test.com';
+      const error = 'Test error';
+      const webhookUrl = 'https://discord.com/api/webhooks/test';
+
+      await sendErrorNotification(originalUrl, error, webhookUrl, mockAxios);
+
+      expect(mockAxios.post).toHaveBeenCalledTimes(1);
+      expect(logWithTimestamp).not.toHaveBeenCalledWith('Discord error notification sent successfully');
+      expect(logWithTimestamp).toHaveBeenCalledWith('Discord notification failed: Network error', 'ERROR');
+    });
+  });
+});
