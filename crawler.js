@@ -51,7 +51,7 @@ function getPropertyId(property) {
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-const extractArrayFromElements = ($el, selector, attr = null) => {
+const extractArrayFromElements = ($el, selector, attr = null, $ = null) => {
   const items = [];
   $el.find(selector).each((i, element) => {
     const value = attr ? $(element).attr(attr) : $(element).text().trim();
@@ -125,8 +125,8 @@ async function crawl591(url, maxLatest = null) {
       const title = titleElement.text().trim();
       const link = titleElement.attr('href');
       
-      const imgUrls = extractArrayFromElements($el, '.item-img .common-img', 'data-src');
-      const tags = extractArrayFromElements($el, '.item-info-tag .tag');
+      const imgUrls = extractArrayFromElements($el, '.item-img .common-img', 'data-src', $);
+      const tags = extractArrayFromElements($el, '.item-info-tag .tag', null, $);
       
       // Get room info
       const rooms = $el.find('.item-info-txt:has(i.house-home) span').text().trim();
