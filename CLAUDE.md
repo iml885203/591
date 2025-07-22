@@ -16,6 +16,7 @@ pnpm install
 # Run the crawler
 node crawler.js "https://rent.591.com.tw/list?region=1&kind=0"
 node crawler.js "https://rent.591.com.tw/list?region=1&kind=0" 5  # Latest 5 properties
+node crawler.js "https://rent.591.com.tw/list?region=1&kind=0" --no-notify  # No notifications (testing mode)
 
 # Testing
 npm test                    # Run all tests
@@ -99,13 +100,27 @@ Current selectors for 591.com.tw parsing (these may need updates if site changes
 - **Metro distance**: `.item-info-txt:has(i.house-metro) strong`
 - **Metro station**: `.item-info-txt:has(i.house-metro) span`
 
+## Command Line Options
+
+The crawler supports several command line options:
+
+- **URL** (required): 591.com.tw search URL
+- **max_latest** (optional): Number of latest properties to notify about
+- **--no-notify** (optional): Run crawler without sending Discord notifications (useful for testing and development)
+
+Examples:
+```bash
+node crawler.js "URL" 5 --no-notify     # Latest 5 properties, no notifications
+node crawler.js "URL" --no-notify       # New properties only, no notifications
+```
+
 ## Data Flow
 
 1. **URL Validation** - Ensures valid 591.com.tw URLs
 2. **HTTP Fetch** - Retry mechanism with exponential backoff  
 3. **HTML Parsing** - Extract property data using CSS selectors
 4. **Property Comparison** - Compare against previous crawl data
-5. **Notification Dispatch** - Send Discord notifications (normal or silent based on MRT distance)
+5. **Notification Dispatch** - Send Discord notifications (normal or silent based on MRT distance), unless disabled with --no-notify
 6. **Data Persistence** - Save current properties for next comparison
 
 ## Error Handling
@@ -121,3 +136,19 @@ Current selectors for 591.com.tw parsing (these may need updates if site changes
 - Mock strategy uses `mockImplementation()` rather than `mockReturnValueOnce()` for consistent behavior
 - Coverage reports exclude test files and focus on core business logic
 - Integration tests for end-to-end workflows are pending implementation
+- Use `--no-notify` flag when testing to avoid sending Discord notifications during development
+
+## 591.com.tw Website Structure
+
+The website uses **dynamic content loading** via JavaScript/AJAX, which means:
+
+- Static HTML only contains page framework and navigation
+- Property listings are loaded asynchronously after page load
+- The crawler works by executing JavaScript to render the full content
+- Property data cannot be found by simply downloading HTML with curl
+- CSS selectors target the dynamically loaded content structure
+
+When debugging parsing issues:
+1. Use browser developer tools to inspect the actual DOM structure after JavaScript execution
+2. Check if CSS selectors still match the current website structure
+3. Properties may appear in different orders between browser and crawler due to personalization/advertising
