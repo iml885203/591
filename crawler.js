@@ -6,7 +6,7 @@
  */
 
 require('dotenv').config();
-const { crawl591 } = require('./lib/crawler');
+const { crawlWithNotifications } = require('./lib/crawlService');
 const { logWithTimestamp } = require('./lib/utils');
 
 // Main execution
@@ -40,12 +40,15 @@ if (require.main === module) {
   }
 
   // Run crawler with default dependencies (production mode)
-  crawl591(url, maxLatest, { noNotify })
-    .then(() => logWithTimestamp('Crawl completed successfully'))
+  crawlWithNotifications(url, maxLatest, { noNotify })
+    .then((result) => {
+      logWithTimestamp('Crawl completed successfully');
+      logWithTimestamp(`Total properties: ${result.summary.totalProperties}, New: ${result.summary.newProperties}`);
+    })
     .catch((error) => {
       logWithTimestamp(`Crawl failed: ${error.message}`, 'ERROR');
       process.exit(1);
     });
 }
 
-module.exports = { crawl591 };
+module.exports = { crawlWithNotifications };

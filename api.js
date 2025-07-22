@@ -7,7 +7,7 @@
 
 require('dotenv').config();
 const express = require('express');
-const { crawl591 } = require('./lib/crawler');
+const { crawlWithNotifications } = require('./lib/crawlService');
 const { logWithTimestamp } = require('./lib/utils');
 
 const app = express();
@@ -59,15 +59,10 @@ app.post('/crawl', async (req, res) => {
 
     logWithTimestamp(`API crawl request: url=${url}, maxLatest=${maxLatest}, noNotify=${noNotify}`);
 
-    // Prepare crawler options
-    const crawlerOptions = {
-      noNotify: noNotify || false
-    };
+    // Execute crawler with notifications service
+    const result = await crawlWithNotifications(url, maxLatest, { noNotify: noNotify || false });
 
-    // Execute crawler
-    const result = await crawl591(url, maxLatest, crawlerOptions);
-
-    // Return success response
+    // Return success response with detailed property data and notification status
     res.json({
       success: true,
       message: 'Crawl completed successfully',
@@ -75,7 +70,11 @@ app.post('/crawl', async (req, res) => {
         url: url,
         maxLatest: maxLatest,
         noNotify: noNotify,
-        propertiesFound: result ? result.length : 0,
+        propertiesFound: result.properties.length,
+        newProperties: result.summary.newProperties,
+        notificationsSent: result.summary.notificationsSent,
+        notificationsDisabled: result.summary.notificationsDisabled,
+        properties: result.properties,
         timestamp: new Date().toISOString()
       }
     });
