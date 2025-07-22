@@ -6,6 +6,7 @@
 
 # Data files
 previous_data.json
+data/
 *.log
 
 # Dependencies
