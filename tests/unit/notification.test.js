@@ -167,10 +167,10 @@ describe('notification', () => {
       expect(mockAxios.post).toHaveBeenCalledTimes(3);
       expect(sleep).toHaveBeenCalledTimes(2); // n-1 delays
       expect(sleep).toHaveBeenCalledWith(500);
-      expect(logWithTimestamp).toHaveBeenCalledWith('Sending 3 Discord notifications...');
-      expect(logWithTimestamp).toHaveBeenCalledWith('✓ Sent notification 1/3: Property 1');
-      expect(logWithTimestamp).toHaveBeenCalledWith('✓ Sent notification 2/3: Property 2');
-      expect(logWithTimestamp).toHaveBeenCalledWith('✓ Sent notification 3/3: Property 3');
+      expect(logWithTimestamp).toHaveBeenCalledWith('Sending 3 Discord notifications... (Distance threshold: 800m)');
+      expect(logWithTimestamp).toHaveBeenCalledWith('✓ Sent notification 1/3 🔔 (normal): Property 1');
+      expect(logWithTimestamp).toHaveBeenCalledWith('✓ Sent notification 2/3 🔔 (normal): Property 2');
+      expect(logWithTimestamp).toHaveBeenCalledWith('✓ Sent notification 3/3 🔔 (normal): Property 3');
     });
 
     it('should return early when no properties provided', async () => {
@@ -218,8 +218,8 @@ describe('notification', () => {
 
       expect(mockAxios.post).toHaveBeenCalledTimes(3);
       // Should log success for property 1 and 3, but not for property 2 (failed)
-      expect(logWithTimestamp).toHaveBeenCalledWith('✓ Sent notification 1/3: Property 1');
-      expect(logWithTimestamp).toHaveBeenCalledWith('✓ Sent notification 3/3: Property 3');
+      expect(logWithTimestamp).toHaveBeenCalledWith('✓ Sent notification 1/3 🔔 (normal): Property 1');
+      expect(logWithTimestamp).toHaveBeenCalledWith('✓ Sent notification 3/3 🔔 (normal): Property 3');
     });
   });
 

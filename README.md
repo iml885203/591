@@ -5,7 +5,8 @@ A Node.js web scraper for 591.com.tw (Taiwan's largest rental property platform)
 ## Features
 
 - 🏠 **Property Monitoring**: Crawls 591.com.tw search results for rental properties
-- 🔔 **Discord Notifications**: Sends individual notifications for each new property
+- 🔔 **Smart Discord Notifications**: Sends individual notifications for each new property
+- 🔇 **Silent Notifications**: Properties far from MRT stations are sent as silent notifications
 - 📊 **Smart Comparison**: Tracks previously seen properties to only notify about new ones
 - 🔄 **Retry Mechanism**: Robust error handling with automatic retries
 - ⏰ **Cron Compatible**: Perfect for scheduled execution via cron jobs
@@ -35,7 +36,7 @@ pnpm install
 3. Configure environment variables:
 ```bash
 cp .env.example .env
-# Edit .env with your Discord webhook URL
+# Edit .env with your Discord webhook URL and preferences
 ```
 
 ## Configuration
@@ -45,7 +46,15 @@ cp .env.example .env
 Create a `.env` file in the project root:
 
 ```env
+# Discord webhook URL for notifications
 DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_URL
+
+# Distance threshold for silent notifications (in meters)
+# Properties farther than this distance from MRT will be sent as silent notifications
+MRT_DISTANCE_THRESHOLD=800
+
+# Notification delay between messages (in milliseconds)
+NOTIFICATION_DELAY=1000
 ```
 
 ### Discord Webhook Setup
@@ -119,6 +128,18 @@ Each property notification includes:
 - **Tags**: Property features (近捷運, 可開伙, etc.)
 - **Images**: Property photos (first image shown in Discord)
 - **Direct Link**: Link to full property details on 591.com.tw
+- **Notification Type**: Normal (🔔) or Silent (🔇) based on MRT distance
+
+### Silent Notifications
+
+Properties that are farther than the configured distance threshold from MRT stations will be sent as silent Discord notifications. These notifications:
+
+- **Don't trigger push notifications** on mobile devices
+- **Use orange color coding** instead of green
+- **Include 🔇 icon** in the footer
+- **Show distance threshold** in the notification footer
+
+This feature helps reduce notification noise while still keeping you informed of all available properties.
 
 ## Error Handling
 
@@ -132,6 +153,21 @@ The crawler includes comprehensive error handling:
 
 ## Configuration Options
 
+### Environment Configuration
+
+Configure these settings in your `.env` file:
+
+```env
+# Discord webhook URL (required)
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_URL
+
+# Distance threshold for silent notifications (default: 800 meters)
+MRT_DISTANCE_THRESHOLD=800
+
+# Delay between Discord notifications (default: 1000ms)
+NOTIFICATION_DELAY=1000
+```
+
 ### Internal Configuration
 
 You can modify these values in `crawler.js`:
@@ -140,7 +176,6 @@ You can modify these values in `crawler.js`:
 const CONFIG = {
   maxRetries: 3,           // Maximum retry attempts for failed requests
   retryDelay: 2000,        // Delay between retries (ms)
-  notificationDelay: 1000, // Delay between Discord notifications (ms)
   timeout: 30000           // Request timeout (ms)
 };
 ```
@@ -151,11 +186,20 @@ const CONFIG = {
 
 ```
 591-crawler/
-├── crawler.js          # Main crawler script
+├── lib/                # Modular components
+│   ├── crawler.js      # Main crawling logic
+│   ├── fetcher.js      # HTTP requests with retry
+│   ├── parser.js       # HTML parsing
+│   ├── storage.js      # Data persistence
+│   ├── notification.js # Discord notifications
+│   └── utils.js        # Utility functions
+├── tests/              # Test suites
+│   ├── unit/           # Unit tests
+│   └── integration/    # Integration tests
+├── crawler.js          # Main entry point
 ├── package.json        # Dependencies and scripts
 ├── .env               # Environment variables (create from .env.example)
 ├── .env.example       # Example environment variables
-├── .gitignore         # Git ignore file
 ├── previous_data.json # Stored previous crawl results (auto-generated)
 └── README.md          # This file
 ```
