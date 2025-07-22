@@ -22,6 +22,11 @@ node crawler.js "https://rent.591.com.tw/list?region=1&kind=0" --no-notify  # No
 npm run api                 # Start API server on port 3000
 node test-api.js           # Test API endpoints
 
+# Docker commands
+docker build -t 591-crawler .                    # Build Docker image
+docker run -p 3000:3000 --env-file .env 591-crawler  # Run container
+docker-compose up                                 # Run with docker-compose
+
 # Testing
 npm test                    # Run all tests
 npm run test:watch         # Run tests in watch mode  
@@ -213,3 +218,64 @@ When debugging parsing issues:
 1. Use browser developer tools to inspect the actual DOM structure after JavaScript execution
 2. Check if CSS selectors still match the current website structure
 3. Properties may appear in different orders between browser and crawler due to personalization/advertising
+
+## Docker Deployment
+
+The project includes Docker support for easy deployment and containerization.
+
+### Docker Files
+
+- **`Dockerfile`** - Multi-stage build with Node.js 18 Alpine, includes Chromium for web scraping
+- **`.dockerignore`** - Excludes unnecessary files from Docker context
+
+### Docker Usage
+
+**Build Image:**
+```bash
+docker build -t 591-crawler .
+```
+
+**Run Container:**
+```bash
+# With environment file
+docker run -p 3000:3000 --env-file .env 591-crawler
+
+# With individual environment variables
+docker run -p 3000:3000 \
+  -e DISCORD_WEBHOOK_URL="your_webhook_url" \
+  -e MRT_DISTANCE_THRESHOLD=800 \
+  -e API_PORT=3000 \
+  591-crawler
+
+# Run as daemon
+docker run -d -p 3000:3000 --name 591-crawler-api --env-file .env 591-crawler
+```
+
+**Docker Features:**
+- **Security**: Runs as non-root user (nodejs:1001)
+- **Health Check**: Built-in health monitoring via `/health` endpoint
+- **Optimized**: Alpine Linux base image for smaller size
+- **Web Scraping**: Includes Chromium browser for dynamic content
+- **Data Persistence**: Configurable data directory mounting
+
+**Example docker-compose.yml:**
+```yaml
+version: '3.8'
+services:
+  crawler-api:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+      - MRT_DISTANCE_THRESHOLD=800
+      - API_PORT=3000
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+```

@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  crawler-api:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+      - MRT_DISTANCE_THRESHOLD=${MRT_DISTANCE_THRESHOLD:-800}
+      - NOTIFICATION_DELAY=${NOTIFICATION_DELAY:-1000}
+      - API_PORT=${API_PORT:-3000}
+    volumes:
+      # Mount data directory for persistence
+      - ./data:/app/data
+      # Mount environment file
+      - ./.env:/app/.env:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - crawler-network
+
+  # Optional: Add a reverse proxy for production
+  # nginx:
+  #   image: nginx:alpine
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #   depends_on:
+  #     - crawler-api
+  #   networks:
+  #     - crawler-network
+
+networks:
+  crawler-network:
+    driver: bridge
+
+volumes:
+  crawler-data:
