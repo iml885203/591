@@ -194,14 +194,16 @@ app.use((error, req, res, next) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  logWithTimestamp(`591 Crawler API server started on port ${PORT}`);
-  logWithTimestamp(`Available endpoints:`);
-  logWithTimestamp(`  GET  http://localhost:${PORT}/health - Health check`);
-  logWithTimestamp(`  GET  http://localhost:${PORT}/info - API information`);
-  logWithTimestamp(`  POST http://localhost:${PORT}/crawl - Execute crawler`);
-});
+// Start server only if this file is run directly (not imported)
+if (require.main === module) {
+  app.listen(PORT, () => {
+    logWithTimestamp(`591 Crawler API server started on port ${PORT}`);
+    logWithTimestamp(`Available endpoints:`);
+    logWithTimestamp(`  GET  http://localhost:${PORT}/health - Health check`);
+    logWithTimestamp(`  GET  http://localhost:${PORT}/info - API information`);
+    logWithTimestamp(`  POST http://localhost:${PORT}/crawl - Execute crawler`);
+  });
+}
 
 // Graceful shutdown
 process.on('SIGINT', () => {

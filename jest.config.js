@@ -22,6 +22,7 @@ module.exports = {
   collectCoverageFrom: [
     'lib/**/*.js',
     'crawler.js',
+    'api.js',
     '!lib/**/*.test.js',
     '!tests/**/*'
   ],
