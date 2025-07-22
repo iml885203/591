@@ -10,6 +10,19 @@ jest.mock('../../lib/utils', () => ({
   logWithTimestamp: jest.fn()
 }));
 
+// Mock the config module
+jest.mock('../../lib/config', () => ({
+  getConfig: jest.fn((module) => {
+    if (module === 'storage') {
+      return {
+        dataFilePath: './data/previous_data.json',
+        baseDir: './data'
+      };
+    }
+    return {};
+  })
+}));
+
 const { logWithTimestamp } = require('../../lib/utils');
 
 describe('storage', () => {
@@ -18,18 +31,17 @@ describe('storage', () => {
   });
 
   describe('getDataFilePath', () => {
-    it('should return default path when no baseDir provided', () => {
+    it('should return default path when no custom path provided', () => {
       const filePath = getDataFilePath();
       
-      expect(filePath).toContain('previous_data.json');
-      expect(path.isAbsolute(filePath)).toBe(true);
+      expect(filePath).toBe('./data/previous_data.json');
     });
 
-    it('should use custom baseDir when provided', () => {
-      const customBase = '/custom/path';
-      const filePath = getDataFilePath(customBase);
+    it('should use custom path when provided', () => {
+      const customPath = '/custom/path/data.json';
+      const filePath = getDataFilePath(customPath);
       
-      expect(filePath).toBe(path.join(customBase, '..', 'previous_data.json'));
+      expect(filePath).toBe(customPath);
     });
   });
 

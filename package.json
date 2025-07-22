@@ -7,6 +7,7 @@
     "591-crawler": "./crawler.js"
   },
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "start": "node crawler.js",
     "api": "node api.js",
     "crawl": "node crawler.js",
@@ -41,7 +42,8 @@
     "url": "https://github.com/iml885203/591/issues"
   },
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=14.0.0",
+    "pnpm": ">=8.0.0"
   },
   "packageManager": "pnpm@10.13.1",
   "dependencies": {
