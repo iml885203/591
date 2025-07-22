@@ -2,320 +2,349 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## 📋 Project Overview
 
-This is a Node.js web scraper for 591.com.tw (Taiwan's largest rental property platform) that monitors property listings and sends Discord notifications. The project uses a modular architecture with comprehensive unit testing and supports configurable silent notifications based on MRT distance.
+This is a **Node.js web scraper** for 591.com.tw (Taiwan's largest rental property platform) that monitors property listings and sends Discord notifications. The project features:
 
-## Essential Commands
+- 🏗️ **Modular architecture** with dependency injection for testability
+- 🔔 **Flexible notification system** with distance-based filtering
+- 🐳 **Docker deployment** support with data persistence
+- ✅ **Comprehensive test coverage** (85%+ statements)
+- 🌐 **REST API** interface for programmatic access
 
-### Development and Testing
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js 18+
+- pnpm (enforced via package.json)
+- Docker & Docker Compose (optional)
+
+### Setup
 ```bash
 # Install dependencies
 pnpm install
 
-# Run the crawler (CLI)
+# Configure environment
+cp .env.example .env
+# Edit .env with your Discord webhook URL
+```
+
+## 💻 Essential Commands
+
+### Development & Testing
+```bash
+# Basic crawler usage
 node crawler.js "https://rent.591.com.tw/list?region=1&kind=0"
-node crawler.js "https://rent.591.com.tw/list?region=1&kind=0" 5  # Latest 5 properties
+node crawler.js "URL" 5  # Latest 5 properties
 
 # Notification mode examples
-node crawler.js "https://rent.591.com.tw/list?region=1&kind=0" --notify-mode=all                    # All properties, normal notifications
-node crawler.js "https://rent.591.com.tw/list?region=1&kind=0" --notify-mode=filtered --filtered-mode=silent  # Default: silent notifications for far properties
-node crawler.js "https://rent.591.com.tw/list?region=1&kind=0" --notify-mode=filtered --filtered-mode=none     # Skip far properties
-node crawler.js "https://rent.591.com.tw/list?region=1&kind=0" --notify-mode=none                   # No notifications
+node crawler.js "URL" --notify-mode=all                    # All properties, normal notifications
+node crawler.js "URL" --notify-mode=filtered --filtered-mode=silent  # Default: silent for far properties
+node crawler.js "URL" --notify-mode=filtered --filtered-mode=none     # Skip far properties
+node crawler.js "URL" --notify-mode=none                   # No notifications
 
-# Run the API server
-npm run api                 # Start API server on port 3000
-node test-api.js           # Test API endpoints
-
-# Docker commands
-docker build -t 591-crawler .                    # Build Docker image
-docker run -p 3000:3000 --env-file .env 591-crawler  # Run container
-docker-compose up                                 # Run with docker-compose
+# API server
+pnpm run api              # Start API server on port 3000
 
 # Testing
-npm test                    # Run all tests
-npm run test:watch         # Run tests in watch mode  
-npm run test:coverage      # Run tests with coverage report
-npm run test:unit          # Run only unit tests
-npm run test:verbose       # Run tests with verbose output
+pnpm test                 # Run all tests
+pnpm run test:watch       # Run tests in watch mode
+pnpm run test:coverage    # Run tests with coverage report
+pnpm run test:unit        # Run only unit tests
+pnpm run test:integration # Run integration tests
+pnpm run test:verbose     # Run tests with verbose output
 
-# Run specific test file
-npm test -- tests/unit/crawler.test.js
-npm test -- --testNamePattern="should parse property"
+# Specific test patterns
+pnpm test -- tests/unit/crawler.test.js
+pnpm test -- --testNamePattern="should parse property"
 ```
 
-### Configuration
+### Docker Deployment (Recommended)
 ```bash
-# Set up environment
-cp .env.example .env
-# Edit .env with your Discord webhook URL and preferences
+# Quick deployment commands
+pnpm run deploy:docker           # Complete redeploy (down + build + up)
+pnpm run deploy:docker:logs      # Deploy and follow logs
+
+# Individual Docker operations
+pnpm run docker:down             # Stop containers
+pnpm run docker:up               # Start containers
+pnpm run docker:rebuild          # Rebuild and start
+pnpm run docker:logs             # View logs
+pnpm run docker:status           # Check container status
+
+# Legacy Docker commands (if needed)
+docker build -t 591-crawler .
+docker run -p 3000:3000 --env-file .env 591-crawler
+docker-compose up --build
 ```
 
-## API Interface
+## 🌐 API Interface
 
-The project includes a REST API server that provides HTTP endpoints to trigger crawler operations.
+The project includes a REST API server for programmatic access.
 
-### API Endpoints
-
-**Start API Server:**
+### Starting the API
 ```bash
-npm run api  # Starts server on port 3000 (configurable via API_PORT env var)
+pnpm run api  # Starts on port 3000 (configurable via API_PORT env var)
 ```
 
-**Available Endpoints:**
-- `GET /health` - Health check
-- `GET /info` - API documentation and usage examples  
-- `POST /crawl` - Execute crawler with parameters
+### Endpoints
 
-**POST /crawl Parameters:**
-```json
-{
-  "url": "https://rent.591.com.tw/list?region=1&kind=0",    // Required: 591.com.tw search URL
-  "maxLatest": 5,                                           // Optional: Limit number of properties
-  "notifyMode": "filtered",                                 // Optional: Notification mode (all/filtered/none), default: filtered
-  "filteredMode": "silent"                                 // Optional: Filtered sub-mode (normal/silent/none), default: silent
-}
-```
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/health` | Health check |
+| `GET` | `/info` | API documentation with examples |
+| `POST` | `/crawl` | Execute crawler with parameters |
 
-**Example API Usage:**
+### API Usage Examples
+
+**Basic crawl (default: filtered/silent):**
 ```bash
-# Health check
-curl http://localhost:3000/health
-
-# Basic crawl (default: filtered/silent mode)
 curl -X POST http://localhost:3000/crawl \
   -H "Content-Type: application/json" \
   -d '{"url": "https://rent.591.com.tw/list?region=1&kind=0"}'
+```
 
-# All properties with normal notifications
+**All properties with normal notifications:**
+```bash
 curl -X POST http://localhost:3000/crawl \
   -H "Content-Type: application/json" \
   -d '{"url": "https://rent.591.com.tw/list?region=1&kind=0", "notifyMode": "all"}'
+```
 
-# Filtered mode - skip far properties
+**Skip far properties entirely:**
+```bash
 curl -X POST http://localhost:3000/crawl \
   -H "Content-Type: application/json" \
-  -d '{"url": "https://rent.591.com.tw/list?region=1&kind=0", "notifyMode": "filtered", "filteredMode": "none"}'
+  -d '{
+    "url": "https://rent.591.com.tw/list?region=1&kind=0",
+    "notifyMode": "filtered",
+    "filteredMode": "none"
+  }'
+```
 
-# No notifications
+**Disable notifications:**
+```bash
 curl -X POST http://localhost:3000/crawl \
   -H "Content-Type: application/json" \
   -d '{"url": "https://rent.591.com.tw/list?region=1&kind=0", "notifyMode": "none"}'
 ```
 
-**API Response Format:**
+### API Parameters
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `url` | string | ✅ | - | 591.com.tw search URL |
+| `maxLatest` | number | ❌ | null | Limit number of properties (null = new only) |
+| `notifyMode` | string | ❌ | `filtered` | `all`, `filtered`, `none` |
+| `filteredMode` | string | ❌ | `silent` | `normal`, `silent`, `none` |
+
+### API Response Format
 ```json
 {
   "success": true,
-  "message": "Crawl completed successfully", 
+  "message": "Crawl completed successfully",
   "data": {
     "url": "https://rent.591.com.tw/list?region=1&kind=0",
-    "maxLatest": 5,
+    "maxLatest": null,
     "notifyMode": "filtered",
     "filteredMode": "silent",
-    "propertiesFound": 12,
+    "propertiesFound": 30,
     "newProperties": 3,
     "notificationsSent": true,
-    "timestamp": "2025-07-22T11:04:37.377Z"
+    "properties": [...],
+    "timestamp": "2025-07-22T15:45:00.000Z"
   }
 }
 ```
 
-## Architecture Overview
+## 🏗️ Architecture Overview
 
-### Modular Design
-The codebase follows a clean modular architecture with dependency injection for testability:
-
-- **`crawler.js`** - Main CLI entry point, handles command line arguments
-- **`lib/crawler.js`** - Core orchestration logic, coordinates all modules
-- **`lib/fetcher.js`** - HTTP requests with retry mechanism and rate limiting
-- **`lib/parser.js`** - HTML parsing using Cheerio, extracts property data
-- **`lib/notification.js`** - Discord webhook notifications with silent notification support
-- **`lib/storage.js`** - File-based persistence for tracking seen properties
-- **`lib/utils.js`** - Pure utility functions (logging, validation, ID generation)
-
-### Key Architectural Patterns
-
-**Dependency Injection**: All modules accept their dependencies as parameters, enabling easy mocking and testing:
-```javascript
-const crawl591 = async (url, maxLatest, dependencies = {}) => {
-  const {
-    axios = require('axios'),
-    cheerio = require('cheerio'),
-    // ... other dependencies
-  } = dependencies;
-}
+### Project Structure
+```
+591-crawler/
+├── crawler.js              # CLI entry point
+├── api.js                  # REST API server
+├── lib/
+│   ├── config.js          # Centralized configuration
+│   ├── crawlService.js    # Service layer orchestration
+│   ├── crawler.js         # Core crawling logic
+│   ├── fetcher.js         # HTTP requests with retry
+│   ├── parser.js          # HTML parsing with Cheerio
+│   ├── notification.js    # Discord webhook notifications
+│   ├── storage.js         # File-based persistence
+│   └── utils.js           # Utility functions
+├── tests/
+│   ├── unit/              # Unit tests
+│   ├── integration/       # API integration tests
+│   └── setup.js           # Test configuration
+└── data/                  # Persistent data (Docker volume)
+    └── previous_data.json # Property history
 ```
 
-**Flexible Notification System**: The crawler supports multiple notification modes to give users fine-grained control over Discord notifications:
+### Key Design Patterns
 
-- **Notification Modes**:
-  - `all`: Send normal notifications for all properties
-  - `filtered`: Apply distance-based filtering (default)
-  - `none`: Disable all notifications
+**🔌 Dependency Injection**: All modules accept dependencies as parameters for easy testing:
+```javascript
+const crawl591 = async (url, options = {}, dependencies = {}) => {
+  const {
+    axios = require('axios'),
+    cheerio = require('cheerio')
+  } = dependencies;
+};
+```
 
-- **Filtered Sub-modes** (when `notifyMode=filtered`):
-  - `normal`: Send normal notifications for all properties
-  - `silent`: Send silent notifications for properties far from MRT stations (default)
-  - `none`: Skip properties far from MRT stations entirely
+**🔔 Flexible Notification System**:
 
-**Smart Property Comparison**: Uses a combination of property URL ID extraction and title+metro fallback to reliably identify duplicate properties across crawls.
+| Mode | Description | Use Case |
+|------|-------------|----------|
+| `all` | Normal notifications for all properties | Monitor everything |
+| `filtered` | Distance-based filtering (default) | Balanced approach |
+| `none` | No notifications | Testing/development |
 
-## Environment Configuration
+**Filtered Sub-modes** (when `notifyMode=filtered`):
+- `normal`: Normal notifications for all properties
+- `silent`: Silent notifications for properties >800m from MRT (default)
+- `none`: Skip far properties entirely
 
-Key environment variables in `.env`:
-- `DISCORD_WEBHOOK_URL` - Discord webhook for notifications (required)
-- `MRT_DISTANCE_THRESHOLD` - Distance in meters for silent notifications (default: 800)
-- `NOTIFICATION_DELAY` - Delay between Discord messages in ms (default: 1000)
-- `API_PORT` - Port for API server (default: 3000)
+**🔍 Smart Property Detection**: Uses URL ID extraction + title/metro fallback for reliable duplicate detection.
 
-## Testing Strategy
+## ⚙️ Configuration
 
-The project has comprehensive unit testing with 88.94% statement coverage:
+### Environment Variables (.env)
 
-- **Jest** as test runner with coverage thresholds (85% statements, 80% branches)
-- **Dependency injection** enables easy mocking of external services
-- **nock** for HTTP request mocking
-- **jsdom** for DOM manipulation testing
-- All modules have 100% individual coverage
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DISCORD_WEBHOOK_URL` | - | Discord webhook for notifications (required) |
+| `MRT_DISTANCE_THRESHOLD` | 800 | Distance in meters for silent notifications |
+| `NOTIFICATION_DELAY` | 1000 | Delay between Discord messages (ms) |
+| `API_PORT` | 3000 | Port for API server |
+| `DATA_FILE_PATH` | `./data/previous_data.json` | Path to persistence file |
 
-### Test Structure
-- `tests/unit/` - Individual module tests
-- `tests/setup.js` - Global test configuration
-- `jest.config.js` - Coverage thresholds and test patterns
+### Package Manager Enforcement
+The project enforces pnpm usage via `preinstall` hook. Use `pnpm` instead of `npm` for all operations.
 
-## CSS Selectors and Data Extraction
+## 🧪 Testing Strategy
 
-Current selectors for 591.com.tw parsing (these may need updates if site changes):
+### Coverage & Quality
+- **85%+ statement coverage** with Jest
+- **Unit tests** for individual modules
+- **Integration tests** for API endpoints
+- **CLI integration tests** for command-line interface
+
+### Test Commands
+```bash
+pnpm test                 # All tests with coverage check
+pnpm run test:unit        # Unit tests only
+pnpm run test:integration # API integration tests
+pnpm run test:watch       # Watch mode for development
+pnpm run test:verbose     # Detailed output
+```
+
+### Testing Best Practices
+- Use `--notify-mode=none` during testing to avoid Discord spam
+- Mock external dependencies using Jest mocks
+- Use `nock` for HTTP request mocking
+- All modules achieve 100% individual coverage
+
+## 🐳 Docker Deployment
+
+### Features
+- **🔒 Security**: Non-root user (nodejs:1001)
+- **📊 Health checks**: Built-in monitoring
+- **🚀 Optimized**: Alpine Linux base image
+- **🌐 Web scraping**: Pre-installed Chromium
+- **💾 Data persistence**: Persistent volume for previous_data.json
+
+### Docker Compose Configuration
+The project includes a complete `docker-compose.yml` with:
+- Named volumes for data persistence
+- Health checks with `/health` endpoint
+- Environment variable support
+- Network isolation
+- Restart policies
+
+### Deployment Workflow
+1. **Development**: `pnpm run deploy:docker:logs` (deploy + follow logs)
+2. **Production**: `pnpm run deploy:docker` (silent deployment)
+3. **Monitoring**: `pnpm run docker:logs` (view logs)
+4. **Status**: `pnpm run docker:status` (check health)
+
+## 🔍 Data Flow & Processing
+
+### Processing Pipeline
+1. **🔗 URL Validation** - Ensures valid 591.com.tw URLs
+2. **📡 HTTP Fetch** - Retry mechanism with exponential backoff
+3. **🏠 Property Parsing** - Extract data using CSS selectors
+4. **🔄 Change Detection** - Compare against previous crawl data
+5. **🎯 Notification Filtering** - Apply distance-based filtering
+6. **📨 Discord Dispatch** - Send notifications based on mode settings  
+7. **💾 Data Persistence** - Save properties for next comparison
+
+### Property Filtering Logic
+```
+All Properties (30) 
+    ↓ (New/Latest filtering)
+Candidate Properties (5)
+    ↓ (Distance-based filtering)  
+Properties to Notify (2)
+    ↓ (Discord webhook)
+Sent Notifications
+```
+
+## 🎯 CSS Selectors (591.com.tw)
+
+**Current selectors** (may need updates if site changes):
 - **Properties**: `.item`
-- **Title**: `.item-info-title a` 
+- **Title**: `.item-info-title a`
 - **Images**: `.item-img .common-img[data-src]`
 - **Tags**: `.item-info-tag .tag`
 - **Room info**: `.item-info-txt:has(i.house-home) span`
 - **Metro distance**: `.item-info-txt:has(i.house-metro) strong`
 - **Metro station**: `.item-info-txt:has(i.house-metro) span`
 
-## Command Line Options
+## 🚨 Error Handling & Resilience
 
-The crawler supports several command line options:
+- **📡 Network retries** with exponential backoff
+- **⏱️ Rate limiting** detection (429 responses)
+- **🛡️ Graceful degradation** - continues if Discord fails
+- **📝 Comprehensive logging** with timestamps and severity levels
+- **🔄 Auto-recovery** from transient failures
 
-- **URL** (required): 591.com.tw search URL
-- **max_latest** (optional): Number of latest properties to notify about
-- **--notify-mode** (optional): Notification mode - `all`, `filtered` (default), or `none`
-- **--filtered-mode** (optional): Filtered sub-mode - `normal`, `silent` (default), or `none`
+## 🌐 591.com.tw Website Notes
 
-**Notification Mode Examples:**
-```bash
-# All properties, normal notifications
-node crawler.js "URL" --notify-mode=all
+⚠️ **Important**: The website uses dynamic content loading:
+- Static HTML only contains page framework
+- Property listings load via JavaScript/AJAX
+- Crawler executes JavaScript to render full content
+- CSS selectors target dynamically loaded content
 
-# Default behavior: silent notifications for far properties
-node crawler.js "URL" --notify-mode=filtered --filtered-mode=silent
+**Debugging tips**:
+1. Use browser dev tools to inspect DOM after JavaScript execution
+2. Verify CSS selectors match current website structure
+3. Property order may vary due to personalization/advertising
 
-# Skip properties far from MRT stations
-node crawler.js "URL" --notify-mode=filtered --filtered-mode=none
+## 📚 Development Notes
 
-# No notifications
-node crawler.js "URL" --notify-mode=none
+### Code Style & Patterns
+- **Modular design** with clear separation of concerns
+- **Dependency injection** for testability
+- **Pure functions** where possible
+- **Consistent error handling** patterns
+- **Comprehensive logging** for debugging
 
-```
+### Common Tasks
+- **Adding new selectors**: Update `lib/parser.js`
+- **Modifying notification logic**: Update `lib/notification.js` and `lib/crawlService.js`
+- **Adding API endpoints**: Update `api.js`
+- **Configuration changes**: Update `lib/config.js`
+- **Testing**: Always run full test suite before commits
 
-## Data Flow
+### Performance Considerations
+- **Rate limiting**: Built-in delays between requests
+- **Memory efficiency**: Process properties in streams where possible
+- **Docker optimization**: Multi-stage builds, Alpine base image
+- **Caching**: Persistent storage for duplicate detection
 
-1. **URL Validation** - Ensures valid 591.com.tw URLs
-2. **HTTP Fetch** - Retry mechanism with exponential backoff  
-3. **HTML Parsing** - Extract property data using CSS selectors
-4. **Property Comparison** - Compare against previous crawl data
-5. **Notification Filtering & Dispatch** - Filter and send Discord notifications based on notification mode settings
-6. **Data Persistence** - Save current properties for next comparison
+---
 
-## Error Handling
-
-- **Network retries** with exponential backoff for failed requests
-- **Rate limiting** detection and longer delays for 429 responses  
-- **Graceful degradation** - continues operation even if Discord notifications fail
-- **Comprehensive logging** with timestamps and severity levels
-
-## Important Testing Notes
-
-- Always run tests after modifying notification logic to ensure compatibility with new logging formats
-- Mock strategy uses `mockImplementation()` rather than `mockReturnValueOnce()` for consistent behavior
-- Coverage reports exclude test files and focus on core business logic
-- Integration tests for end-to-end workflows are pending implementation
-- Use `--notify-mode=none` when testing to avoid sending Discord notifications during development
-
-## 591.com.tw Website Structure
-
-The website uses **dynamic content loading** via JavaScript/AJAX, which means:
-
-- Static HTML only contains page framework and navigation
-- Property listings are loaded asynchronously after page load
-- The crawler works by executing JavaScript to render the full content
-- Property data cannot be found by simply downloading HTML with curl
-- CSS selectors target the dynamically loaded content structure
-
-When debugging parsing issues:
-1. Use browser developer tools to inspect the actual DOM structure after JavaScript execution
-2. Check if CSS selectors still match the current website structure
-3. Properties may appear in different orders between browser and crawler due to personalization/advertising
-
-## Docker Deployment
-
-The project includes Docker support for easy deployment and containerization.
-
-### Docker Files
-
-- **`Dockerfile`** - Multi-stage build with Node.js 18 Alpine, includes Chromium for web scraping
-- **`.dockerignore`** - Excludes unnecessary files from Docker context
-
-### Docker Usage
-
-**Build Image:**
-```bash
-docker build -t 591-crawler .
-```
-
-**Run Container:**
-```bash
-# With environment file
-docker run -p 3000:3000 --env-file .env 591-crawler
-
-# With individual environment variables
-docker run -p 3000:3000 \
-  -e DISCORD_WEBHOOK_URL="your_webhook_url" \
-  -e MRT_DISTANCE_THRESHOLD=800 \
-  -e API_PORT=3000 \
-  591-crawler
-
-# Run as daemon
-docker run -d -p 3000:3000 --name 591-crawler-api --env-file .env 591-crawler
-```
-
-**Docker Features:**
-- **Security**: Runs as non-root user (nodejs:1001)
-- **Health Check**: Built-in health monitoring via `/health` endpoint
-- **Optimized**: Alpine Linux base image for smaller size
-- **Web Scraping**: Includes Chromium browser for dynamic content
-- **Data Persistence**: Configurable data directory mounting
-
-**Example docker-compose.yml:**
-```yaml
-version: '3.8'
-services:
-  crawler-api:
-    build: .
-    ports:
-      - "3000:3000"
-    environment:
-      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
-      - MRT_DISTANCE_THRESHOLD=800
-      - API_PORT=3000
-    volumes:
-      - ./data:/app/data
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-```
+**📝 Note**: This project focuses on defensive security and property monitoring. It does not perform any malicious activities and respects website terms of service through appropriate rate limiting and request patterns.

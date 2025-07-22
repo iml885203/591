@@ -17,7 +17,14 @@
     "test:coverage": "jest --coverage",
     "test:unit": "jest tests/unit",
     "test:integration": "jest tests/integration",
-    "test:verbose": "VERBOSE_TESTS=1 jest --verbose"
+    "test:verbose": "VERBOSE_TESTS=1 jest --verbose",
+    "deploy:docker": "docker-compose down && docker-compose up --build -d",
+    "deploy:docker:logs": "pnpm run deploy:docker && docker-compose logs -f",
+    "docker:down": "docker-compose down",
+    "docker:up": "docker-compose up -d",
+    "docker:rebuild": "docker-compose up --build -d",
+    "docker:logs": "docker-compose logs -f",
+    "docker:status": "docker-compose ps"
   },
   "keywords": [
     "591",
