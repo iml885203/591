@@ -13,10 +13,14 @@ This is a Node.js web scraper for 591.com.tw (Taiwan's largest rental property p
 # Install dependencies
 pnpm install
 
-# Run the crawler
+# Run the crawler (CLI)
 node crawler.js "https://rent.591.com.tw/list?region=1&kind=0"
 node crawler.js "https://rent.591.com.tw/list?region=1&kind=0" 5  # Latest 5 properties
 node crawler.js "https://rent.591.com.tw/list?region=1&kind=0" --no-notify  # No notifications (testing mode)
+
+# Run the API server
+npm run api                 # Start API server on port 3000
+node test-api.js           # Test API endpoints
 
 # Testing
 npm test                    # Run all tests
@@ -35,6 +39,62 @@ npm test -- --testNamePattern="should parse property"
 # Set up environment
 cp .env.example .env
 # Edit .env with your Discord webhook URL and preferences
+```
+
+## API Interface
+
+The project includes a REST API server that provides HTTP endpoints to trigger crawler operations.
+
+### API Endpoints
+
+**Start API Server:**
+```bash
+npm run api  # Starts server on port 3000 (configurable via API_PORT env var)
+```
+
+**Available Endpoints:**
+- `GET /health` - Health check
+- `GET /info` - API documentation and usage examples  
+- `POST /crawl` - Execute crawler with parameters
+
+**POST /crawl Parameters:**
+```json
+{
+  "url": "https://rent.591.com.tw/list?region=1&kind=0",    // Required: 591.com.tw search URL
+  "maxLatest": 5,                                           // Optional: Limit number of properties
+  "noNotify": true                                          // Optional: Disable Discord notifications
+}
+```
+
+**Example API Usage:**
+```bash
+# Health check
+curl http://localhost:3000/health
+
+# Basic crawl with notifications disabled
+curl -X POST http://localhost:3000/crawl \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://rent.591.com.tw/list?region=1&kind=0", "noNotify": true}'
+
+# Crawl latest 5 properties with notifications
+curl -X POST http://localhost:3000/crawl \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://rent.591.com.tw/list?region=1&kind=0", "maxLatest": 5}'
+```
+
+**API Response Format:**
+```json
+{
+  "success": true,
+  "message": "Crawl completed successfully", 
+  "data": {
+    "url": "https://rent.591.com.tw/list?region=1&kind=0",
+    "maxLatest": 5,
+    "noNotify": false,
+    "propertiesFound": 12,
+    "timestamp": "2025-07-22T11:04:37.377Z"
+  }
+}
 ```
 
 ## Architecture Overview
@@ -73,6 +133,7 @@ Key environment variables in `.env`:
 - `DISCORD_WEBHOOK_URL` - Discord webhook for notifications (required)
 - `MRT_DISTANCE_THRESHOLD` - Distance in meters for silent notifications (default: 800)
 - `NOTIFICATION_DELAY` - Delay between Discord messages in ms (default: 1000)
+- `API_PORT` - Port for API server (default: 3000)
 
 ## Testing Strategy
 
