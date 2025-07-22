@@ -5,7 +5,7 @@
  * Provides REST API endpoints to trigger crawler operations
  */
 
-require('dotenv').config();
+require('dotenv').config({ silent: true });
 const express = require('express');
 const { crawlWithNotifications } = require('./lib/crawlService');
 const { logWithTimestamp } = require('./lib/utils');
