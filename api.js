@@ -37,7 +37,7 @@ app.get('/health', (req, res) => {
 // Main crawler endpoint
 app.post('/crawl', async (req, res) => {
   try {
-    const { url, maxLatest, noNotify } = req.body;
+    const { url, maxLatest, notifyMode = 'filtered', filteredMode = 'silent' } = req.body;
 
     // Validate required parameters
     if (!url) {
@@ -57,10 +57,10 @@ app.post('/crawl', async (req, res) => {
       });
     }
 
-    logWithTimestamp(`API crawl request: url=${url}, maxLatest=${maxLatest}, noNotify=${noNotify}`);
+    logWithTimestamp(`API crawl request: url=${url}, maxLatest=${maxLatest}, notifyMode=${notifyMode}, filteredMode=${filteredMode}`);
 
     // Execute crawler with notifications service
-    const result = await crawlWithNotifications(url, maxLatest, { noNotify: noNotify || false });
+    const result = await crawlWithNotifications(url, maxLatest, { notifyMode, filteredMode });
 
     // Return success response with detailed property data and notification status
     res.json({
@@ -69,11 +69,11 @@ app.post('/crawl', async (req, res) => {
       data: {
         url: url,
         maxLatest: maxLatest,
-        noNotify: noNotify,
+        notifyMode: notifyMode,
+        filteredMode: filteredMode,
         propertiesFound: result.properties.length,
         newProperties: result.summary.newProperties,
         notificationsSent: result.summary.notificationsSent,
-        notificationsDisabled: result.summary.notificationsDisabled,
         properties: result.properties,
         timestamp: new Date().toISOString()
       }
@@ -113,11 +113,19 @@ app.get('/info', (req, res) => {
         required: false,
         description: 'Maximum number of latest properties to process'
       },
-      noNotify: {
-        type: 'boolean',
+      notifyMode: {
+        type: 'string',
         required: false,
-        default: false,
-        description: 'Disable Discord notifications'
+        default: 'filtered',
+        description: 'Notification mode: all, filtered, none',
+        enum: ['all', 'filtered', 'none']
+      },
+      filteredMode: {
+        type: 'string',
+        required: false,
+        default: 'silent',
+        description: 'Filtered sub-mode for far properties: normal, silent, none',
+        enum: ['normal', 'silent', 'none']
       }
     },
     examples: {
@@ -128,13 +136,38 @@ app.get('/info', (req, res) => {
           url: 'https://rent.591.com.tw/list?region=1&kind=0'
         }
       },
-      crawlWithLimitAndNoNotify: {
+      allNotifications: {
         method: 'POST',
         url: '/crawl',
         body: {
           url: 'https://rent.591.com.tw/list?region=1&kind=0',
-          maxLatest: 5,
-          noNotify: true
+          notifyMode: 'all'
+        }
+      },
+      filteredSilent: {
+        method: 'POST',
+        url: '/crawl',
+        body: {
+          url: 'https://rent.591.com.tw/list?region=1&kind=0',
+          notifyMode: 'filtered',
+          filteredMode: 'silent'
+        }
+      },
+      skipFarProperties: {
+        method: 'POST',
+        url: '/crawl',
+        body: {
+          url: 'https://rent.591.com.tw/list?region=1&kind=0',
+          notifyMode: 'filtered',
+          filteredMode: 'none'
+        }
+      },
+      noNotifications: {
+        method: 'POST',
+        url: '/crawl',
+        body: {
+          url: 'https://rent.591.com.tw/list?region=1&kind=0',
+          notifyMode: 'none'
         }
       }
     }

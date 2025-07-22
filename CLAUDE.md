@@ -16,7 +16,12 @@ pnpm install
 # Run the crawler (CLI)
 node crawler.js "https://rent.591.com.tw/list?region=1&kind=0"
 node crawler.js "https://rent.591.com.tw/list?region=1&kind=0" 5  # Latest 5 properties
-node crawler.js "https://rent.591.com.tw/list?region=1&kind=0" --no-notify  # No notifications (testing mode)
+
+# Notification mode examples
+node crawler.js "https://rent.591.com.tw/list?region=1&kind=0" --notify-mode=all                    # All properties, normal notifications
+node crawler.js "https://rent.591.com.tw/list?region=1&kind=0" --notify-mode=filtered --filtered-mode=silent  # Default: silent notifications for far properties
+node crawler.js "https://rent.591.com.tw/list?region=1&kind=0" --notify-mode=filtered --filtered-mode=none     # Skip far properties
+node crawler.js "https://rent.591.com.tw/list?region=1&kind=0" --notify-mode=none                   # No notifications
 
 # Run the API server
 npm run api                 # Start API server on port 3000
@@ -67,7 +72,8 @@ npm run api  # Starts server on port 3000 (configurable via API_PORT env var)
 {
   "url": "https://rent.591.com.tw/list?region=1&kind=0",    // Required: 591.com.tw search URL
   "maxLatest": 5,                                           // Optional: Limit number of properties
-  "noNotify": true                                          // Optional: Disable Discord notifications
+  "notifyMode": "filtered",                                 // Optional: Notification mode (all/filtered/none), default: filtered
+  "filteredMode": "silent"                                 // Optional: Filtered sub-mode (normal/silent/none), default: silent
 }
 ```
 
@@ -76,15 +82,25 @@ npm run api  # Starts server on port 3000 (configurable via API_PORT env var)
 # Health check
 curl http://localhost:3000/health
 
-# Basic crawl with notifications disabled
+# Basic crawl (default: filtered/silent mode)
 curl -X POST http://localhost:3000/crawl \
   -H "Content-Type: application/json" \
-  -d '{"url": "https://rent.591.com.tw/list?region=1&kind=0", "noNotify": true}'
+  -d '{"url": "https://rent.591.com.tw/list?region=1&kind=0"}'
 
-# Crawl latest 5 properties with notifications
+# All properties with normal notifications
 curl -X POST http://localhost:3000/crawl \
   -H "Content-Type: application/json" \
-  -d '{"url": "https://rent.591.com.tw/list?region=1&kind=0", "maxLatest": 5}'
+  -d '{"url": "https://rent.591.com.tw/list?region=1&kind=0", "notifyMode": "all"}'
+
+# Filtered mode - skip far properties
+curl -X POST http://localhost:3000/crawl \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://rent.591.com.tw/list?region=1&kind=0", "notifyMode": "filtered", "filteredMode": "none"}'
+
+# No notifications
+curl -X POST http://localhost:3000/crawl \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://rent.591.com.tw/list?region=1&kind=0", "notifyMode": "none"}'
 ```
 
 **API Response Format:**
@@ -95,8 +111,11 @@ curl -X POST http://localhost:3000/crawl \
   "data": {
     "url": "https://rent.591.com.tw/list?region=1&kind=0",
     "maxLatest": 5,
-    "noNotify": false,
+    "notifyMode": "filtered",
+    "filteredMode": "silent",
     "propertiesFound": 12,
+    "newProperties": 3,
+    "notificationsSent": true,
     "timestamp": "2025-07-22T11:04:37.377Z"
   }
 }
@@ -128,7 +147,17 @@ const crawl591 = async (url, maxLatest, dependencies = {}) => {
 }
 ```
 
-**Silent Notifications**: Properties farther than the configured distance threshold from MRT stations are sent as silent Discord notifications (no push notifications). Distance threshold is configurable via `MRT_DISTANCE_THRESHOLD` environment variable.
+**Flexible Notification System**: The crawler supports multiple notification modes to give users fine-grained control over Discord notifications:
+
+- **Notification Modes**:
+  - `all`: Send normal notifications for all properties
+  - `filtered`: Apply distance-based filtering (default)
+  - `none`: Disable all notifications
+
+- **Filtered Sub-modes** (when `notifyMode=filtered`):
+  - `normal`: Send normal notifications for all properties
+  - `silent`: Send silent notifications for properties far from MRT stations (default)
+  - `none`: Skip properties far from MRT stations entirely
 
 **Smart Property Comparison**: Uses a combination of property URL ID extraction and title+metro fallback to reliably identify duplicate properties across crawls.
 
@@ -172,12 +201,23 @@ The crawler supports several command line options:
 
 - **URL** (required): 591.com.tw search URL
 - **max_latest** (optional): Number of latest properties to notify about
-- **--no-notify** (optional): Run crawler without sending Discord notifications (useful for testing and development)
+- **--notify-mode** (optional): Notification mode - `all`, `filtered` (default), or `none`
+- **--filtered-mode** (optional): Filtered sub-mode - `normal`, `silent` (default), or `none`
 
-Examples:
+**Notification Mode Examples:**
 ```bash
-node crawler.js "URL" 5 --no-notify     # Latest 5 properties, no notifications
-node crawler.js "URL" --no-notify       # New properties only, no notifications
+# All properties, normal notifications
+node crawler.js "URL" --notify-mode=all
+
+# Default behavior: silent notifications for far properties
+node crawler.js "URL" --notify-mode=filtered --filtered-mode=silent
+
+# Skip properties far from MRT stations
+node crawler.js "URL" --notify-mode=filtered --filtered-mode=none
+
+# No notifications
+node crawler.js "URL" --notify-mode=none
+
 ```
 
 ## Data Flow
@@ -186,7 +226,7 @@ node crawler.js "URL" --no-notify       # New properties only, no notifications
 2. **HTTP Fetch** - Retry mechanism with exponential backoff  
 3. **HTML Parsing** - Extract property data using CSS selectors
 4. **Property Comparison** - Compare against previous crawl data
-5. **Notification Dispatch** - Send Discord notifications (normal or silent based on MRT distance), unless disabled with --no-notify
+5. **Notification Filtering & Dispatch** - Filter and send Discord notifications based on notification mode settings
 6. **Data Persistence** - Save current properties for next comparison
 
 ## Error Handling
@@ -202,7 +242,7 @@ node crawler.js "URL" --no-notify       # New properties only, no notifications
 - Mock strategy uses `mockImplementation()` rather than `mockReturnValueOnce()` for consistent behavior
 - Coverage reports exclude test files and focus on core business logic
 - Integration tests for end-to-end workflows are pending implementation
-- Use `--no-notify` flag when testing to avoid sending Discord notifications during development
+- Use `--notify-mode=none` when testing to avoid sending Discord notifications during development
 
 ## 591.com.tw Website Structure
 

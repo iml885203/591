@@ -155,9 +155,9 @@ describe('notification', () => {
         post: jest.fn().mockResolvedValue({ data: 'success' })
       };
       const properties = [
-        { title: 'Property 1', tags: [], imgUrls: [] },
-        { title: 'Property 2', tags: [], imgUrls: [] },
-        { title: 'Property 3', tags: [], imgUrls: [] }
+        { title: 'Property 1', tags: [], imgUrls: [], notification: { isSilent: false } },
+        { title: 'Property 2', tags: [], imgUrls: [], notification: { isSilent: false } },
+        { title: 'Property 3', tags: [], imgUrls: [], notification: { isSilent: false } }
       ];
       const webhookUrl = 'https://discord.com/api/webhooks/test';
       const config = { notificationDelay: 500 };
@@ -167,7 +167,7 @@ describe('notification', () => {
       expect(mockAxios.post).toHaveBeenCalledTimes(3);
       expect(sleep).toHaveBeenCalledTimes(2); // n-1 delays
       expect(sleep).toHaveBeenCalledWith(500);
-      expect(logWithTimestamp).toHaveBeenCalledWith('Sending 3 Discord notifications... (Distance threshold: 800m)');
+      expect(logWithTimestamp).toHaveBeenCalledWith('Sending 3 Discord notifications...');
       expect(logWithTimestamp).toHaveBeenCalledWith('✓ Sent notification 1/3 🔔 (normal): Property 1');
       expect(logWithTimestamp).toHaveBeenCalledWith('✓ Sent notification 2/3 🔔 (normal): Property 2');
       expect(logWithTimestamp).toHaveBeenCalledWith('✓ Sent notification 3/3 🔔 (normal): Property 3');
@@ -190,8 +190,8 @@ describe('notification', () => {
         post: jest.fn().mockResolvedValue({ data: 'success' })
       };
       const properties = [
-        { title: 'Property 1', tags: [], imgUrls: [] },
-        { title: 'Property 2', tags: [], imgUrls: [] }
+        { title: 'Property 1', tags: [], imgUrls: [], notification: { isSilent: false } },
+        { title: 'Property 2', tags: [], imgUrls: [], notification: { isSilent: false } }
       ];
       const webhookUrl = 'https://discord.com/api/webhooks/test';
 
@@ -208,9 +208,9 @@ describe('notification', () => {
           .mockResolvedValueOnce({ data: 'success' })
       };
       const properties = [
-        { title: 'Property 1', tags: [], imgUrls: [] },
-        { title: 'Property 2', tags: [], imgUrls: [] },
-        { title: 'Property 3', tags: [], imgUrls: [] }
+        { title: 'Property 1', tags: [], imgUrls: [], notification: { isSilent: false } },
+        { title: 'Property 2', tags: [], imgUrls: [], notification: { isSilent: false } },
+        { title: 'Property 3', tags: [], imgUrls: [], notification: { isSilent: false } }
       ];
       const webhookUrl = 'https://discord.com/api/webhooks/test';
 

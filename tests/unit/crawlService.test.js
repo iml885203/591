@@ -203,12 +203,12 @@ describe('crawlService', () => {
         return null;
       });
 
-      const result = await crawlWithNotifications('https://test.591.com.tw/list', 2, { noNotify: true });
+      const result = await crawlWithNotifications('https://test.591.com.tw/list', 2, { notifyMode: 'none' });
 
       expect(crawl591).toHaveBeenCalledWith('https://test.591.com.tw/list', expect.any(Object));
       expect(result.properties).toHaveLength(2);
       expect(result.summary.totalProperties).toBe(2);
-      expect(result.summary.notificationsDisabled).toBe(true);
+      expect(result.summary.notifyMode).toBe('none');
     });
 
     it('should handle crawl errors', async () => {
