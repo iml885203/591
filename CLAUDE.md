@@ -1,0 +1,123 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+This is a Node.js web scraper for 591.com.tw (Taiwan's largest rental property platform) that monitors property listings and sends Discord notifications. The project uses a modular architecture with comprehensive unit testing and supports configurable silent notifications based on MRT distance.
+
+## Essential Commands
+
+### Development and Testing
+```bash
+# Install dependencies
+pnpm install
+
+# Run the crawler
+node crawler.js "https://rent.591.com.tw/list?region=1&kind=0"
+node crawler.js "https://rent.591.com.tw/list?region=1&kind=0" 5  # Latest 5 properties
+
+# Testing
+npm test                    # Run all tests
+npm run test:watch         # Run tests in watch mode  
+npm run test:coverage      # Run tests with coverage report
+npm run test:unit          # Run only unit tests
+npm run test:verbose       # Run tests with verbose output
+
+# Run specific test file
+npm test -- tests/unit/crawler.test.js
+npm test -- --testNamePattern="should parse property"
+```
+
+### Configuration
+```bash
+# Set up environment
+cp .env.example .env
+# Edit .env with your Discord webhook URL and preferences
+```
+
+## Architecture Overview
+
+### Modular Design
+The codebase follows a clean modular architecture with dependency injection for testability:
+
+- **`crawler.js`** - Main CLI entry point, handles command line arguments
+- **`lib/crawler.js`** - Core orchestration logic, coordinates all modules
+- **`lib/fetcher.js`** - HTTP requests with retry mechanism and rate limiting
+- **`lib/parser.js`** - HTML parsing using Cheerio, extracts property data
+- **`lib/notification.js`** - Discord webhook notifications with silent notification support
+- **`lib/storage.js`** - File-based persistence for tracking seen properties
+- **`lib/utils.js`** - Pure utility functions (logging, validation, ID generation)
+
+### Key Architectural Patterns
+
+**Dependency Injection**: All modules accept their dependencies as parameters, enabling easy mocking and testing:
+```javascript
+const crawl591 = async (url, maxLatest, dependencies = {}) => {
+  const {
+    axios = require('axios'),
+    cheerio = require('cheerio'),
+    // ... other dependencies
+  } = dependencies;
+}
+```
+
+**Silent Notifications**: Properties farther than the configured distance threshold from MRT stations are sent as silent Discord notifications (no push notifications). Distance threshold is configurable via `MRT_DISTANCE_THRESHOLD` environment variable.
+
+**Smart Property Comparison**: Uses a combination of property URL ID extraction and title+metro fallback to reliably identify duplicate properties across crawls.
+
+## Environment Configuration
+
+Key environment variables in `.env`:
+- `DISCORD_WEBHOOK_URL` - Discord webhook for notifications (required)
+- `MRT_DISTANCE_THRESHOLD` - Distance in meters for silent notifications (default: 800)
+- `NOTIFICATION_DELAY` - Delay between Discord messages in ms (default: 1000)
+
+## Testing Strategy
+
+The project has comprehensive unit testing with 88.94% statement coverage:
+
+- **Jest** as test runner with coverage thresholds (85% statements, 80% branches)
+- **Dependency injection** enables easy mocking of external services
+- **nock** for HTTP request mocking
+- **jsdom** for DOM manipulation testing
+- All modules have 100% individual coverage
+
+### Test Structure
+- `tests/unit/` - Individual module tests
+- `tests/setup.js` - Global test configuration
+- `jest.config.js` - Coverage thresholds and test patterns
+
+## CSS Selectors and Data Extraction
+
+Current selectors for 591.com.tw parsing (these may need updates if site changes):
+- **Properties**: `.item`
+- **Title**: `.item-info-title a` 
+- **Images**: `.item-img .common-img[data-src]`
+- **Tags**: `.item-info-tag .tag`
+- **Room info**: `.item-info-txt:has(i.house-home) span`
+- **Metro distance**: `.item-info-txt:has(i.house-metro) strong`
+- **Metro station**: `.item-info-txt:has(i.house-metro) span`
+
+## Data Flow
+
+1. **URL Validation** - Ensures valid 591.com.tw URLs
+2. **HTTP Fetch** - Retry mechanism with exponential backoff  
+3. **HTML Parsing** - Extract property data using CSS selectors
+4. **Property Comparison** - Compare against previous crawl data
+5. **Notification Dispatch** - Send Discord notifications (normal or silent based on MRT distance)
+6. **Data Persistence** - Save current properties for next comparison
+
+## Error Handling
+
+- **Network retries** with exponential backoff for failed requests
+- **Rate limiting** detection and longer delays for 429 responses  
+- **Graceful degradation** - continues operation even if Discord notifications fail
+- **Comprehensive logging** with timestamps and severity levels
+
+## Important Testing Notes
+
+- Always run tests after modifying notification logic to ensure compatibility with new logging formats
+- Mock strategy uses `mockImplementation()` rather than `mockReturnValueOnce()` for consistent behavior
+- Coverage reports exclude test files and focus on core business logic
+- Integration tests for end-to-end workflows are pending implementation
