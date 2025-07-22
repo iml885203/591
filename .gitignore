@@ -35,3 +35,6 @@ Thumbs.db
 
 # HTML test/sample files
 *.html
+
+# Test coverage
+coverage/
