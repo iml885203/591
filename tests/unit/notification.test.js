@@ -76,7 +76,8 @@ describe('notification', () => {
         imgUrls: ['https://example.com/image1.jpg', 'https://example.com/image2.jpg']
       };
 
-      const embed = createPropertyEmbed(property, 1, 3);
+      const testUrl = 'https://rent.591.com.tw/list?region=1&kind=0';
+      const embed = createPropertyEmbed(property, 1, 3, false, 800, testUrl);
 
       expect(embed).toMatchObject({
         title: 'Beautiful Apartment',
@@ -87,7 +88,7 @@ describe('notification', () => {
           { name: '🚇 捷運距離', value: '文湖線 大直站 3分鐘', inline: true },
           { name: '🏷️ 標籤', value: '電梯大樓, 可養寵物, 近捷運', inline: false }
         ],
-        footer: { text: '1/3 - 591房源通知' },
+        footer: { text: `1/3 - 591房源通知 • ${testUrl}` },
         image: { url: 'https://example.com/image1.jpg' }
       });
       expect(embed.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
@@ -112,6 +113,23 @@ describe('notification', () => {
       expect(embed.fields[2].value).toBe('N/A'); // tags
       expect(embed.footer.text).toBe('2/5 - 591房源通知');
       expect(embed.image).toBeUndefined();
+    });
+
+    it('should include URL in footer when provided', () => {
+      const property = {
+        title: 'Test Property',
+        link: 'https://rent.591.com.tw/12345',
+        rooms: '1房1廳',
+        metroTitle: 'Test Station',
+        metroValue: '5分鐘',
+        tags: ['test'],
+        imgUrls: []
+      };
+      const testUrl = 'https://rent.591.com.tw/list?region=1&kind=0';
+
+      const embed = createPropertyEmbed(property, 1, 1, false, 800, testUrl);
+
+      expect(embed.footer.text).toBe(`1/1 - 591房源通知 • ${testUrl}`);
     });
 
     it('should handle partial metro information', () => {
