@@ -31,3 +31,6 @@ Thumbs.db
 *.pid
 *.seed
 *.pid.lock
+
+# HTML test/sample files
+*.html
