@@ -94,9 +94,10 @@ describe('notification', () => {
         fields: [
           { name: '🏠 房型', value: '1房1廳1衛', inline: true },
           { name: '🚇 捷運距離', value: '文湖線 大直站 3分鐘', inline: true },
-          { name: '🏷️ 標籤', value: '電梯大樓, 可養寵物, 近捷運', inline: false }
+          { name: '🏷️ 標籤', value: '電梯大樓, 可養寵物, 近捷運', inline: false },
+          { name: '🔍 搜尋網址', value: testUrl, inline: false }
         ],
-        footer: { text: `1/3 - 591房源通知 • ${testUrl}` },
+        footer: { text: '1/3 - 591房源通知' },
         image: { url: 'https://example.com/image1.jpg' }
       });
       expect(embed.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
@@ -120,6 +121,7 @@ describe('notification', () => {
       expect(embed.fields[1].value).toBe('N/A'); // metro
       expect(embed.fields[2].value).toBe('N/A'); // tags
       expect(embed.footer.text).toBe('2/5 - 591房源通知');
+      expect(embed.fields.length).toBe(3); // 沒有搜尋網址 field
       expect(embed.image).toBeUndefined();
     });
 
@@ -137,7 +139,8 @@ describe('notification', () => {
 
       const embed = createRentalEmbed(rental, 1, 1, false, 800, testUrl);
 
-      expect(embed.footer.text).toBe(`1/1 - 591房源通知 • ${testUrl}`);
+      expect(embed.footer.text).toBe('1/1 - 591房源通知');
+      expect(embed.fields[3]).toEqual({ name: '🔍 搜尋網址', value: testUrl, inline: false });
     });
 
     it('should handle partial metro information', () => {
