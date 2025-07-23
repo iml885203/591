@@ -194,6 +194,11 @@ app.get('/info', (req, res) => {
             mrtDistanceThreshold: 600
           }
         }
+      },
+      versionInfo: {
+        format: 'CalVer (YYYY.MM.PATCH)',
+        description: 'Calendar-based versioning system',
+        example: '2025.07.1 (July 2025, first release)'
       }
     }
   });

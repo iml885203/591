@@ -74,6 +74,10 @@ pnpm run docker:rebuild          # Rebuild and start
 pnpm run docker:logs             # View logs
 pnpm run docker:status           # Check container status
 
+# Version management
+pnpm run version:update          # Update to next CalVer version (YYYY.MM.PATCH)
+pnpm run version:show            # Show current version
+
 # Legacy Docker commands (if needed)
 docker build -t 591-crawler .
 docker run -p 3000:3000 --env-file .env 591-crawler
@@ -379,6 +383,40 @@ Sent Notifications
 - **Memory efficiency**: Process properties in streams where possible
 - **Docker optimization**: Multi-stage builds, Alpine base image
 - **Caching**: Persistent storage for duplicate detection
+
+## 🏷️ Version Management
+
+This project uses **CalVer (Calendar Versioning)** with the format `YYYY.MM.PATCH`:
+
+### Version Format
+- `YYYY`: Year (e.g., 2025)
+- `MM`: Month (e.g., 07 for July)
+- `PATCH`: Incremental number within the month (starts at 1)
+
+### Version Commands
+```bash
+# Update to next version and create git tag
+pnpm run version:update
+
+# Show current version
+pnpm run version:show
+
+# Example: If current version is 2025.07.1
+# Running version:update will create 2025.07.2
+# In August, first release will be 2025.08.1
+```
+
+### Release Process
+1. **Update version**: `pnpm run version:update`
+2. **Review changes**: `git diff --cached`
+3. **Commit release**: `git commit -m "bump: Release version X.X.X"`
+4. **Push with tags**: `git push && git push --tags`
+5. **Deploy**: `pnpm run deploy:docker`
+
+### Version Information
+- **API endpoint**: Version is dynamically read from `package.json`
+- **Git tags**: Each version creates a corresponding `vX.X.X` tag
+- **Docker images**: Tagged with timestamp for rollback capability
 
 ---
 
