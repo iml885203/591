@@ -2,7 +2,7 @@
  * Test script to analyze URL formatting issues
  */
 
-const { parseRentals } = require('./lib/parser');
+const { parseRentals } = require('../lib/parser');
 const cheerio = require('cheerio');
 
 // Test with sample HTML that might contain problematic URLs
@@ -77,7 +77,7 @@ if (rentals.length > 0) {
 }
 
 // Test the createRentalEmbed function with potentially problematic URLs
-const { createRentalEmbed } = require('./lib/notification');
+const { createRentalEmbed } = require('../lib/notification');
 
 const testRental = {
   title: '測試房源 with special chars & symbols',

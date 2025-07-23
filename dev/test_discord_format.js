@@ -2,7 +2,7 @@
  * Test script to check Discord embed format
  */
 
-const { createRentalEmbed } = require('./lib/notification');
+const { createRentalEmbed } = require('../lib/notification');
 
 // Mock rental data similar to actual 591 data
 const mockRental = {

@@ -174,4 +174,29 @@ describe('utils', () => {
       );
     });
   });
+
+  describe('extractDistanceInMeters', () => {
+    it('should extract distance from meters format', () => {
+      expect(extractDistanceInMeters('500公尺')).toBe(500);
+      expect(extractDistanceInMeters('120 公尺')).toBe(120);
+      expect(extractDistanceInMeters('1000公尺')).toBe(1000);
+    });
+
+    it('should extract distance from minutes format and convert to meters', () => {
+      expect(extractDistanceInMeters('5分鐘')).toBe(400); // 5 * 80 = 400
+      expect(extractDistanceInMeters('10 分鐘')).toBe(800); // 10 * 80 = 800
+      expect(extractDistanceInMeters('2分鐘')).toBe(160); // 2 * 80 = 160
+    });
+
+    it('should return null when no distance found', () => {
+      expect(extractDistanceInMeters('無資料')).toBe(null);
+      expect(extractDistanceInMeters('near station')).toBe(null);
+      expect(extractDistanceInMeters('')).toBe(null);
+    });
+
+    it('should return null when metroValue is null or undefined', () => {
+      expect(extractDistanceInMeters(null)).toBe(null);
+      expect(extractDistanceInMeters(undefined)).toBe(null);
+    });
+  });
 });

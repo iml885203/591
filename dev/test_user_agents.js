@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-const { crawl591 } = require('./lib/crawler');
-const { logWithTimestamp } = require('./lib/utils');
+const { crawl591 } = require('../lib/crawler');
+const { logWithTimestamp } = require('../lib/utils');
 
 const userAgents = [
   // Chrome Windows

@@ -1,336 +1,67 @@
 # 591 Rental Crawler
 
-A Node.js web scraper for 591.com.tw (Taiwan's largest rental property platform) that monitors rental listings and sends Discord notifications for new rentals.
+Node.js web scraper for 591.com.tw that monitors rental listings and sends Discord notifications.
 
 ## Features
 
-- 🏠 **Rental Monitoring**: Crawls 591.com.tw search results for rental properties
-- 🔔 **Smart Discord Notifications**: Sends individual notifications for each new rental
-- 🔇 **Silent Notifications**: Rentals far from MRT stations are sent as silent notifications
-- 📊 **Smart Comparison**: Tracks previously seen rentals to only notify about new ones
-- 🔄 **Retry Mechanism**: Robust error handling with automatic retries
-- ⏰ **Cron Compatible**: Perfect for scheduled execution via cron jobs
-- 📝 **Comprehensive Logging**: Timestamped logs with different severity levels
-- 🎯 **Flexible Options**: Support for latest N rentals or new rentals only
+- 🏠 **Auto-monitoring** - Crawls 591.com.tw for new rental listings
+- 🔔 **Discord alerts** - Real-time notifications with rental details  
+- 🚇 **Distance filtering** - Silent notifications for rentals far from MRT
+- 🎯 **Smart detection** - Only notifies about genuinely new rentals
 
-## Installation
+## Quick Start
 
-### Prerequisites
-
-- Node.js (v14 or higher)
-- pnpm (recommended) or npm
-
-### Setup
-
-1. Clone the repository:
 ```bash
-git clone https://github.com/iml885203/591.git
-cd 591
-```
-
-2. Install dependencies:
-```bash
+# Install
 pnpm install
-```
 
-3. Configure environment variables:
-```bash
+# Configure Discord webhook
 cp .env.example .env
-# Edit .env with your Discord webhook URL and preferences
+# Edit .env with your Discord webhook URL
+
+# Run crawler
+node crawler.js "https://rent.591.com.tw/list?region=1&kind=0"
+
+# Or use API
+pnpm run api
+curl -X POST http://localhost:3000/crawl \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://rent.591.com.tw/list?region=1&kind=0"}'
 ```
 
 ## Configuration
 
-### Environment Variables
-
-Create a `.env` file in the project root:
-
+Edit `.env`:
 ```env
-# Discord webhook URL for notifications
 DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_URL
-
-# Notification delay between messages (in milliseconds)
-NOTIFICATION_DELAY=1000
-
-# API Server port (default: 3000)
-API_PORT=3000
 ```
-
-### Discord Webhook Setup
-
-1. In your Discord server, go to Server Settings → Integrations → Webhooks
-2. Create a new webhook for the channel where you want notifications
-3. Copy the webhook URL and add it to your `.env` file
 
 ## Usage
 
-The crawler can be used in two ways: as a **Command Line Interface (CLI)** or as a **REST API Server**.
-
-### REST API Server (Recommended)
-
-Start the API server for HTTP-based operations:
-
+**CLI:**
 ```bash
-# Start API server on port 3000
-npm run api
-
-# Or specify custom port
-API_PORT=8080 npm run api
+node crawler.js "URL"              # New rentals only
+node crawler.js "URL" 5            # Latest 5 rentals
+node crawler.js "URL" --notify-mode=none  # No notifications
 ```
 
-**Available Endpoints:**
-
-- `GET /health` - Health check and server status
-- `GET /swagger` - Swagger API documentation and usage examples  
-- `POST /crawl` - Execute crawler with parameters
-
-**API Usage Examples:**
-
+**API:**
 ```bash
-# Health check
-curl http://localhost:3000/health
-
-# Basic crawl with notifications disabled (for testing)
-curl -X POST http://localhost:3000/crawl \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://rent.591.com.tw/list?region=1&kind=0", "noNotify": true}'
-
-# Crawl latest 5 rentals with notifications
-curl -X POST http://localhost:3000/crawl \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://rent.591.com.tw/list?region=1&kind=0", "maxLatest": 5}'
-
-# Advanced notification control with MRT distance filtering
-curl -X POST http://localhost:3000/crawl \
-  -H "Content-Type: application/json" \
-  -d '{
-    "url": "https://rent.591.com.tw/list?region=1&kind=0",
-    "maxLatest": 10,
-    "notifyMode": "filtered",
-    "filteredMode": "silent",
-    "filter": {
-      "mrtDistanceThreshold": 600
-    }
-  }'
+pnpm run api  # Start on port 3000
+# Endpoints: GET /health, POST /crawl, GET /swagger
 ```
 
-**API Parameters:**
-- `url` (required): 591.com.tw search URL
-- `maxLatest` (optional): Limit number of properties to process
-- `noNotify` (optional): Disable Discord notifications (useful for testing)
-- `notifyMode` (optional): `"all"`, `"filtered"`, or `"none"`
-- `filteredMode` (optional): `"normal"`, `"silent"`, or `"none"`
-- `filter` (optional): Filter object for property screening
-  - `filter.mrtDistanceThreshold` (number): Distance threshold in meters for MRT filtering
-
-**Docker Deployment:**
-
+**Docker:**
 ```bash
-# Build and run with docker-compose
 pnpm run deploy:docker
-
-# Or use individual commands
-docker build -t 591-crawler .
-docker run -p 3000:3000 --env-file .env 591-crawler
 ```
 
-### Command Line Interface (CLI)
-
-Direct command-line usage for scripts and cron jobs:
+## Testing
 
 ```bash
-# Send notifications for all new properties (compared to previous run)
-node crawler.js "https://rent.591.com.tw/list?region=1&kind=0"
-
-# Send notifications for latest 5 properties
-node crawler.js "https://rent.591.com.tw/list?region=1&kind=0" 5
+pnpm test
 ```
-
-### Example URLs
-
-```bash
-# Taipei apartments under 30k
-node crawler.js "https://rent.591.com.tw/list?region=1&price=0$_30000$"
-
-# New Taipei 2-bedroom apartments near MRT
-node crawler.js "https://rent.591.com.tw/list?region=3&metro=162&room=2"
-
-# With specific filters (size, price, amenities)
-node crawler.js "https://rent.591.com.tw/list?region=3&metro=162&sort=posttime_desc&station=4232,4233,4234,4231&acreage=20$_50$&option=cold&notice=not_cover&price=25000$_40000$"
-```
-
-### Command Line Options
-
-- **URL** (required): 591.com.tw search URL
-- **max_latest** (optional): Number of latest properties to notify about
-  - If not specified: Only sends notifications for new properties compared to last run
-  - If specified: Sends notifications for the latest N properties
-
-## Scheduled Execution
-
-### Using Cron
-
-Add to your crontab to run every 30 minutes:
-
-```bash
-crontab -e
-
-# Add this line:
-*/30 * * * * cd /path/to/591-crawler && node crawler.js "YOUR_591_URL" >> /var/log/591-crawler.log 2>&1
-```
-
-### Using Crontab UI
-
-If you're using crontab-ui (Docker):
-
-```bash
-docker run -d -p 8000:8000 -v /var/spool/cron/crontabs:/etc/crontabs alseambusher/crontab-ui
-```
-
-Then access http://localhost:8000 to manage your cron jobs.
-
-## Rental Data Structure
-
-Each rental notification includes:
-
-- **Title**: Rental listing title
-- **Room Type**: Rental type (套房, 整層住家, etc.)
-- **MRT Distance**: Distance to nearest MRT station
-- **Tags**: Rental features (近捷運, 可開伙, etc.)
-- **Images**: Rental photos (first image shown in Discord)
-- **Direct Link**: Link to full rental details on 591.com.tw
-- **Notification Type**: Normal (🔔) or Silent (🔇) based on MRT distance
-- **Source URL**: Original crawl URL appears in notification footer for verification
-
-### Silent Notifications
-
-Rentals that are farther than the configured distance threshold from MRT stations will be sent as silent Discord notifications. These notifications:
-
-- **Don't trigger push notifications** on mobile devices
-- **Use orange color coding** instead of green
-- **Include 🔇 icon** in the footer
-- **Show distance threshold** in the notification footer
-
-This feature helps reduce notification noise while still keeping you informed of all available rentals.
-
-## Error Handling
-
-The crawler includes comprehensive error handling:
-
-- **Network Retries**: Automatic retry for failed requests (3 attempts)
-- **Rate Limiting**: Handles 429 responses with exponential backoff
-- **Discord Failures**: Continues operation even if Discord notifications fail
-- **Data Persistence**: Gracefully handles file system errors
-- **Logging**: All errors are logged with timestamps
-
-## Configuration Options
-
-### Environment Configuration
-
-Configure these settings in your `.env` file:
-
-```env
-# Discord webhook URL (required)
-DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_URL
-
-# Delay between Discord notifications (default: 1000ms)
-NOTIFICATION_DELAY=1000
-```
-
-### Internal Configuration
-
-You can modify these values in `crawler.js`:
-
-```javascript
-const CONFIG = {
-  maxRetries: 3,           // Maximum retry attempts for failed requests
-  retryDelay: 2000,        // Delay between retries (ms)
-  timeout: 30000           // Request timeout (ms)
-};
-```
-
-## Development
-
-### Project Structure
-
-```
-591-crawler/
-├── lib/                # Modular components
-│   ├── crawler.js      # Main crawling logic
-│   ├── fetcher.js      # HTTP requests with retry
-│   ├── parser.js       # HTML parsing
-│   ├── storage.js      # Data persistence
-│   ├── notification.js # Discord notifications
-│   └── utils.js        # Utility functions
-├── tests/              # Test suites
-│   ├── unit/           # Unit tests
-│   └── integration/    # Integration tests
-├── crawler.js          # Main entry point
-├── package.json        # Dependencies and scripts
-├── .env               # Environment variables (create from .env.example)
-├── .env.example       # Example environment variables
-├── previous_data.json # Stored previous crawl results (auto-generated)
-└── README.md          # This file
-```
-
-### Dependencies
-
-- **axios**: HTTP client for web requests
-- **cheerio**: jQuery-like server-side HTML parsing
-- **dotenv**: Environment variable management
-- **fs-extra**: Enhanced file system operations
-
-## Troubleshooting
-
-### Common Issues
-
-**No rentals found**
-- Check if the 591.com.tw URL is valid and returns results in a browser
-- The website structure might have changed (CSS selectors may need updating)
-
-**Discord notifications not working**
-- Verify your webhook URL is correct in `.env`
-- Check Discord server permissions
-- Look for error messages in logs
-
-**Rentals not being detected as new**
-- Delete `previous_data.json` to reset the comparison data
-- Ensure the URL remains consistent between runs
-
-**Request failures**
-- Check internet connection
-- 591.com.tw might be blocking requests (try different user agents)
-- Increase retry delay in configuration
-
-### Logging
-
-All operations are logged with timestamps:
-- `[INFO]`: Normal operations
-- `[WARN]`: Warnings (retries, missing data)
-- `[ERROR]`: Errors (failed requests, Discord failures)
-
-### CSS Selectors
-
-Current selectors used for data extraction:
-- **Title**: `.item-info-title a`
-- **Images**: `.item-img .common-img[data-src]`
-- **Tags**: `.item-info-tag .tag`
-- **Rooms**: `.item-info-txt:has(i.house-home) span`
-- **Metro Distance**: `.item-info-txt:has(i.house-metro) strong`
-- **Metro Name**: `.item-info-txt:has(i.house-metro) span`
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
 
 ## License
 
-MIT License - see LICENSE file for details
-
-## Disclaimer
-
-This tool is for personal use only. Please respect 591.com.tw's terms of service and don't overload their servers with too frequent requests. The authors are not responsible for any misuse of this tool.
+MIT
