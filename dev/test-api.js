@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 /**
  * Test script for 591 Crawler API
@@ -117,7 +117,7 @@ async function main() {
   console.log(`\n📚 Usage Examples:`);
   console.log(`
   # Start the API server
-  npm run api
+  bun run api
   
   # Health check
   curl http://localhost:3000/health
@@ -144,7 +144,7 @@ async function checkServer() {
     return true;
   } catch (error) {
     console.log('❌ API server is not running!');
-    console.log('💡 Start the server first: npm run api');
+    console.log('💡 Start the server first: bun run api');
     console.log('   Then run this test script again');
     return false;
   }

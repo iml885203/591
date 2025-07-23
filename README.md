@@ -13,17 +13,17 @@ Node.js web scraper for 591.com.tw that monitors rental listings and sends Disco
 
 ```bash
 # Install
-pnpm install
+bun install
 
 # Configure Discord webhook
 cp .env.example .env
 # Edit .env with your Discord webhook URL
 
 # Run crawler
-node crawler.js "https://rent.591.com.tw/list?region=1&kind=0"
+bun crawler.js "https://rent.591.com.tw/list?region=1&kind=0"
 
 # Or use API
-pnpm run api
+bun run api
 curl -X POST http://localhost:3000/crawl \
   -H "Content-Type: application/json" \
   -d '{"url": "https://rent.591.com.tw/list?region=1&kind=0"}'
@@ -40,26 +40,26 @@ DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_URL
 
 **CLI:**
 ```bash
-node crawler.js "URL"              # New rentals only
-node crawler.js "URL" 5            # Latest 5 rentals
-node crawler.js "URL" --notify-mode=none  # No notifications
+bun crawler.js "URL"              # New rentals only
+bun crawler.js "URL" 5            # Latest 5 rentals
+bun crawler.js "URL" --notify-mode=none  # No notifications
 ```
 
 **API:**
 ```bash
-pnpm run api  # Start on port 3000
+bun run api  # Start on port 3000
 # Endpoints: GET /health, POST /crawl, GET /swagger
 ```
 
 **Docker:**
 ```bash
-pnpm run deploy:docker
+bun run deploy:docker
 ```
 
 ## Testing
 
 ```bash
-pnpm test
+bun test
 ```
 
 ## License

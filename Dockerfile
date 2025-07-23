@@ -1,5 +1,5 @@
 # 591 Crawler Docker Image
-FROM node:18-alpine
+FROM oven/bun:alpine
 
 # Set working directory
 WORKDIR /app
@@ -17,14 +17,12 @@ RUN apk add --no-cache \
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
-# Install pnpm globally
-RUN npm install -g pnpm@10.13.1
 
 # Copy package files
-COPY package.json pnpm-lock.yaml ./
+COPY package.json bun.lock ./
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile --prod
+RUN bun install --frozen-lockfile --production
 
 # Copy application source code
 COPY . .
@@ -45,14 +43,14 @@ EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD node -e "const http = require('http'); \
+    CMD bun -e "const http = require('http'); \
         const options = { hostname: 'localhost', port: 3000, path: '/health', timeout: 5000 }; \
         const req = http.request(options, (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }); \
         req.on('error', () => process.exit(1)); \
         req.end();"
 
 # Default command - run API server
-CMD ["npm", "run", "api"]
+CMD ["bun", "run", "api"]
 
 # Labels for metadata
 LABEL maintainer="iml885203" \

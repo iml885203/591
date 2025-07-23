@@ -38,4 +38,4 @@ docker-compose up -d
 
 echo "✅ Deployment completed!"
 echo "   Current: ${CURRENT_TAG}"
-echo "   Use 'pnpm run docker:rollback' to rollback if needed"
+echo "   Use 'bun run docker:rollback' to rollback if needed"

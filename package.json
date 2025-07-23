@@ -7,27 +7,26 @@
     "591-crawler": "./crawler.js"
   },
   "scripts": {
-    "preinstall": "npx only-allow pnpm",
-    "start": "node crawler.js",
-    "api": "node api.js",
-    "crawl": "node crawler.js",
-    "example": "node crawler.js \"https://rent.591.com.tw/list?region=1&kind=0\" 3",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "test:unit": "jest tests/unit",
-    "test:integration": "jest tests/integration",
-    "test:verbose": "VERBOSE_TESTS=1 jest --verbose",
+    "start": "bun run crawler.js",
+    "api": "bun run api.js",
+    "crawl": "bun run crawler.js",
+    "example": "bun run crawler.js \"https://rent.591.com.tw/list?region=1&kind=0\" 3",
+    "test": "bun run jest",
+    "test:watch": "bun run jest --watch",
+    "test:coverage": "bun run jest --coverage",
+    "test:unit": "bun run jest tests/unit",
+    "test:integration": "bun run jest tests/integration",
+    "test:verbose": "VERBOSE_TESTS=1 bun run jest --verbose",
     "deploy:docker": "bash scripts/deploy.sh",
-    "deploy:docker:logs": "pnpm run deploy:docker && docker-compose logs -f",
+    "deploy:docker:logs": "bun run deploy:docker && docker-compose logs -f",
     "docker:down": "docker-compose down",
     "docker:up": "docker-compose up -d",
     "docker:rebuild": "docker-compose up --build -d",
     "docker:logs": "docker-compose logs -f",
     "docker:status": "docker-compose ps",
     "docker:rollback": "bash scripts/rollback.sh",
-    "version:update": "node scripts/update-version.js",
-    "version:show": "node -p \"require('./package.json').version\""
+    "version:update": "bun scripts/update-version.js",
+    "version:show": "bun -p \"require('./package.json').version\""
   },
   "keywords": [
     "591",
@@ -52,10 +51,8 @@
     "url": "https://github.com/iml885203/591/issues"
   },
   "engines": {
-    "node": ">=14.0.0",
-    "pnpm": ">=8.0.0"
+    "bun": ">=1.0.0"
   },
-  "packageManager": "pnpm@10.13.1",
   "dependencies": {
     "axios": "^1.10.0",
     "cheerio": "^1.1.2",

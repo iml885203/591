@@ -6,18 +6,18 @@ Node.js web scraper for 591.com.tw rental monitoring with Discord notifications.
 
 ```bash
 # Development
-pnpm install
-pnpm test
-pnpm run api
+bun install
+bun test
+bun run api
 
 # Usage
-node crawler.js "https://rent.591.com.tw/list?region=1&kind=0"
-node crawler.js "URL" 5  # Latest 5 rentals
-node crawler.js "URL" --notify-mode=none  # No notifications
+bun run crawler.js "https://rent.591.com.tw/list?region=1&kind=0"
+bun run crawler.js "URL" 5  # Latest 5 rentals
+bun run crawler.js "URL" --notify-mode=none  # No notifications
 
 # Docker
-pnpm run deploy:docker
-pnpm run docker:logs
+bun run deploy:docker
+bun run docker:logs
 
 # API
 curl -X POST http://localhost:3000/crawl \
