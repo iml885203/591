@@ -127,6 +127,17 @@ app.get('/info', (req, res) => {
         default: 'silent',
         description: 'Filtered sub-mode for far properties: normal, silent, none',
         enum: ['normal', 'silent', 'none']
+      },
+      filter: {
+        type: 'object',
+        required: false,
+        description: 'Filter options for property screening',
+        properties: {
+          mrtDistanceThreshold: {
+            type: 'number',
+            description: 'Distance threshold in meters for MRT filtering'
+          }
+        }
       }
     },
     examples: {
@@ -169,6 +180,18 @@ app.get('/info', (req, res) => {
         body: {
           url: 'https://rent.591.com.tw/list?region=1&kind=0',
           notifyMode: 'none'
+        }
+      },
+      customDistanceFilter: {
+        method: 'POST',
+        url: '/crawl',
+        body: {
+          url: 'https://rent.591.com.tw/list?region=1&kind=0',
+          notifyMode: 'filtered',
+          filteredMode: 'silent',
+          filter: {
+            mrtDistanceThreshold: 600
+          }
         }
       }
     }
