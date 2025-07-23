@@ -8,7 +8,8 @@ const {
   getPropertyId,
   isValid591Url,
   generateUrlKey,
-  logWithTimestamp
+  logWithTimestamp,
+  extractDistanceInMeters
 } = require('../../lib/utils');
 
 describe('utils', () => {

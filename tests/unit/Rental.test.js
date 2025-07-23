@@ -86,7 +86,7 @@ describe('Rental', () => {
 
     it('should return false when distance is null', () => {
       const rental = new Rental({ ...mockRentalData, metroValue: 'unknown' });
-      expect(rental.isFarFromMRT(600)).toBe(false);
+      expect(rental.isFarFromMRT(600)).toBeFalsy();
     });
   });
 

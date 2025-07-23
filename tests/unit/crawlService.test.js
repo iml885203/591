@@ -233,5 +233,112 @@ describe('crawlService', () => {
       await expect(crawlWithNotifications('https://test.591.com.tw/list')).rejects.toThrow('Crawl failed');
       expect(sendErrorNotification).toHaveBeenCalled();
     });
+
+    it('should handle filtered notification modes', async () => {
+      const mockRentals = [
+        { title: 'Close Property', metroValue: '500公尺' },
+        { title: 'Far Property', metroValue: '1200公尺' }
+      ];
+
+      crawl591.mockResolvedValue(mockRentals);
+      getPropertyId.mockImplementation((prop) => prop.title);
+      extractDistanceInMeters.mockImplementation((metro) => {
+        if (metro === '500公尺') return 500;
+        if (metro === '1200公尺') return 1200;
+        return null;
+      });
+      generateUrlKey.mockReturnValue('test-key');
+      getDataFilePath.mockReturnValue('/path/to/data.json');
+      loadPreviousData.mockResolvedValue({});
+      savePreviousData.mockResolvedValue();
+
+      const result = await crawlWithNotifications('https://test.591.com.tw/list', null, { 
+        notifyMode: 'filtered',
+        filteredMode: 'silent',
+        filter: { mrtDistanceThreshold: 800 }
+      });
+
+      expect(result.summary.notifyMode).toBe('filtered');
+      expect(sendDiscordNotifications).toHaveBeenCalled();
+    });
+
+    it('should handle case with no new rentals', async () => {
+      const mockRentals = [];
+
+      crawl591.mockResolvedValue(mockRentals);
+      generateUrlKey.mockReturnValue('test-key');
+      getDataFilePath.mockReturnValue('/path/to/data.json');
+      loadPreviousData.mockResolvedValue({});
+      savePreviousData.mockResolvedValue();
+
+      const result = await crawlWithNotifications('https://test.591.com.tw/list', null, { 
+        notifyMode: 'all'
+      });
+
+      expect(result.summary.totalRentals).toBe(0);
+      expect(sendDiscordNotifications).not.toHaveBeenCalled();
+    });
+
+    it('should handle webhook URL from environment', async () => {
+      process.env.DISCORD_WEBHOOK_URL = 'https://discord.com/webhook/test';
+      
+      const mockRentals = [{ title: 'Property 1', metroValue: '500公尺' }];
+
+      crawl591.mockResolvedValue(mockRentals);
+      getPropertyId.mockImplementation((prop) => prop.title);
+      extractDistanceInMeters.mockReturnValue(500);
+      generateUrlKey.mockReturnValue('test-key');
+      getDataFilePath.mockReturnValue('/path/to/data.json');
+      loadPreviousData.mockResolvedValue({});
+      savePreviousData.mockResolvedValue();
+
+      const result = await crawlWithNotifications('https://test.591.com.tw/list', null, { 
+        notifyMode: 'all'
+      });
+
+      expect(sendDiscordNotifications).toHaveBeenCalledWith(
+        expect.any(Array),
+        'https://test.591.com.tw/list',
+        'https://discord.com/webhook/test',
+        expect.any(Object),
+        expect.any(Object),
+        expect.any(Object)
+      );
+    });
+
+    it('should handle all notification mode branches', async () => {
+      const mockRentals = [
+        { title: 'Far Property', metroValue: '1200公尺' }
+      ];
+
+      crawl591.mockResolvedValue(mockRentals);
+      getPropertyId.mockImplementation((prop) => prop.title);
+      extractDistanceInMeters.mockReturnValue(1200);
+      generateUrlKey.mockReturnValue('test-key');
+      getDataFilePath.mockReturnValue('/path/to/data.json');
+      loadPreviousData.mockResolvedValue({});
+      savePreviousData.mockResolvedValue();
+
+      // Test 'none' notify mode
+      await crawlWithNotifications('https://test.591.com.tw/list', null, { 
+        notifyMode: 'none'
+      });
+
+      // Test 'filtered' mode with 'none' filtered mode
+      await crawlWithNotifications('https://test.591.com.tw/list', null, { 
+        notifyMode: 'filtered',
+        filteredMode: 'none',
+        filter: { mrtDistanceThreshold: 800 }
+      });
+
+      // Test 'filtered' mode with 'normal' filtered mode
+      await crawlWithNotifications('https://test.591.com.tw/list', null, { 
+        notifyMode: 'filtered',
+        filteredMode: 'normal',
+        filter: { mrtDistanceThreshold: 800 }
+      });
+
+      expect(crawl591).toHaveBeenCalledTimes(3);
+    });
   });
 });

@@ -191,4 +191,34 @@ describe('API Integration Tests', () => {
       expect(response.headers['access-control-allow-origin']).toBe('*');
     });
   });
+
+  describe('Error handling', () => {
+    it('should handle unhandled errors with global error handler', async () => {
+      // Temporarily mock crawlWithNotifications to throw an unexpected error
+      crawlWithNotifications.mockImplementation(() => {
+        throw new Error('Unexpected synchronous error');
+      });
+
+      const response = await request(app)
+        .post('/crawl')
+        .send({ url: 'https://rent.591.com.tw/list?region=1&kind=0' })
+        .expect(500);
+
+      expect(response.body).toMatchObject({
+        success: false,
+        error: 'Crawl failed',  // This is the actual error message from the API
+        message: 'Unexpected synchronous error'
+      });
+    });
+  });
+
+  describe('Swagger endpoint', () => {
+    it('should serve Swagger documentation', async () => {
+      const response = await request(app)
+        .get('/swagger/')  // Add trailing slash to handle redirect
+        .expect(200);
+
+      expect(response.text).toContain('swagger-ui');
+    });
+  });
 });
