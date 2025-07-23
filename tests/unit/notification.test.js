@@ -13,7 +13,15 @@ const {
 // Mock the utils module
 jest.mock('../../lib/utils', () => ({
   logWithTimestamp: jest.fn(),
-  sleep: jest.fn(() => Promise.resolve())
+  sleep: jest.fn(() => Promise.resolve()),
+  extractDistanceInMeters: jest.fn((metroValue) => {
+    if (!metroValue) return null;
+    const meterMatch = metroValue.match(/(\d+)\s*公尺/);
+    if (meterMatch) return parseInt(meterMatch[1]);
+    const minuteMatch = metroValue.match(/(\d+)\s*分鐘/);
+    if (minuteMatch) return parseInt(minuteMatch[1]) * 80;
+    return null;
+  })
 }));
 
 const { logWithTimestamp, sleep } = require('../../lib/utils');

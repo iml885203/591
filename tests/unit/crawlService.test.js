@@ -12,7 +12,15 @@ jest.mock('../../lib/crawler', () => ({
 jest.mock('../../lib/utils', () => ({
   generateUrlKey: jest.fn(),
   logWithTimestamp: jest.fn(),
-  getPropertyId: jest.fn()
+  getPropertyId: jest.fn(),
+  extractDistanceInMeters: jest.fn((metroValue) => {
+    if (!metroValue) return null;
+    const meterMatch = metroValue.match(/(\d+)\s*公尺/);
+    if (meterMatch) return parseInt(meterMatch[1]);
+    const minuteMatch = metroValue.match(/(\d+)\s*分鐘/);
+    if (minuteMatch) return parseInt(minuteMatch[1]) * 80;
+    return null;
+  })
 }));
 
 jest.mock('../../lib/storage', () => ({
@@ -162,7 +170,10 @@ describe('crawlService', () => {
         return null;
       });
 
-      const result = addNotificationMetadata(allProperties, propertiesToNotify, false);
+      const result = addNotificationMetadata(allProperties, propertiesToNotify, { 
+        notifyMode: 'all',
+        filter: { mrtDistanceThreshold: 800 }
+      });
 
       expect(result).toHaveLength(2);
       expect(result[0].notification.willNotify).toBe(true);
@@ -181,7 +192,11 @@ describe('crawlService', () => {
       getPropertyId.mockImplementation((prop) => prop.title);
       extractDistanceInMeters.mockReturnValue(1200);
 
-      const result = addNotificationMetadata(allProperties, propertiesToNotify, false);
+      const result = addNotificationMetadata(allProperties, propertiesToNotify, { 
+        notifyMode: 'filtered', 
+        filteredMode: 'silent',
+        filter: { mrtDistanceThreshold: 800 }
+      });
 
       expect(result[0].notification.willNotify).toBe(true);
       expect(result[0].notification.isSilent).toBe(true);

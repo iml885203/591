@@ -39,9 +39,11 @@ node crawler.js "URL" 5  # Latest 5 properties
 
 # Notification mode examples
 node crawler.js "URL" --notify-mode=all                    # All properties, normal notifications
-node crawler.js "URL" --notify-mode=filtered --filtered-mode=silent  # Default: silent for far properties
-node crawler.js "URL" --notify-mode=filtered --filtered-mode=none     # Skip far properties
+node crawler.js "URL" --notify-mode=filtered --filtered-mode=silent  # Default: no distance filtering
+node crawler.js "URL" --notify-mode=filtered --filtered-mode=none     # Skip far properties (no filtering by default)
 node crawler.js "URL" --notify-mode=none                   # No notifications
+
+# Note: Distance filtering (filter.mrtDistanceThreshold) is only available via API, not CLI
 
 # API server
 pnpm run api              # Start API server on port 3000
@@ -122,6 +124,20 @@ curl -X POST http://localhost:3000/crawl \
   }'
 ```
 
+**Custom distance threshold (600m from MRT):**
+```bash
+curl -X POST http://localhost:3000/crawl \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://rent.591.com.tw/list?region=1&kind=0",
+    "notifyMode": "filtered",
+    "filteredMode": "silent",
+    "filter": {
+      "mrtDistanceThreshold": 600
+    }
+  }'
+```
+
 **Disable notifications:**
 ```bash
 curl -X POST http://localhost:3000/crawl \
@@ -137,6 +153,8 @@ curl -X POST http://localhost:3000/crawl \
 | `maxLatest` | number | ❌ | null | Limit number of properties (null = new only) |
 | `notifyMode` | string | ❌ | `filtered` | `all`, `filtered`, `none` |
 | `filteredMode` | string | ❌ | `silent` | `normal`, `silent`, `none` |
+| `filter` | object | ❌ | `{}` | Filter options for property screening |
+| `filter.mrtDistanceThreshold` | number | ❌ | - | Distance threshold in meters for MRT filtering |
 
 ### API Response Format
 ```json
@@ -172,6 +190,7 @@ curl -X POST http://localhost:3000/crawl \
 │   ├── parser.js          # HTML parsing with Cheerio
 │   ├── notification.js    # Discord webhook notifications
 │   ├── storage.js         # File-based persistence
+│   ├── Rental.js          # Domain model for rental properties
 │   └── utils.js           # Utility functions
 ├── tests/
 │   ├── unit/              # Unit tests
@@ -203,10 +222,19 @@ const crawl591 = async (url, options = {}, dependencies = {}) => {
 
 **Filtered Sub-modes** (when `notifyMode=filtered`):
 - `normal`: Normal notifications for all properties
-- `silent`: Silent notifications for properties >800m from MRT (default)
+- `silent`: Silent notifications for properties beyond distance threshold (default)
 - `none`: Skip far properties entirely
 
 **🔍 Smart Property Detection**: Uses URL ID extraction + title/metro fallback for reliable duplicate detection.
+
+**🏠 Domain Model**: Rental class encapsulates property business logic:
+```javascript
+const rental = new Rental(propertyData);
+rental.isFarFromMRT(800);              // Check if >800m from MRT
+rental.getDistanceToMRT();             // Get distance in meters
+rental.shouldBeSilentNotification();   // Check notification mode
+rental.getNotificationColor();         // Get Discord embed color
+```
 
 ## ⚙️ Configuration
 
@@ -215,10 +243,15 @@ const crawl591 = async (url, options = {}, dependencies = {}) => {
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `DISCORD_WEBHOOK_URL` | - | Discord webhook for notifications (required) |
-| `MRT_DISTANCE_THRESHOLD` | 800 | Distance in meters for silent notifications |
 | `NOTIFICATION_DELAY` | 1000 | Delay between Discord messages (ms) |
 | `API_PORT` | 3000 | Port for API server |
 | `DATA_FILE_PATH` | `./data/previous_data.json` | Path to persistence file |
+
+### API-Based Configuration
+Distance filtering and other property screening options are configured via API parameters rather than environment variables:
+- **MRT Distance Filtering**: Use `filter.mrtDistanceThreshold` in API requests
+- **No default threshold**: Properties are not filtered unless explicitly specified
+- **Runtime flexibility**: Different thresholds can be used per API call
 
 ### Package Manager Enforcement
 The project enforces pnpm usage via `preinstall` hook. Use `pnpm` instead of `npm` for all operations.
@@ -327,6 +360,7 @@ Sent Notifications
 
 ### Code Style & Patterns
 - **Modular design** with clear separation of concerns
+- **Domain-driven design** with Rental class encapsulating business logic
 - **Dependency injection** for testability
 - **Pure functions** where possible
 - **Consistent error handling** patterns
@@ -334,9 +368,10 @@ Sent Notifications
 
 ### Common Tasks
 - **Adding new selectors**: Update `lib/parser.js`
-- **Modifying notification logic**: Update `lib/notification.js` and `lib/crawlService.js`
+- **Modifying notification logic**: Update `lib/Rental.js` (domain model) or `lib/crawlService.js`
 - **Adding API endpoints**: Update `api.js`
 - **Configuration changes**: Update `lib/config.js`
+- **Adding property business logic**: Update `lib/Rental.js` domain model
 - **Testing**: Always run full test suite before commits
 
 ### Performance Considerations

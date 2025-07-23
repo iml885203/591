@@ -37,7 +37,7 @@ app.get('/health', (req, res) => {
 // Main crawler endpoint
 app.post('/crawl', async (req, res) => {
   try {
-    const { url, maxLatest, notifyMode = 'filtered', filteredMode = 'silent' } = req.body;
+    const { url, maxLatest, notifyMode = 'filtered', filteredMode = 'silent', filter } = req.body;
 
     // Validate required parameters
     if (!url) {
@@ -57,10 +57,11 @@ app.post('/crawl', async (req, res) => {
       });
     }
 
-    logWithTimestamp(`API crawl request: url=${url}, maxLatest=${maxLatest}, notifyMode=${notifyMode}, filteredMode=${filteredMode}`);
+    const filterInfo = filter ? JSON.stringify(filter) : 'none';
+    logWithTimestamp(`API crawl request: url=${url}, maxLatest=${maxLatest}, notifyMode=${notifyMode}, filteredMode=${filteredMode}, filter=${filterInfo}`);
 
     // Execute crawler with notifications service
-    const result = await crawlWithNotifications(url, maxLatest, { notifyMode, filteredMode });
+    const result = await crawlWithNotifications(url, maxLatest, { notifyMode, filteredMode, filter });
 
     // Return success response with detailed property data and notification status
     res.json({

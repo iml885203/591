@@ -49,12 +49,11 @@ Create a `.env` file in the project root:
 # Discord webhook URL for notifications
 DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_URL
 
-# Distance threshold for silent notifications (in meters)
-# Properties farther than this distance from MRT will be sent as silent notifications
-MRT_DISTANCE_THRESHOLD=800
-
 # Notification delay between messages (in milliseconds)
 NOTIFICATION_DELAY=1000
+
+# API Server port (default: 3000)
+API_PORT=3000
 ```
 
 ### Discord Webhook Setup
@@ -65,7 +64,79 @@ NOTIFICATION_DELAY=1000
 
 ## Usage
 
-### Basic Usage
+The crawler can be used in two ways: as a **Command Line Interface (CLI)** or as a **REST API Server**.
+
+### REST API Server (Recommended)
+
+Start the API server for HTTP-based operations:
+
+```bash
+# Start API server on port 3000
+npm run api
+
+# Or specify custom port
+API_PORT=8080 npm run api
+```
+
+**Available Endpoints:**
+
+- `GET /health` - Health check and server status
+- `GET /info` - API documentation and usage examples  
+- `POST /crawl` - Execute crawler with parameters
+
+**API Usage Examples:**
+
+```bash
+# Health check
+curl http://localhost:3000/health
+
+# Basic crawl with notifications disabled (for testing)
+curl -X POST http://localhost:3000/crawl \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://rent.591.com.tw/list?region=1&kind=0", "noNotify": true}'
+
+# Crawl latest 5 properties with notifications
+curl -X POST http://localhost:3000/crawl \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://rent.591.com.tw/list?region=1&kind=0", "maxLatest": 5}'
+
+# Advanced notification control with MRT distance filtering
+curl -X POST http://localhost:3000/crawl \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://rent.591.com.tw/list?region=1&kind=0",
+    "maxLatest": 10,
+    "notifyMode": "filtered",
+    "filteredMode": "silent",
+    "filter": {
+      "mrtDistanceThreshold": 600
+    }
+  }'
+```
+
+**API Parameters:**
+- `url` (required): 591.com.tw search URL
+- `maxLatest` (optional): Limit number of properties to process
+- `noNotify` (optional): Disable Discord notifications (useful for testing)
+- `notifyMode` (optional): `"all"`, `"filtered"`, or `"none"`
+- `filteredMode` (optional): `"normal"`, `"silent"`, or `"none"`
+- `filter` (optional): Filter object for property screening
+  - `filter.mrtDistanceThreshold` (number): Distance threshold in meters for MRT filtering
+
+**Docker Deployment:**
+
+```bash
+# Build and run with docker-compose
+pnpm run deploy:docker
+
+# Or use individual commands
+docker build -t 591-crawler .
+docker run -p 3000:3000 --env-file .env 591-crawler
+```
+
+### Command Line Interface (CLI)
+
+Direct command-line usage for scripts and cron jobs:
 
 ```bash
 # Send notifications for all new properties (compared to previous run)
@@ -129,6 +200,7 @@ Each property notification includes:
 - **Images**: Property photos (first image shown in Discord)
 - **Direct Link**: Link to full property details on 591.com.tw
 - **Notification Type**: Normal (🔔) or Silent (🔇) based on MRT distance
+- **Source URL**: Original crawl URL appears in notification footer for verification
 
 ### Silent Notifications
 
@@ -160,9 +232,6 @@ Configure these settings in your `.env` file:
 ```env
 # Discord webhook URL (required)
 DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_URL
-
-# Distance threshold for silent notifications (default: 800 meters)
-MRT_DISTANCE_THRESHOLD=800
 
 # Delay between Discord notifications (default: 1000ms)
 NOTIFICATION_DELAY=1000
