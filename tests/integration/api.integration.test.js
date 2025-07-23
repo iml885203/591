@@ -32,44 +32,7 @@ describe('API Integration Tests', () => {
     });
   });
 
-  describe('GET /info', () => {
-    it('should return API information', async () => {
-      const response = await request(app)
-        .get('/info')
-        .expect(200);
-
-      expect(response.body).toMatchObject({
-        name: '591 Crawler API',
-        version: '2025.07.2',
-        endpoints: {
-          'GET /health': 'Health check',
-          'GET /info': 'API information',
-          'POST /crawl': 'Execute crawler'
-        }
-      });
-
-      expect(response.body.crawlParameters).toBeDefined();
-      expect(response.body.examples).toBeDefined();
-    });
-
-    it('should include new notification parameters in documentation', async () => {
-      const response = await request(app)
-        .get('/info')
-        .expect(200);
-
-      expect(response.body.crawlParameters.notifyMode).toMatchObject({
-        type: 'string',
-        default: 'filtered',
-        enum: ['all', 'filtered', 'none']
-      });
-
-      expect(response.body.crawlParameters.filteredMode).toMatchObject({
-        type: 'string',
-        default: 'silent',
-        enum: ['normal', 'silent', 'none']
-      });
-    });
-  });
+  // Note: /info endpoint was removed - API documentation is now available at /swagger
 
   describe('POST /crawl', () => {
     const mockSuccessResponse = {
@@ -214,7 +177,7 @@ describe('API Integration Tests', () => {
       expect(response.body).toMatchObject({
         success: false,
         error: 'Endpoint not found',
-        availableEndpoints: ['/health', '/info', '/crawl']
+        availableEndpoints: ['/health', '/crawl', '/swagger']
       });
     });
   });

@@ -1,17 +1,17 @@
-# 591 Property Crawler
+# 591 Rental Crawler
 
-A Node.js web scraper for 591.com.tw (Taiwan's largest rental property platform) that monitors property listings and sends Discord notifications for new properties.
+A Node.js web scraper for 591.com.tw (Taiwan's largest rental property platform) that monitors rental listings and sends Discord notifications for new rentals.
 
 ## Features
 
-- 🏠 **Property Monitoring**: Crawls 591.com.tw search results for rental properties
-- 🔔 **Smart Discord Notifications**: Sends individual notifications for each new property
-- 🔇 **Silent Notifications**: Properties far from MRT stations are sent as silent notifications
-- 📊 **Smart Comparison**: Tracks previously seen properties to only notify about new ones
+- 🏠 **Rental Monitoring**: Crawls 591.com.tw search results for rental properties
+- 🔔 **Smart Discord Notifications**: Sends individual notifications for each new rental
+- 🔇 **Silent Notifications**: Rentals far from MRT stations are sent as silent notifications
+- 📊 **Smart Comparison**: Tracks previously seen rentals to only notify about new ones
 - 🔄 **Retry Mechanism**: Robust error handling with automatic retries
 - ⏰ **Cron Compatible**: Perfect for scheduled execution via cron jobs
 - 📝 **Comprehensive Logging**: Timestamped logs with different severity levels
-- 🎯 **Flexible Options**: Support for latest N properties or new properties only
+- 🎯 **Flexible Options**: Support for latest N rentals or new rentals only
 
 ## Installation
 
@@ -81,7 +81,7 @@ API_PORT=8080 npm run api
 **Available Endpoints:**
 
 - `GET /health` - Health check and server status
-- `GET /info` - API documentation and usage examples  
+- `GET /swagger` - Swagger API documentation and usage examples  
 - `POST /crawl` - Execute crawler with parameters
 
 **API Usage Examples:**
@@ -95,7 +95,7 @@ curl -X POST http://localhost:3000/crawl \
   -H "Content-Type: application/json" \
   -d '{"url": "https://rent.591.com.tw/list?region=1&kind=0", "noNotify": true}'
 
-# Crawl latest 5 properties with notifications
+# Crawl latest 5 rentals with notifications
 curl -X POST http://localhost:3000/crawl \
   -H "Content-Type: application/json" \
   -d '{"url": "https://rent.591.com.tw/list?region=1&kind=0", "maxLatest": 5}'
@@ -189,29 +189,29 @@ docker run -d -p 8000:8000 -v /var/spool/cron/crontabs:/etc/crontabs alseambushe
 
 Then access http://localhost:8000 to manage your cron jobs.
 
-## Property Data Structure
+## Rental Data Structure
 
-Each property notification includes:
+Each rental notification includes:
 
-- **Title**: Property listing title
-- **Room Type**: Property type (套房, 整層住家, etc.)
+- **Title**: Rental listing title
+- **Room Type**: Rental type (套房, 整層住家, etc.)
 - **MRT Distance**: Distance to nearest MRT station
-- **Tags**: Property features (近捷運, 可開伙, etc.)
-- **Images**: Property photos (first image shown in Discord)
-- **Direct Link**: Link to full property details on 591.com.tw
+- **Tags**: Rental features (近捷運, 可開伙, etc.)
+- **Images**: Rental photos (first image shown in Discord)
+- **Direct Link**: Link to full rental details on 591.com.tw
 - **Notification Type**: Normal (🔔) or Silent (🔇) based on MRT distance
 - **Source URL**: Original crawl URL appears in notification footer for verification
 
 ### Silent Notifications
 
-Properties that are farther than the configured distance threshold from MRT stations will be sent as silent Discord notifications. These notifications:
+Rentals that are farther than the configured distance threshold from MRT stations will be sent as silent Discord notifications. These notifications:
 
 - **Don't trigger push notifications** on mobile devices
 - **Use orange color coding** instead of green
 - **Include 🔇 icon** in the footer
 - **Show distance threshold** in the notification footer
 
-This feature helps reduce notification noise while still keeping you informed of all available properties.
+This feature helps reduce notification noise while still keeping you informed of all available rentals.
 
 ## Error Handling
 
@@ -284,7 +284,7 @@ const CONFIG = {
 
 ### Common Issues
 
-**No properties found**
+**No rentals found**
 - Check if the 591.com.tw URL is valid and returns results in a browser
 - The website structure might have changed (CSS selectors may need updating)
 
@@ -293,7 +293,7 @@ const CONFIG = {
 - Check Discord server permissions
 - Look for error messages in logs
 
-**Properties not being detected as new**
+**Rentals not being detected as new**
 - Delete `previous_data.json` to reset the comparison data
 - Ensure the URL remains consistent between runs
 

@@ -98,7 +98,7 @@ pnpm run api  # Starts on port 3000 (configurable via API_PORT env var)
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET` | `/health` | Health check |
-| `GET` | `/info` | API documentation with examples |
+| `GET` | `/swagger` | Swagger API documentation with examples |
 | `POST` | `/crawl` | Execute crawler with parameters |
 
 ### API Usage Examples
