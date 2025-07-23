@@ -1,6 +1,6 @@
 {
   "name": "591-crawler",
-  "version": "1.0.0",
+  "version": "2025.07.1",
   "description": "A Node.js web scraper for 591.com.tw rental properties with Discord notifications",
   "main": "crawler.js",
   "bin": {
@@ -25,7 +25,9 @@
     "docker:rebuild": "docker-compose up --build -d",
     "docker:logs": "docker-compose logs -f",
     "docker:status": "docker-compose ps",
-    "docker:rollback": "bash scripts/rollback.sh"
+    "docker:rollback": "bash scripts/rollback.sh",
+    "version:update": "node scripts/update-version.js",
+    "version:show": "node -p \"require('./package.json').version\""
   },
   "keywords": [
     "591",

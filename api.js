@@ -94,9 +94,10 @@ app.post('/crawl', async (req, res) => {
 
 // Get API usage information
 app.get('/info', (req, res) => {
+  const packageInfo = require('./package.json');
   res.json({
     name: '591 Crawler API',
-    version: '1.0.0',
+    version: packageInfo.version,
     description: 'REST API for 591.com.tw property crawler',
     endpoints: {
       'GET /health': 'Health check',
