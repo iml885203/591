@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * 591.com.tw Property Crawler - Main Entry Point
+ * 591.com.tw Rental Crawler - Main Entry Point
  * A web scraper that monitors rental properties and sends Discord notifications
  */
 
@@ -32,20 +32,20 @@ if (require.main === module) {
     console.error('Usage: node crawler.js <591_url> [max_latest] [--notify-mode=MODE] [--filtered-mode=FILTERED_MODE]');
     console.error('');
     console.error('Notification modes:');
-    console.error('  --notify-mode=all       # Notify all properties');
+    console.error('  --notify-mode=all       # Notify all rentals');
     console.error('  --notify-mode=filtered  # Notify with filtering (default)');
     console.error('  --notify-mode=none      # No notifications');
     console.error('');
     console.error('Filtered sub-modes (when --notify-mode=filtered):');
     console.error('  --filtered-mode=normal  # Normal notifications for all');
-    console.error('  --filtered-mode=silent  # Silent notifications for far properties (default)');
-    console.error('  --filtered-mode=none    # Skip far properties');
+    console.error('  --filtered-mode=silent  # Silent notifications for far rentals (default)');
+    console.error('  --filtered-mode=none    # Skip far rentals');
     console.error('');
     console.error('Examples:');
     console.error('  node crawler.js "URL" 5                              # Latest 5, filtered+silent');
-    console.error('  node crawler.js "URL" --notify-mode=all              # All properties, normal notifications');
-    console.error('  node crawler.js "URL" --filtered-mode=none           # Skip far properties');
-    console.error('  node crawler.js "URL" --notify-mode=filtered --filtered-mode=normal  # All properties, normal notifications');
+    console.error('  node crawler.js "URL" --notify-mode=all              # All rentals, normal notifications');
+    console.error('  node crawler.js "URL" --filtered-mode=none           # Skip far rentals');
+    console.error('  node crawler.js "URL" --notify-mode=filtered --filtered-mode=normal  # All rentals, normal notifications');
     process.exit(1);
   }
 
@@ -69,7 +69,7 @@ if (require.main === module) {
   crawlWithNotifications(url, maxLatest, { notifyMode, filteredMode })
     .then((result) => {
       logWithTimestamp('Crawl completed successfully');
-      logWithTimestamp(`Total properties: ${result.summary.totalProperties}, New: ${result.summary.newProperties}`);
+      logWithTimestamp(`Total rentals: ${result.summary.totalRentals}, New: ${result.summary.newRentals}`);
     })
     .catch((error) => {
       logWithTimestamp(`Crawl failed: ${error.message}`, 'ERROR');

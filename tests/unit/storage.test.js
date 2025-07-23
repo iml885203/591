@@ -47,7 +47,7 @@ describe('storage', () => {
 
   describe('loadPreviousData', () => {
     it('should load and return data when file exists', async () => {
-      const mockData = { test: 'data', properties: [] };
+      const mockData = { test: 'data', rentals: [] };
       const mockFs = {
         pathExists: jest.fn().mockResolvedValue(true),
         readJson: jest.fn().mockResolvedValue(mockData)
@@ -106,7 +106,7 @@ describe('storage', () => {
 
   describe('savePreviousData', () => {
     it('should save data successfully', async () => {
-      const testData = { properties: [{ id: 1, title: 'Test' }] };
+      const testData = { rentals: [{ id: 1, title: 'Test' }] };
       const mockFs = {
         writeJson: jest.fn().mockResolvedValue(undefined)
       };
@@ -118,7 +118,7 @@ describe('storage', () => {
     });
 
     it('should log error when save fails', async () => {
-      const testData = { properties: [] };
+      const testData = { rentals: [] };
       const saveError = new Error('Write permission denied');
       const mockFs = {
         writeJson: jest.fn().mockRejectedValue(saveError)
@@ -143,13 +143,13 @@ describe('storage', () => {
 
     it('should handle complex data objects', async () => {
       const complexData = {
-        properties: [
-          { id: 1, title: 'Property 1', nested: { data: 'value' } },
-          { id: 2, title: 'Property 2', array: [1, 2, 3] }
+        rentals: [
+          { id: 1, title: 'Rental 1', nested: { data: 'value' } },
+          { id: 2, title: 'Rental 2', array: [1, 2, 3] }
         ],
         metadata: {
           lastCrawl: '2023-01-01T00:00:00.000Z',
-          totalProperties: 2
+          totalRentals: 2
         }
       };
       const mockFs = {

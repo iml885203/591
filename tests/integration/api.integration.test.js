@@ -40,7 +40,7 @@ describe('API Integration Tests', () => {
 
       expect(response.body).toMatchObject({
         name: '591 Crawler API',
-        version: '1.0.0',
+        version: '2025.07.2',
         endpoints: {
           'GET /health': 'Health check',
           'GET /info': 'API information',
@@ -73,16 +73,16 @@ describe('API Integration Tests', () => {
 
   describe('POST /crawl', () => {
     const mockSuccessResponse = {
-      properties: [
+      rentals: [
         {
-          title: 'Test Property',
+          title: 'Test Rental',
           link: 'https://rent.591.com.tw/test',
           notification: { willNotify: false, isSilent: false }
         }
       ],
       summary: {
-        totalProperties: 1,
-        newProperties: 0,
+        totalRentals: 1,
+        newRentals: 0,
         notificationsSent: false,
         notifyMode: 'none',
         filteredMode: 'silent'
@@ -133,7 +133,7 @@ describe('API Integration Tests', () => {
         url: 'https://rent.591.com.tw/list?region=1&kind=0',
         notifyMode: 'filtered',
         filteredMode: 'silent',
-        propertiesFound: 1
+        rentalsFound: 1
       });
 
       expect(crawlWithNotifications).toHaveBeenCalledWith(

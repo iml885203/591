@@ -72,10 +72,14 @@ app.post('/crawl', async (req, res) => {
         maxLatest: maxLatest,
         notifyMode: notifyMode,
         filteredMode: filteredMode,
-        propertiesFound: result.properties.length,
-        newProperties: result.summary.newProperties,
+        // Backward compatibility: include both old and new field names
+        propertiesFound: result.rentals.length,  // deprecated, use rentalsFound
+        newProperties: result.summary.newRentals,  // deprecated, use newRentals
+        rentalsFound: result.rentals.length,
+        newRentals: result.summary.newRentals,
         notificationsSent: result.summary.notificationsSent,
-        properties: result.properties,
+        properties: result.rentals,  // deprecated, use rentals
+        rentals: result.rentals,
         timestamp: new Date().toISOString()
       }
     });
@@ -98,7 +102,7 @@ app.get('/info', (req, res) => {
   res.json({
     name: '591 Crawler API',
     version: packageInfo.version,
-    description: 'REST API for 591.com.tw property crawler',
+    description: 'REST API for 591.com.tw rental crawler',
     endpoints: {
       'GET /health': 'Health check',
       'GET /info': 'API information',
@@ -113,7 +117,7 @@ app.get('/info', (req, res) => {
       maxLatest: {
         type: 'number',
         required: false,
-        description: 'Maximum number of latest properties to process'
+        description: 'Maximum number of latest rentals to process'
       },
       notifyMode: {
         type: 'string',
@@ -126,13 +130,13 @@ app.get('/info', (req, res) => {
         type: 'string',
         required: false,
         default: 'silent',
-        description: 'Filtered sub-mode for far properties: normal, silent, none',
+        description: 'Filtered sub-mode for far rentals: normal, silent, none',
         enum: ['normal', 'silent', 'none']
       },
       filter: {
         type: 'object',
         required: false,
-        description: 'Filter options for property screening',
+        description: 'Filter options for rental screening',
         properties: {
           mrtDistanceThreshold: {
             type: 'number',

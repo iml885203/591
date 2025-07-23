@@ -80,35 +80,35 @@ describe('utils', () => {
 
   describe('getPropertyId', () => {
     it('should extract ID from link when available', () => {
-      const property = {
-        title: 'Test Property',
+      const rental = {
+        title: 'Test Rental',
         link: 'https://rent.591.com.tw/19284954',
         metroValue: '500公尺'
       };
 
-      const result = getPropertyId(property);
+      const result = getPropertyId(rental);
       expect(result).toBe('19284954');
     });
 
     it('should create ID from title and metro when link has no ID', () => {
-      const property = {
-        title: 'Test Property',
+      const rental = {
+        title: 'Test Rental',
         link: 'https://rent.591.com.tw/invalid',
         metroValue: '500公尺'
       };
 
-      const result = getPropertyId(property);
-      expect(result).toBe('Test-Property-500公尺');
+      const result = getPropertyId(rental);
+      expect(result).toBe('Test-Rental-500公尺');
     });
 
     it('should handle spaces in title and metro', () => {
-      const property = {
-        title: 'Test Property With Spaces',
+      const rental = {
+        title: 'Test Rental With Spaces',
         metroValue: '500 公尺 距離'
       };
 
-      const result = getPropertyId(property);
-      expect(result).toBe('Test-Property-With-Spaces-500-公尺-距離');
+      const result = getPropertyId(rental);
+      expect(result).toBe('Test-Rental-With-Spaces-500-公尺-距離');
     });
   });
 

@@ -4,7 +4,7 @@
 
 const {
   sendToDiscord,
-  createPropertyEmbed,
+  createRentalEmbed,
   createErrorEmbed,
   sendDiscordNotifications,
   sendErrorNotification
@@ -36,7 +36,7 @@ describe('notification', () => {
       const mockAxios = {
         post: jest.fn().mockResolvedValue({ data: 'success' })
       };
-      const embed = { title: 'Test Property' };
+      const embed = { title: 'Test Rental' };
       const webhookUrl = 'https://discord.com/api/webhooks/test';
 
       const result = await sendToDiscord(embed, webhookUrl, mockAxios);
@@ -48,7 +48,7 @@ describe('notification', () => {
 
     it('should return false and log warning when webhook URL is not provided', async () => {
       const mockAxios = { post: jest.fn() };
-      const embed = { title: 'Test Property' };
+      const embed = { title: 'Test Rental' };
 
       const result = await sendToDiscord(embed, null, mockAxios);
 
@@ -61,7 +61,7 @@ describe('notification', () => {
       const mockAxios = {
         post: jest.fn().mockRejectedValue(new Error('Network error'))
       };
-      const embed = { title: 'Test Property' };
+      const embed = { title: 'Test Rental' };
       const webhookUrl = 'https://discord.com/api/webhooks/test';
 
       const result = await sendToDiscord(embed, webhookUrl, mockAxios);
@@ -72,9 +72,9 @@ describe('notification', () => {
     });
   });
 
-  describe('createPropertyEmbed', () => {
-    it('should create a properly formatted property embed', () => {
-      const property = {
+  describe('createRentalEmbed', () => {
+    it('should create a properly formatted rental embed', () => {
+      const rental = {
         title: 'Beautiful Apartment',
         link: 'https://rent.591.com.tw/12345',
         rooms: '1房1廳1衛',
@@ -85,7 +85,7 @@ describe('notification', () => {
       };
 
       const testUrl = 'https://rent.591.com.tw/list?region=1&kind=0';
-      const embed = createPropertyEmbed(property, 1, 3, false, 800, testUrl);
+      const embed = createRentalEmbed(rental, 1, 3, false, 800, testUrl);
 
       expect(embed).toMatchObject({
         title: 'Beautiful Apartment',
@@ -102,8 +102,8 @@ describe('notification', () => {
       expect(embed.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
     });
 
-    it('should handle missing property fields gracefully', () => {
-      const property = {
+    it('should handle missing rental fields gracefully', () => {
+      const rental = {
         title: null,
         link: 'https://rent.591.com.tw/12345',
         rooms: null,
@@ -113,7 +113,7 @@ describe('notification', () => {
         imgUrls: []
       };
 
-      const embed = createPropertyEmbed(property, 2, 5);
+      const embed = createRentalEmbed(rental, 2, 5);
 
       expect(embed.title).toBe('無標題');
       expect(embed.fields[0].value).toBe('N/A'); // rooms
@@ -124,8 +124,8 @@ describe('notification', () => {
     });
 
     it('should include URL in footer when provided', () => {
-      const property = {
-        title: 'Test Property',
+      const rental = {
+        title: 'Test Rental',
         link: 'https://rent.591.com.tw/12345',
         rooms: '1房1廳',
         metroTitle: 'Test Station',
@@ -135,14 +135,14 @@ describe('notification', () => {
       };
       const testUrl = 'https://rent.591.com.tw/list?region=1&kind=0';
 
-      const embed = createPropertyEmbed(property, 1, 1, false, 800, testUrl);
+      const embed = createRentalEmbed(rental, 1, 1, false, 800, testUrl);
 
       expect(embed.footer.text).toBe(`1/1 - 591房源通知 • ${testUrl}`);
     });
 
     it('should handle partial metro information', () => {
-      const property = {
-        title: 'Test Property',
+      const rental = {
+        title: 'Test Rental',
         rooms: '1房',
         metroTitle: '信義線',
         metroValue: null,
@@ -150,7 +150,7 @@ describe('notification', () => {
         imgUrls: []
       };
 
-      const embed = createPropertyEmbed(property, 1, 1);
+      const embed = createRentalEmbed(rental, 1, 1);
 
       expect(embed.fields[1].value).toBe('信義線 N/A');
     });
@@ -176,35 +176,35 @@ describe('notification', () => {
   });
 
   describe('sendDiscordNotifications', () => {
-    it('should send notifications for all properties with delays', async () => {
+    it('should send notifications for all rentals with delays', async () => {
       const mockAxios = {
         post: jest.fn().mockResolvedValue({ data: 'success' })
       };
-      const properties = [
-        { title: 'Property 1', tags: [], imgUrls: [], notification: { isSilent: false } },
-        { title: 'Property 2', tags: [], imgUrls: [], notification: { isSilent: false } },
-        { title: 'Property 3', tags: [], imgUrls: [], notification: { isSilent: false } }
+      const rentals = [
+        { title: 'Rental 1', tags: [], imgUrls: [], notification: { isSilent: false } },
+        { title: 'Rental 2', tags: [], imgUrls: [], notification: { isSilent: false } },
+        { title: 'Rental 3', tags: [], imgUrls: [], notification: { isSilent: false } }
       ];
       const webhookUrl = 'https://discord.com/api/webhooks/test';
       const config = { notificationDelay: 500 };
 
-      await sendDiscordNotifications(properties, 'https://test.com', webhookUrl, mockAxios, config);
+      await sendDiscordNotifications(rentals, 'https://test.com', webhookUrl, mockAxios, config);
 
       expect(mockAxios.post).toHaveBeenCalledTimes(3);
       expect(sleep).toHaveBeenCalledTimes(2); // n-1 delays
       expect(sleep).toHaveBeenCalledWith(500);
       expect(logWithTimestamp).toHaveBeenCalledWith('Sending 3 Discord notifications...');
-      expect(logWithTimestamp).toHaveBeenCalledWith('✓ Sent notification 1/3 🔔 (normal): Property 1');
-      expect(logWithTimestamp).toHaveBeenCalledWith('✓ Sent notification 2/3 🔔 (normal): Property 2');
-      expect(logWithTimestamp).toHaveBeenCalledWith('✓ Sent notification 3/3 🔔 (normal): Property 3');
+      expect(logWithTimestamp).toHaveBeenCalledWith('✓ Sent notification 1/3 🔔 (normal): Rental 1');
+      expect(logWithTimestamp).toHaveBeenCalledWith('✓ Sent notification 2/3 🔔 (normal): Rental 2');
+      expect(logWithTimestamp).toHaveBeenCalledWith('✓ Sent notification 3/3 🔔 (normal): Rental 3');
     });
 
-    it('should return early when no properties provided', async () => {
+    it('should return early when no rentals provided', async () => {
       const mockAxios = { post: jest.fn() };
-      const properties = [];
+      const rentals = [];
       const webhookUrl = 'https://discord.com/api/webhooks/test';
 
-      await sendDiscordNotifications(properties, 'https://test.com', webhookUrl, mockAxios);
+      await sendDiscordNotifications(rentals, 'https://test.com', webhookUrl, mockAxios);
 
       expect(mockAxios.post).not.toHaveBeenCalled();
       expect(sleep).not.toHaveBeenCalled();
@@ -215,13 +215,13 @@ describe('notification', () => {
       const mockAxios = {
         post: jest.fn().mockResolvedValue({ data: 'success' })
       };
-      const properties = [
-        { title: 'Property 1', tags: [], imgUrls: [], notification: { isSilent: false } },
-        { title: 'Property 2', tags: [], imgUrls: [], notification: { isSilent: false } }
+      const rentals = [
+        { title: 'Rental 1', tags: [], imgUrls: [], notification: { isSilent: false } },
+        { title: 'Rental 2', tags: [], imgUrls: [], notification: { isSilent: false } }
       ];
       const webhookUrl = 'https://discord.com/api/webhooks/test';
 
-      await sendDiscordNotifications(properties, 'https://test.com', webhookUrl, mockAxios);
+      await sendDiscordNotifications(rentals, 'https://test.com', webhookUrl, mockAxios);
 
       expect(sleep).toHaveBeenCalledWith(1000); // Default delay
     });
@@ -233,14 +233,14 @@ describe('notification', () => {
           .mockRejectedValueOnce(new Error('Failed'))
           .mockResolvedValueOnce({ data: 'success' })
       };
-      const properties = [
+      const rentals = [
         { title: 'Property 1', tags: [], imgUrls: [], notification: { isSilent: false } },
         { title: 'Property 2', tags: [], imgUrls: [], notification: { isSilent: false } },
         { title: 'Property 3', tags: [], imgUrls: [], notification: { isSilent: false } }
       ];
       const webhookUrl = 'https://discord.com/api/webhooks/test';
 
-      await sendDiscordNotifications(properties, 'https://test.com', webhookUrl, mockAxios);
+      await sendDiscordNotifications(rentals, 'https://test.com', webhookUrl, mockAxios);
 
       expect(mockAxios.post).toHaveBeenCalledTimes(3);
       // Should log success for property 1 and 3, but not for property 2 (failed)

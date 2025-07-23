@@ -11,7 +11,7 @@ jest.mock('../../lib/utils', () => ({
 }));
 
 jest.mock('../../lib/parser', () => ({
-  parseProperties: jest.fn()
+  parseRentals: jest.fn()
 }));
 
 jest.mock('../../lib/fetcher', () => ({
@@ -20,7 +20,7 @@ jest.mock('../../lib/fetcher', () => ({
 }));
 
 const { isValid591Url, logWithTimestamp } = require('../../lib/utils');
-const { parseProperties } = require('../../lib/parser');
+const { parseRentals } = require('../../lib/parser');
 const { fetchWithRetry, getDefaultHeaders } = require('../../lib/fetcher');
 
 describe('crawler', () => {
@@ -29,16 +29,16 @@ describe('crawler', () => {
   });
 
   describe('crawl591', () => {
-    it('should successfully crawl and return properties', async () => {
-      const mockProperties = [
-        { title: 'Property 1', link: 'https://rent.591.com.tw/house/1' },
-        { title: 'Property 2', link: 'https://rent.591.com.tw/house/2' }
+    it('should successfully crawl and return rentals', async () => {
+      const mockRentals = [
+        { title: 'Rental 1', link: 'https://rent.591.com.tw/house/1' },
+        { title: 'Rental 2', link: 'https://rent.591.com.tw/house/2' }
       ];
 
       isValid591Url.mockReturnValue(true);
       getDefaultHeaders.mockReturnValue({ 'User-Agent': 'test-agent' });
       fetchWithRetry.mockResolvedValue({ data: '<html>mock</html>' });
-      parseProperties.mockReturnValue(mockProperties);
+      parseRentals.mockReturnValue(mockRentals);
 
       const mockAxios = jest.fn();
       const mockCheerio = jest.fn();
@@ -55,9 +55,9 @@ describe('crawler', () => {
         mockAxios,
         expect.any(Object)
       );
-      expect(parseProperties).toHaveBeenCalledWith('<html>mock</html>', mockCheerio);
-      expect(result).toEqual(mockProperties);
-      expect(logWithTimestamp).toHaveBeenCalledWith('Found 2 properties');
+      expect(parseRentals).toHaveBeenCalledWith('<html>mock</html>', mockCheerio);
+      expect(result).toEqual(mockRentals);
+      expect(logWithTimestamp).toHaveBeenCalledWith('Found 2 rentals');
     });
 
     it('should handle invalid URL error', async () => {
@@ -79,17 +79,17 @@ describe('crawler', () => {
     });
 
     it('should use default dependencies when not provided', async () => {
-      const mockProperties = [];
+      const mockRentals = [];
       
       isValid591Url.mockReturnValue(true);
       getDefaultHeaders.mockReturnValue({ 'User-Agent': 'test-agent' });
       fetchWithRetry.mockResolvedValue({ data: '<html>empty</html>' });
-      parseProperties.mockReturnValue(mockProperties);
+      parseRentals.mockReturnValue(mockRentals);
 
       const result = await crawl591('https://rent.591.com.tw/list');
 
-      expect(result).toEqual(mockProperties);
-      expect(logWithTimestamp).toHaveBeenCalledWith('Found 0 properties');
+      expect(result).toEqual(mockRentals);
+      expect(logWithTimestamp).toHaveBeenCalledWith('Found 0 rentals');
     });
   });
 });

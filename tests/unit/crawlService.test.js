@@ -2,7 +2,7 @@
  * Unit tests for crawlService.js
  */
 
-const { crawlWithNotifications, findNewProperties, getPropertiesToNotify, addNotificationMetadata } = require('../../lib/crawlService');
+const { crawlWithNotifications, findNewRentals, getRentalsToNotify, addNotificationMetadata } = require('../../lib/crawlService');
 
 // Mock all dependencies
 jest.mock('../../lib/crawler', () => ({
@@ -46,8 +46,8 @@ describe('crawlService', () => {
     process.env.MRT_DISTANCE_THRESHOLD = '800';
   });
 
-  describe('findNewProperties', () => {
-    it('should return properties that are not in previous list', () => {
+  describe('findNewRentals', () => {
+    it('should return rentals that are not in previous list', () => {
       getPropertyId.mockImplementation((prop) => prop.title);
       
       const currentProperties = [
@@ -61,10 +61,10 @@ describe('crawlService', () => {
         { title: 'Property 2' }
       ];
 
-      const newProperties = findNewProperties(currentProperties, previousProperties);
+      const newRentals = findNewRentals(currentProperties, previousProperties);
 
-      expect(newProperties).toHaveLength(1);
-      expect(newProperties[0].title).toBe('Property 3');
+      expect(newRentals).toHaveLength(1);
+      expect(newRentals[0].title).toBe('Property 3');
     });
 
     it('should return empty array when no new properties', () => {
@@ -80,9 +80,9 @@ describe('crawlService', () => {
         { title: 'Property 2' }
       ];
 
-      const newProperties = findNewProperties(currentProperties, previousProperties);
+      const newRentals = findNewRentals(currentProperties, previousProperties);
 
-      expect(newProperties).toHaveLength(0);
+      expect(newRentals).toHaveLength(0);
     });
 
     it('should return all properties when no previous properties exist', () => {
@@ -95,15 +95,15 @@ describe('crawlService', () => {
       
       const previousProperties = [];
 
-      const newProperties = findNewProperties(currentProperties, previousProperties);
+      const newRentals = findNewRentals(currentProperties, previousProperties);
 
-      expect(newProperties).toHaveLength(2);
+      expect(newRentals).toHaveLength(2);
     });
   });
 
-  describe('getPropertiesToNotify', () => {
-    it('should return latest N properties when maxLatest is specified', async () => {
-      const properties = [
+  describe('getRentalsToNotify', () => {
+    it('should return latest N rentals when maxLatest is specified', async () => {
+      const rentals = [
         { title: 'Property 1' },
         { title: 'Property 2' },
         { title: 'Property 3' }
@@ -111,15 +111,15 @@ describe('crawlService', () => {
       
       const mockFs = {};
 
-      const result = await getPropertiesToNotify(properties, 2, 'https://test.com', mockFs);
+      const result = await getRentalsToNotify(rentals, 2, 'https://test.com', mockFs);
 
       expect(result).toHaveLength(2);
       expect(result[0].title).toBe('Property 1');
       expect(result[1].title).toBe('Property 2');
     });
 
-    it('should find and return new properties when maxLatest is null', async () => {
-      const properties = [{ title: 'Property 1' }];
+    it('should find and return new rentals when maxLatest is null', async () => {
+      const rentals = [{ title: 'Property 1' }];
       const mockFs = {};
       
       getDataFilePath.mockReturnValue('/path/to/data.json');
@@ -128,10 +128,10 @@ describe('crawlService', () => {
       savePreviousData.mockResolvedValue();
       getPropertyId.mockReturnValue('prop1');
       
-      // Mock that we find the property as new (empty previous data)
+      // Mock that we find the rental as new (empty previous data)
       const expectedResult = [{ title: 'Property 1' }];
 
-      const result = await getPropertiesToNotify(properties, null, 'https://test.com', mockFs);
+      const result = await getRentalsToNotify(rentals, null, 'https://test.com', mockFs);
 
       expect(loadPreviousData).toHaveBeenCalledWith('/path/to/data.json', mockFs);
       expect(generateUrlKey).toHaveBeenCalledWith('https://test.com');
@@ -139,7 +139,7 @@ describe('crawlService', () => {
     });
 
     it('should handle empty previous data', async () => {
-      const properties = [{ title: 'Property 1' }];
+      const rentals = [{ title: 'Property 1' }];
       const mockFs = {};
       
       getDataFilePath.mockReturnValue('/path/to/data.json');
@@ -147,7 +147,7 @@ describe('crawlService', () => {
       generateUrlKey.mockReturnValue('test-key');
       getPropertyId.mockReturnValue('prop1');
 
-      const result = await getPropertiesToNotify(properties, null, 'https://test.com', mockFs);
+      const result = await getRentalsToNotify(rentals, null, 'https://test.com', mockFs);
 
       expect(result).toHaveLength(1);
       expect(result[0].title).toBe('Property 1');
@@ -155,13 +155,13 @@ describe('crawlService', () => {
   });
 
   describe('addNotificationMetadata', () => {
-    it('should add notification metadata to properties', () => {
-      const allProperties = [
+    it('should add notification metadata to rentals', () => {
+      const allRentals = [
         { title: 'Property 1', metroValue: '500公尺' },
         { title: 'Property 2', metroValue: '1000公尺' }
       ];
       
-      const propertiesToNotify = [{ title: 'Property 1', metroValue: '500公尺' }];
+      const rentalsToNotify = [{ title: 'Property 1', metroValue: '500公尺' }];
       
       getPropertyId.mockImplementation((prop) => prop.title);
       extractDistanceInMeters.mockImplementation((metro) => {
@@ -170,7 +170,7 @@ describe('crawlService', () => {
         return null;
       });
 
-      const result = addNotificationMetadata(allProperties, propertiesToNotify, { 
+      const result = addNotificationMetadata(allRentals, rentalsToNotify, { 
         notifyMode: 'all',
         filter: { mrtDistanceThreshold: 800 }
       });
@@ -182,17 +182,17 @@ describe('crawlService', () => {
       expect(result[1].notification.isSilent).toBe(false);
     });
 
-    it('should mark far properties as silent', () => {
-      const allProperties = [
+    it('should mark far rentals as silent', () => {
+      const allRentals = [
         { title: 'Property 1', metroValue: '1200公尺' }
       ];
       
-      const propertiesToNotify = [{ title: 'Property 1', metroValue: '1200公尺' }];
+      const rentalsToNotify = [{ title: 'Property 1', metroValue: '1200公尺' }];
       
       getPropertyId.mockImplementation((prop) => prop.title);
       extractDistanceInMeters.mockReturnValue(1200);
 
-      const result = addNotificationMetadata(allProperties, propertiesToNotify, { 
+      const result = addNotificationMetadata(allRentals, rentalsToNotify, { 
         notifyMode: 'filtered', 
         filteredMode: 'silent',
         filter: { mrtDistanceThreshold: 800 }
@@ -205,12 +205,12 @@ describe('crawlService', () => {
 
   describe('crawlWithNotifications', () => {
     it('should successfully crawl and process notifications', async () => {
-      const mockProperties = [
+      const mockRentals = [
         { title: 'Property 1', metroValue: '500公尺' },
         { title: 'Property 2', metroValue: '900公尺' }
       ];
 
-      crawl591.mockResolvedValue(mockProperties);
+      crawl591.mockResolvedValue(mockRentals);
       getPropertyId.mockImplementation((prop) => prop.title);
       extractDistanceInMeters.mockImplementation((metro) => {
         if (metro === '500公尺') return 500;
@@ -221,8 +221,8 @@ describe('crawlService', () => {
       const result = await crawlWithNotifications('https://test.591.com.tw/list', 2, { notifyMode: 'none' });
 
       expect(crawl591).toHaveBeenCalledWith('https://test.591.com.tw/list', expect.any(Object));
-      expect(result.properties).toHaveLength(2);
-      expect(result.summary.totalProperties).toBe(2);
+      expect(result.rentals).toHaveLength(2);
+      expect(result.summary.totalRentals).toBe(2);
       expect(result.summary.notifyMode).toBe('none');
     });
 

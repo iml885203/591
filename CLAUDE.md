@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 📋 Project Overview
 
-This is a **Node.js web scraper** for 591.com.tw (Taiwan's largest rental property platform) that monitors property listings and sends Discord notifications. The project features:
+This is a **Node.js web scraper** for 591.com.tw (Taiwan's largest rental property platform) that monitors rental listings and sends Discord notifications. The project features:
 
 - 🏗️ **Modular architecture** with dependency injection for testability
 - 🔔 **Flexible notification system** with distance-based filtering
@@ -35,12 +35,12 @@ cp .env.example .env
 ```bash
 # Basic crawler usage
 node crawler.js "https://rent.591.com.tw/list?region=1&kind=0"
-node crawler.js "URL" 5  # Latest 5 properties
+node crawler.js "URL" 5  # Latest 5 rentals
 
 # Notification mode examples
-node crawler.js "URL" --notify-mode=all                    # All properties, normal notifications
+node crawler.js "URL" --notify-mode=all                    # All rentals, normal notifications
 node crawler.js "URL" --notify-mode=filtered --filtered-mode=silent  # Default: no distance filtering
-node crawler.js "URL" --notify-mode=filtered --filtered-mode=none     # Skip far properties (no filtering by default)
+node crawler.js "URL" --notify-mode=filtered --filtered-mode=none     # Skip far rentals (no filtering by default)
 node crawler.js "URL" --notify-mode=none                   # No notifications
 
 # Note: Distance filtering (filter.mrtDistanceThreshold) is only available via API, not CLI
@@ -58,7 +58,7 @@ pnpm run test:verbose     # Run tests with verbose output
 
 # Specific test patterns
 pnpm test -- tests/unit/crawler.test.js
-pnpm test -- --testNamePattern="should parse property"
+pnpm test -- --testNamePattern="should parse rental"
 ```
 
 ### Docker Deployment (Recommended)
@@ -110,14 +110,14 @@ curl -X POST http://localhost:3000/crawl \
   -d '{"url": "https://rent.591.com.tw/list?region=1&kind=0"}'
 ```
 
-**All properties with normal notifications:**
+**All rentals with normal notifications:**
 ```bash
 curl -X POST http://localhost:3000/crawl \
   -H "Content-Type: application/json" \
   -d '{"url": "https://rent.591.com.tw/list?region=1&kind=0", "notifyMode": "all"}'
 ```
 
-**Skip far properties entirely:**
+**Skip far rentals entirely:**
 ```bash
 curl -X POST http://localhost:3000/crawl \
   -H "Content-Type: application/json" \
@@ -154,10 +154,10 @@ curl -X POST http://localhost:3000/crawl \
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
 | `url` | string | ✅ | - | 591.com.tw search URL |
-| `maxLatest` | number | ❌ | null | Limit number of properties (null = new only) |
+| `maxLatest` | number | ❌ | null | Limit number of rentals (null = new only) |
 | `notifyMode` | string | ❌ | `filtered` | `all`, `filtered`, `none` |
 | `filteredMode` | string | ❌ | `silent` | `normal`, `silent`, `none` |
-| `filter` | object | ❌ | `{}` | Filter options for property screening |
+| `filter` | object | ❌ | `{}` | Filter options for rental screening |
 | `filter.mrtDistanceThreshold` | number | ❌ | - | Distance threshold in meters for MRT filtering |
 
 ### API Response Format
@@ -170,10 +170,10 @@ curl -X POST http://localhost:3000/crawl \
     "maxLatest": null,
     "notifyMode": "filtered",
     "filteredMode": "silent",
-    "propertiesFound": 30,
-    "newProperties": 3,
+    "rentalsFound": 30,
+    "newRentals": 3,
     "notificationsSent": true,
-    "properties": [...],
+    "rentals": [...],
     "timestamp": "2025-07-22T15:45:00.000Z"
   }
 }
@@ -201,7 +201,7 @@ curl -X POST http://localhost:3000/crawl \
 │   ├── integration/       # API integration tests
 │   └── setup.js           # Test configuration
 └── data/                  # Persistent data (Docker volume)
-    └── previous_data.json # Property history
+    └── previous_data.json # Rental history
 ```
 
 ### Key Design Patterns
@@ -220,18 +220,18 @@ const crawl591 = async (url, options = {}, dependencies = {}) => {
 
 | Mode | Description | Use Case |
 |------|-------------|----------|
-| `all` | Normal notifications for all properties | Monitor everything |
+| `all` | Normal notifications for all rentals | Monitor everything |
 | `filtered` | Distance-based filtering (default) | Balanced approach |
 | `none` | No notifications | Testing/development |
 
 **Filtered Sub-modes** (when `notifyMode=filtered`):
-- `normal`: Normal notifications for all properties
-- `silent`: Silent notifications for properties beyond distance threshold (default)
-- `none`: Skip far properties entirely
+- `normal`: Normal notifications for all rentals
+- `silent`: Silent notifications for rentals beyond distance threshold (default)
+- `none`: Skip far rentals entirely
 
-**🔍 Smart Property Detection**: Uses URL ID extraction + title/metro fallback for reliable duplicate detection.
+**🔍 Smart Rental Detection**: Uses URL ID extraction + title/metro fallback for reliable duplicate detection.
 
-**🏠 Domain Model**: Rental class encapsulates property business logic:
+**🏠 Domain Model**: Rental class encapsulates rental business logic:
 ```javascript
 const rental = new Rental(propertyData);
 rental.isFarFromMRT(800);              // Check if >800m from MRT
@@ -252,9 +252,9 @@ rental.getNotificationColor();         // Get Discord embed color
 | `DATA_FILE_PATH` | `./data/previous_data.json` | Path to persistence file |
 
 ### API-Based Configuration
-Distance filtering and other property screening options are configured via API parameters rather than environment variables:
+Distance filtering and other rental screening options are configured via API parameters rather than environment variables:
 - **MRT Distance Filtering**: Use `filter.mrtDistanceThreshold` in API requests
-- **No default threshold**: Properties are not filtered unless explicitly specified
+- **No default threshold**: Rentals are not filtered unless explicitly specified
 - **Runtime flexibility**: Different thresholds can be used per API call
 
 ### Package Manager Enforcement
@@ -311,19 +311,19 @@ The project includes a complete `docker-compose.yml` with:
 ### Processing Pipeline
 1. **🔗 URL Validation** - Ensures valid 591.com.tw URLs
 2. **📡 HTTP Fetch** - Retry mechanism with exponential backoff
-3. **🏠 Property Parsing** - Extract data using CSS selectors
+3. **🏠 Rental Parsing** - Extract data using CSS selectors
 4. **🔄 Change Detection** - Compare against previous crawl data
 5. **🎯 Notification Filtering** - Apply distance-based filtering
 6. **📨 Discord Dispatch** - Send notifications based on mode settings  
-7. **💾 Data Persistence** - Save properties for next comparison
+7. **💾 Data Persistence** - Save rentals for next comparison
 
-### Property Filtering Logic
+### Rental Filtering Logic
 ```
-All Properties (30) 
+All Rentals (30) 
     ↓ (New/Latest filtering)
-Candidate Properties (5)
+Candidate Rentals (5)
     ↓ (Distance-based filtering)  
-Properties to Notify (2)
+Rentals to Notify (2)
     ↓ (Discord webhook)
 Sent Notifications
 ```
@@ -331,7 +331,7 @@ Sent Notifications
 ## 🎯 CSS Selectors (591.com.tw)
 
 **Current selectors** (may need updates if site changes):
-- **Properties**: `.item`
+- **Rentals**: `.item`
 - **Title**: `.item-info-title a`
 - **Images**: `.item-img .common-img[data-src]`
 - **Tags**: `.item-info-tag .tag`
@@ -351,14 +351,14 @@ Sent Notifications
 
 ⚠️ **Important**: The website uses dynamic content loading:
 - Static HTML only contains page framework
-- Property listings load via JavaScript/AJAX
+- Rental listings load via JavaScript/AJAX
 - Crawler executes JavaScript to render full content
 - CSS selectors target dynamically loaded content
 
 **Debugging tips**:
 1. Use browser dev tools to inspect DOM after JavaScript execution
 2. Verify CSS selectors match current website structure
-3. Property order may vary due to personalization/advertising
+3. Rental order may vary due to personalization/advertising
 
 ## 📚 Development Notes
 
@@ -375,12 +375,12 @@ Sent Notifications
 - **Modifying notification logic**: Update `lib/Rental.js` (domain model) or `lib/crawlService.js`
 - **Adding API endpoints**: Update `api.js`
 - **Configuration changes**: Update `lib/config.js`
-- **Adding property business logic**: Update `lib/Rental.js` domain model
+- **Adding rental business logic**: Update `lib/Rental.js` domain model
 - **Testing**: Always run full test suite before commits
 
 ### Performance Considerations
 - **Rate limiting**: Built-in delays between requests
-- **Memory efficiency**: Process properties in streams where possible
+- **Memory efficiency**: Process rentals in streams where possible
 - **Docker optimization**: Multi-stage builds, Alpine base image
 - **Caching**: Persistent storage for duplicate detection
 
@@ -420,4 +420,4 @@ pnpm run version:show
 
 ---
 
-**📝 Note**: This project focuses on defensive security and property monitoring. It does not perform any malicious activities and respects website terms of service through appropriate rate limiting and request patterns.
+**📝 Note**: This project focuses on defensive security and rental monitoring. It does not perform any malicious activities and respects website terms of service through appropriate rate limiting and request patterns.

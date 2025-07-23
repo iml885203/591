@@ -60,7 +60,7 @@ async function testUserAgents() {
         firstFive
       });
       
-      console.log(`找到 ${properties.length} 個房源`);
+      console.log(`找到 ${properties.length} 個租屋`);
       console.log(`前5筆: ${firstFive.join(' | ')}`);
       
     } catch (error) {
@@ -85,18 +85,18 @@ async function testUserAgents() {
     if (result.error) {
       console.log(`   錯誤: ${result.error}`);
     } else {
-      console.log(`   房源數量: ${result.totalProperties}`);
+      console.log(`   租屋數量: ${result.totalProperties}`);
       console.log(`   第一筆: ${result.firstFive[0]}`);
     }
   });
   
   // 檢查第一筆房源是否都相同
-  const firstProperties = results.filter(r => !r.error).map(r => r.firstFive[0]);
-  const uniqueFirst = [...new Set(firstProperties)];
+  const firstRentals = results.filter(r => !r.error).map(r => r.firstFive[0]);
+  const uniqueFirst = [...new Set(firstRentals)];
   
   console.log(`\n=== 分析 ===`);
-  console.log(`有效測試: ${firstProperties.length}`);
-  console.log(`不同的第一筆房源: ${uniqueFirst.length}`);
+  console.log(`有效測試: ${firstRentals.length}`);
+  console.log(`不同的第一筆租屋: ${uniqueFirst.length}`);
   
   if (uniqueFirst.length === 1) {
     console.log('✅ 所有 User-Agent 都得到相同的第一筆房源');
