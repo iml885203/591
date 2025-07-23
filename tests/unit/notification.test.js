@@ -95,7 +95,7 @@ describe('notification', () => {
           { name: '🏠 房型', value: '1房1廳1衛', inline: true },
           { name: '🚇 捷運距離', value: '文湖線 大直站 3分鐘', inline: true },
           { name: '🏷️ 標籤', value: '電梯大樓, 可養寵物, 近捷運', inline: false },
-          { name: '🔍 搜尋網址', value: testUrl, inline: false }
+          { name: '🔍 搜尋條件', value: `[查看完整搜尋條件](${testUrl})`, inline: false }
         ],
         footer: { text: '1/3 - 591房源通知' },
         image: { url: 'https://example.com/image1.jpg' }
@@ -140,7 +140,7 @@ describe('notification', () => {
       const embed = createRentalEmbed(rental, 1, 1, false, 800, testUrl);
 
       expect(embed.footer.text).toBe('1/1 - 591房源通知');
-      expect(embed.fields[3]).toEqual({ name: '🔍 搜尋網址', value: testUrl, inline: false });
+      expect(embed.fields[3]).toEqual({ name: '🔍 搜尋條件', value: `[查看完整搜尋條件](${testUrl})`, inline: false });
     });
 
     it('should handle partial metro information', () => {
