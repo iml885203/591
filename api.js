@@ -7,6 +7,8 @@
 
 require('dotenv').config({ silent: true });
 const express = require('express');
+const swaggerUi = require('swagger-ui-express');
+const { specs } = require('./lib/swagger');
 const { crawlWithNotifications } = require('./lib/crawlService');
 const { logWithTimestamp } = require('./lib/utils');
 
@@ -25,6 +27,39 @@ app.use((req, res, next) => {
   next();
 });
 
+// Swagger UI setup
+app.use('/swagger', swaggerUi.serve, swaggerUi.setup(specs, {
+  explorer: true,
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: '591 Crawler API Documentation',
+  swaggerOptions: {
+    persistAuthorization: true,
+    displayRequestDuration: true,
+    filter: true,
+    showExtensions: true,
+    showCommonExtensions: true
+  }
+}));
+
+/**
+ * @swagger
+ * /health:
+ *   get:
+ *     summary: Health check endpoint
+ *     description: Returns the current health status of the API server
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: Service is healthy and operational
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/HealthResponse'
+ *             example:
+ *               status: "ok"
+ *               timestamp: "2025-07-23T12:00:00.000Z"
+ *               service: "591-crawler-api"
+ */
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 
@@ -34,6 +69,95 @@ app.get('/health', (req, res) => {
   });
 });
 
+/**
+ * @swagger
+ * /crawl:
+ *   post:
+ *     summary: Execute rental property crawler
+ *     description: |
+ *       Crawls 591.com.tw rental listings and sends Discord notifications based on specified parameters.
+ *       
+ *       **Notification Modes:**
+ *       - `all`: Send normal notifications for all rentals
+ *       - `filtered`: Apply distance-based filtering (default)
+ *       - `none`: No notifications sent
+ *       
+ *       **Filtered Sub-modes** (when notifyMode=filtered):
+ *       - `normal`: Normal notifications for all rentals
+ *       - `silent`: Silent notifications for rentals beyond distance threshold (default)
+ *       - `none`: Skip far rentals entirely
+ *       
+ *       **Distance Filtering:**
+ *       Use `filter.mrtDistanceThreshold` to set MRT distance threshold in meters.
+ *       Rentals beyond this distance will be handled according to `filteredMode`.
+ *     tags: [Crawler]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CrawlRequest'
+ *           examples:
+ *             basicCrawl:
+ *               summary: Basic crawl with default settings
+ *               value:
+ *                 url: "https://rent.591.com.tw/list?region=1&kind=0"
+ *             allNotifications:
+ *               summary: All rentals with normal notifications
+ *               value:
+ *                 url: "https://rent.591.com.tw/list?region=1&kind=0"
+ *                 notifyMode: "all"
+ *             filteredSilent:
+ *               summary: Distance filtering with silent notifications
+ *               value:
+ *                 url: "https://rent.591.com.tw/list?region=1&kind=0"
+ *                 notifyMode: "filtered"
+ *                 filteredMode: "silent"
+ *                 filter:
+ *                   mrtDistanceThreshold: 600
+ *             skipFarRentals:
+ *               summary: Skip rentals far from MRT entirely
+ *               value:
+ *                 url: "https://rent.591.com.tw/list?region=1&kind=0"
+ *                 notifyMode: "filtered"
+ *                 filteredMode: "none"
+ *                 filter:
+ *                   mrtDistanceThreshold: 800
+ *             noNotifications:
+ *               summary: Crawl without sending notifications
+ *               value:
+ *                 url: "https://rent.591.com.tw/list?region=1&kind=0"
+ *                 notifyMode: "none"
+ *             limitedResults:
+ *               summary: Process only latest 5 rentals
+ *               value:
+ *                 url: "https://rent.591.com.tw/list?region=1&kind=0"
+ *                 maxLatest: 5
+ *     responses:
+ *       200:
+ *         description: Crawl completed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CrawlResponse'
+ *             example:
+ *               success: true
+ *               message: "Crawl completed successfully"
+ *               data:
+ *                 url: "https://rent.591.com.tw/list?region=1&kind=0"
+ *                 maxLatest: null
+ *                 notifyMode: "filtered"
+ *                 filteredMode: "silent"
+ *                 rentalsFound: 25
+ *                 newRentals: 3
+ *                 notificationsSent: true
+ *                 rentals: []
+ *                 timestamp: "2025-07-23T12:00:00.000Z"
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 // Main crawler endpoint
 app.post('/crawl', async (req, res) => {
   try {
@@ -96,125 +220,46 @@ app.post('/crawl', async (req, res) => {
   }
 });
 
-// Get API usage information
-app.get('/info', (req, res) => {
-  const packageInfo = require('./package.json');
-  res.json({
-    name: '591 Crawler API',
-    version: packageInfo.version,
-    description: 'REST API for 591.com.tw rental crawler',
-    endpoints: {
-      'GET /health': 'Health check',
-      'GET /info': 'API information',
-      'POST /crawl': 'Execute crawler'
-    },
-    crawlParameters: {
-      url: {
-        type: 'string',
-        required: true,
-        description: '591.com.tw search URL'
-      },
-      maxLatest: {
-        type: 'number',
-        required: false,
-        description: 'Maximum number of latest rentals to process'
-      },
-      notifyMode: {
-        type: 'string',
-        required: false,
-        default: 'filtered',
-        description: 'Notification mode: all, filtered, none',
-        enum: ['all', 'filtered', 'none']
-      },
-      filteredMode: {
-        type: 'string',
-        required: false,
-        default: 'silent',
-        description: 'Filtered sub-mode for far rentals: normal, silent, none',
-        enum: ['normal', 'silent', 'none']
-      },
-      filter: {
-        type: 'object',
-        required: false,
-        description: 'Filter options for rental screening',
-        properties: {
-          mrtDistanceThreshold: {
-            type: 'number',
-            description: 'Distance threshold in meters for MRT filtering'
-          }
-        }
-      }
-    },
-    examples: {
-      basicCrawl: {
-        method: 'POST',
-        url: '/crawl',
-        body: {
-          url: 'https://rent.591.com.tw/list?region=1&kind=0'
-        }
-      },
-      allNotifications: {
-        method: 'POST',
-        url: '/crawl',
-        body: {
-          url: 'https://rent.591.com.tw/list?region=1&kind=0',
-          notifyMode: 'all'
-        }
-      },
-      filteredSilent: {
-        method: 'POST',
-        url: '/crawl',
-        body: {
-          url: 'https://rent.591.com.tw/list?region=1&kind=0',
-          notifyMode: 'filtered',
-          filteredMode: 'silent'
-        }
-      },
-      skipFarProperties: {
-        method: 'POST',
-        url: '/crawl',
-        body: {
-          url: 'https://rent.591.com.tw/list?region=1&kind=0',
-          notifyMode: 'filtered',
-          filteredMode: 'none'
-        }
-      },
-      noNotifications: {
-        method: 'POST',
-        url: '/crawl',
-        body: {
-          url: 'https://rent.591.com.tw/list?region=1&kind=0',
-          notifyMode: 'none'
-        }
-      },
-      customDistanceFilter: {
-        method: 'POST',
-        url: '/crawl',
-        body: {
-          url: 'https://rent.591.com.tw/list?region=1&kind=0',
-          notifyMode: 'filtered',
-          filteredMode: 'silent',
-          filter: {
-            mrtDistanceThreshold: 600
-          }
-        }
-      },
-      versionInfo: {
-        format: 'CalVer (YYYY.MM.PATCH)',
-        description: 'Calendar-based versioning system',
-        example: '2025.07.1 (July 2025, first release)'
-      }
-    }
-  });
-});
 
+/**
+ * @swagger
+ * /*:
+ *   get:
+ *     summary: Handle undefined routes (404)
+ *     description: Returns a 404 error for any undefined API endpoints
+ *     tags: [Info]
+ *     responses:
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *   post:
+ *     summary: Handle undefined routes (404)
+ *     description: Returns a 404 error for any undefined API endpoints
+ *     tags: [Info]
+ *     responses:
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *   put:
+ *     summary: Handle undefined routes (404)
+ *     description: Returns a 404 error for any undefined API endpoints
+ *     tags: [Info]
+ *     responses:
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *   delete:
+ *     summary: Handle undefined routes (404)
+ *     description: Returns a 404 error for any undefined API endpoints
+ *     tags: [Info]
+ *     responses:
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
 // Handle 404 for undefined routes
 app.use('*', (req, res) => {
   res.status(404).json({
     success: false,
     error: 'Endpoint not found',
     message: `Route ${req.method} ${req.originalUrl} not found`,
-    availableEndpoints: ['/health', '/info', '/crawl']
+    availableEndpoints: ['/health', '/crawl', '/swagger']
   });
 });
 
@@ -234,8 +279,8 @@ if (require.main === module) {
     logWithTimestamp(`591 Crawler API server started on port ${PORT}`);
     logWithTimestamp(`Available endpoints:`);
     logWithTimestamp(`  GET  http://localhost:${PORT}/health - Health check`);
-    logWithTimestamp(`  GET  http://localhost:${PORT}/info - API information`);
     logWithTimestamp(`  POST http://localhost:${PORT}/crawl - Execute crawler`);
+    logWithTimestamp(`  GET  http://localhost:${PORT}/swagger - Swagger API Documentation`);
   });
 }
 
