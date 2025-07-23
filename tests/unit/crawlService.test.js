@@ -300,9 +300,9 @@ describe('crawlService', () => {
         expect.any(Array),
         'https://test.591.com.tw/list',
         'https://discord.com/webhook/test',
+        expect.any(Function),
         expect.any(Object),
-        expect.any(Object),
-        expect.any(Object)
+        undefined
       );
     });
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 const { crawl591 } = require('../lib/crawler');
 const { logWithTimestamp } = require('../lib/utils');

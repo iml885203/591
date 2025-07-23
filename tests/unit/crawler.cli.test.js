@@ -20,7 +20,7 @@ describe('crawler.js CLI', () => {
 
   describe('argument parsing', () => {
     it('should show usage when no URL provided', (done) => {
-      const child = spawn('node', [crawlerPath], {
+      const child = spawn('bun', [crawlerPath], {
         stdio: ['pipe', 'pipe', 'pipe']
       });
 
@@ -31,7 +31,7 @@ describe('crawler.js CLI', () => {
 
       child.on('close', (code) => {
         expect(code).toBe(1);
-        expect(stderr).toContain('Usage: node crawler.js');
+        expect(stderr).toContain('Usage: bun crawler.js');
         expect(stderr).toContain('--notify-mode');
         expect(stderr).toContain('--filtered-mode');
         done();
@@ -39,7 +39,7 @@ describe('crawler.js CLI', () => {
     });
 
     it('should validate notify-mode parameter', (done) => {
-      const child = spawn('node', [crawlerPath, 'https://test.com', '--notify-mode=invalid'], {
+      const child = spawn('bun', [crawlerPath, 'https://test.com', '--notify-mode=invalid'], {
         stdio: ['pipe', 'pipe', 'pipe']
       });
 
@@ -56,7 +56,7 @@ describe('crawler.js CLI', () => {
     });
 
     it('should validate filtered-mode parameter', (done) => {
-      const child = spawn('node', [crawlerPath, 'https://test.com', '--filtered-mode=invalid'], {
+      const child = spawn('bun', [crawlerPath, 'https://test.com', '--filtered-mode=invalid'], {
         stdio: ['pipe', 'pipe', 'pipe']
       });
 
@@ -73,7 +73,7 @@ describe('crawler.js CLI', () => {
     });
 
     it('should validate maxLatest parameter', (done) => {
-      const child = spawn('node', [crawlerPath, 'https://test.com', '-5'], {
+      const child = spawn('bun', [crawlerPath, 'https://test.com', '-5'], {
         stdio: ['pipe', 'pipe', 'pipe']
       });
 
@@ -103,7 +103,7 @@ describe('crawler.js CLI', () => {
       }));
 
       // Test parsing logic directly
-      const args = ['node', 'crawler.js', 'https://test.com', '--notify-mode=all'];
+      const args = ['bun', 'crawler.js', 'https://test.com', '--notify-mode=all'];
       process.argv = args;
       
       delete require.cache[require.resolve('../../crawler.js')];

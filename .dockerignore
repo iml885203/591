@@ -4,6 +4,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+bun-debug.log*
 
 # Environment files
 .env
@@ -58,6 +59,7 @@ test_user_agents.js
 *.tmp
 *.temp
 
-# Package manager lock files (keep only pnpm)
+# Package manager lock files (keep only bun)
 package-lock.json
 yarn.lock
+pnpm-lock.yaml

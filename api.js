@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 /**
  * API Server for 591 Crawler
@@ -275,12 +275,21 @@ app.use((error, req, res, next) => {
 
 // Start server only if this file is run directly (not imported)
 if (require.main === module) {
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     logWithTimestamp(`591 Crawler API server started on port ${PORT}`);
     logWithTimestamp(`Available endpoints:`);
     logWithTimestamp(`  GET  http://localhost:${PORT}/health - Health check`);
     logWithTimestamp(`  POST http://localhost:${PORT}/crawl - Execute crawler`);
     logWithTimestamp(`  GET  http://localhost:${PORT}/swagger - Swagger API Documentation`);
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      logWithTimestamp(`Port ${PORT} is already in use. Please try a different port or stop the existing service.`);
+    } else {
+      logWithTimestamp(`Failed to start server: ${err.message}`);
+    }
+    process.exit(1);
   });
 }
 
