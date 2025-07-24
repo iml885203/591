@@ -14,7 +14,7 @@ const { hasMultipleStations, getUrlStationInfo } = require('./lib/multiStationCr
 const { logWithTimestamp } = require('./lib/utils');
 
 const app = express();
-const PORT = process.env.API_PORT || 3000;
+const PORT = process.env.PORT || process.env.API_PORT || 3000;
 
 // Middleware
 app.use(express.json());
@@ -94,10 +94,12 @@ app.use('/swagger', swaggerUi.serve, swaggerUi.setup(specs, {
  */
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
+  res.status(200).json({
+    status: 'healthy',
     timestamp: new Date().toISOString(),
-    service: '591-crawler-api'
+    service: '591-crawler-api',
+    version: process.env.npm_package_version || 'unknown',
+    uptime: process.uptime()
   });
 });
 
