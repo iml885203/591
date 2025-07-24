@@ -27,11 +27,13 @@ bun run docker:logs
 # API
 curl -X POST http://localhost:3000/crawl \
   -H "Content-Type: application/json" \
+  -H "x-api-key: your-secret-api-key-here" \
   -d '{"url": "URL", "notifyMode": "filtered"}'
 
 # Multi-station API
 curl -X POST http://localhost:3000/crawl \
   -H "Content-Type: application/json" \
+  -H "x-api-key: your-secret-api-key-here" \
   -d '{
     "url": "URL_WITH_MULTIPLE_STATIONS",
     "notifyMode": "filtered",
@@ -74,6 +76,7 @@ curl -X POST http://localhost:3000/crawl \
 DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
 NOTIFICATION_DELAY=1000
 API_PORT=3000
+API_KEY=your-secret-api-key-here
 ```
 
 **Distance filtering via API only:**

@@ -20,6 +20,37 @@ const PORT = process.env.API_PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// API Key authentication middleware
+const authenticateApiKey = (req, res, next) => {
+  const apiKey = req.headers['x-api-key'] || req.query.apiKey;
+  const expectedApiKey = process.env.API_KEY;
+  
+  // Skip authentication if no API_KEY is configured (for backward compatibility)
+  if (!expectedApiKey) {
+    logWithTimestamp('Warning: API_KEY not configured, skipping authentication', 'WARN');
+    return next();
+  }
+  
+  if (!apiKey) {
+    return res.status(401).json({
+      success: false,
+      error: 'Unauthorized',
+      message: 'API key required. Provide via x-api-key header or apiKey query parameter'
+    });
+  }
+  
+  if (apiKey !== expectedApiKey) {
+    logWithTimestamp(`Authentication failed: invalid API key from ${req.ip}`, 'WARN');
+    return res.status(401).json({
+      success: false,
+      error: 'Unauthorized', 
+      message: 'Invalid API key'
+    });
+  }
+  
+  next();
+};
+
 // CORS headers for cross-origin requests
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
@@ -156,11 +187,15 @@ app.get('/health', (req, res) => {
  *                 timestamp: "2025-07-23T12:00:00.000Z"
  *       400:
  *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
  *       500:
  *         $ref: '#/components/responses/InternalServerError'
+ *     security:
+ *       - ApiKeyAuth: []
  */
 // Main crawler endpoint
-app.post('/crawl', async (req, res) => {
+app.post('/crawl', authenticateApiKey, async (req, res) => {
   try {
     const { 
       url, 
