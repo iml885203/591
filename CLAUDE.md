@@ -15,6 +15,11 @@ bun run crawler.js "https://rent.591.com.tw/list?region=1&kind=0"
 bun run crawler.js "URL" 5  # Latest 5 rentals
 bun run crawler.js "URL" --notify-mode=none  # No notifications
 
+# Multi-station crawling
+bun run crawler.js "URL_WITH_MULTIPLE_STATIONS" --max-concurrent=3 --delay=1500
+bun run crawler.js "URL" --no-merge  # Skip merging duplicate properties
+bun run crawler.js "URL" --no-station-info  # Hide station processing info
+
 # Docker
 bun run deploy:docker
 bun run docker:logs
@@ -23,6 +28,20 @@ bun run docker:logs
 curl -X POST http://localhost:3000/crawl \
   -H "Content-Type: application/json" \
   -d '{"url": "URL", "notifyMode": "filtered"}'
+
+# Multi-station API
+curl -X POST http://localhost:3000/crawl \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "URL_WITH_MULTIPLE_STATIONS",
+    "notifyMode": "filtered",
+    "multiStationOptions": {
+      "maxConcurrent": 3,
+      "delayBetweenRequests": 1500,
+      "enableMerging": true,
+      "showStationInfo": false
+    }
+  }'
 ```
 
 ## 🏗️ Architecture
@@ -32,13 +51,21 @@ curl -X POST http://localhost:3000/crawl \
 - `api.js` - REST API server  
 - `lib/crawlService.js` - Main orchestration
 - `lib/crawler.js` - Web scraping logic
+- `lib/multiStationCrawler.js` - Multi-station handling
 - `lib/notification.js` - Discord webhooks
 - `lib/Rental.js` - Domain model
 
+**Domain models:**
+- `lib/domain/Distance.js` - Distance calculations
+- `lib/domain/SearchUrl.js` - URL parsing & manipulation
+- `lib/domain/PropertyId.js` - Property identification
+
 **Key features:**
-- Dependency injection for testing
+- Multi-station crawler with domain-driven architecture
+- Concurrent crawling with semaphore-based rate limiting
+- Intelligent property merging and duplicate detection
 - Distance-based notification filtering  
-- Duplicate detection via URL ID + title/metro fallback
+- Dependency injection for testing
 - CalVer versioning (YYYY.MM.PATCH)
 
 ## ⚙️ Configuration
@@ -58,11 +85,24 @@ API_PORT=3000
 }
 ```
 
+**Multi-station crawling configuration:**
+```json
+{
+  "multiStationOptions": {
+    "maxConcurrent": 3,
+    "delayBetweenRequests": 1500,
+    "enableMerging": true,
+    "showStationInfo": false
+  }
+}
+```
+
 ## 🧪 Testing
 
-- 70%+ coverage with Jest
-- Unit tests: `tests/unit/`
+- 70%+ coverage with Bun test
+- Unit tests: `tests/unit/`  
 - Integration tests: `tests/integration/`
+- Multi-station tests: `tests/integration/multiStationCrawler.test.js`
 - Dev scripts: `dev/`
 
 ## 📁 Project Structure
@@ -70,8 +110,16 @@ API_PORT=3000
 ```
 ├── crawler.js          # CLI entry
 ├── api.js              # REST API
-├── lib/                # Core modules  
+├── lib/                # Core modules
+│   ├── domain/         # Domain models
+│   ├── crawlService.js # Main orchestration
+│   ├── crawler.js      # Web scraping
+│   ├── multiStationCrawler.js  # Multi-station handling
+│   ├── notification.js # Discord webhooks
+│   └── Rental.js       # Property model
 ├── tests/              # Test suite
+│   ├── unit/           # Unit tests
+│   └── integration/    # Integration tests
 ├── dev/                # Dev scripts
 ├── samples/            # HTML samples
 └── scripts/            # Build scripts
