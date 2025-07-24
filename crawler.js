@@ -8,6 +8,7 @@
 require('dotenv').config();
 const { crawlWithNotifications } = require('./lib/crawlService');
 const { logWithTimestamp } = require('./lib/utils');
+const { getUrlStationInfo } = require('./lib/multiStationCrawler');
 
 // Main execution
 if (require.main === module) {
@@ -16,6 +17,7 @@ if (require.main === module) {
   let maxLatest = null;
   let notifyMode = 'filtered'; // all, filtered, none
   let filteredMode = 'silent'; // normal, silent, none (only applies when notifyMode is 'filtered')
+  let multiStationOptions = {}; // Options for multi-station crawling
   
   // Parse arguments
   for (let i = 1; i < args.length; i++) {
@@ -23,6 +25,14 @@ if (require.main === module) {
       notifyMode = args[i].split('=')[1];
     } else if (args[i].startsWith('--filtered-mode=')) {
       filteredMode = args[i].split('=')[1];
+    } else if (args[i].startsWith('--max-concurrent=')) {
+      multiStationOptions.maxConcurrent = parseInt(args[i].split('=')[1]);
+    } else if (args[i].startsWith('--delay=')) {
+      multiStationOptions.delayBetweenRequests = parseInt(args[i].split('=')[1]);
+    } else if (args[i] === '--no-merge') {
+      multiStationOptions.mergeResults = false;
+    } else if (args[i] === '--no-station-info') {
+      multiStationOptions.includeStationInfo = false;
     } else if (!isNaN(parseInt(args[i]))) {
       maxLatest = parseInt(args[i]);
     }
@@ -65,11 +75,35 @@ if (require.main === module) {
     process.exit(1);
   }
 
+  // Check if URL has multiple stations and log info
+  const urlStationInfo = getUrlStationInfo(url);
+  const multiStationInfo = urlStationInfo.hasMultiple ? 
+    ` (multi-station: ${urlStationInfo.stations.join(',')})` : '';
+  
+  logWithTimestamp(`Starting crawler with mode=${notifyMode}${notifyMode === 'filtered' ? `/${filteredMode}` : ''}, maxLatest=${maxLatest}${multiStationInfo}`);
+  
+  if (urlStationInfo.hasMultiple) {
+    logWithTimestamp(`Multi-station options: ${JSON.stringify(multiStationOptions)}`);
+  }
+
   // Run crawler with default dependencies (production mode)
-  crawlWithNotifications(url, maxLatest, { notifyMode, filteredMode })
+  crawlWithNotifications(url, maxLatest, { 
+    notifyMode, 
+    filteredMode, 
+    multiStationOptions 
+  })
     .then((result) => {
-      logWithTimestamp('Crawl completed successfully');
-      logWithTimestamp(`Total rentals: ${result.summary.totalRentals}, New: ${result.summary.newRentals}`);
+      const summary = result.summary;
+      logWithTimestamp(`Total properties: ${summary.totalRentals}, New: ${summary.newRentals}, Notifications sent: ${summary.notificationsSent}`);
+      
+      if (summary.multiStation) {
+        logWithTimestamp(`Multi-station crawl: ${summary.stationCount} stations (${summary.stations.join(', ')})`);
+        if (summary.crawlErrors && summary.crawlErrors.length > 0) {
+          logWithTimestamp(`Station errors: ${summary.crawlErrors.length}`, 'WARN');
+        }
+      }
+      
+      logWithTimestamp('Crawler completed successfully');
     })
     .catch((error) => {
       logWithTimestamp(`Crawl failed: ${error.message}`, 'ERROR');

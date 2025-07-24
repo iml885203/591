@@ -10,6 +10,7 @@ const express = require('express');
 const swaggerUi = require('swagger-ui-express');
 const { specs } = require('./lib/swagger');
 const { crawlWithNotifications } = require('./lib/crawlService');
+const { hasMultipleStations, getUrlStationInfo } = require('./lib/multiStationCrawler');
 const { logWithTimestamp } = require('./lib/utils');
 
 const app = express();
@@ -161,7 +162,14 @@ app.get('/health', (req, res) => {
 // Main crawler endpoint
 app.post('/crawl', async (req, res) => {
   try {
-    const { url, maxLatest, notifyMode = 'filtered', filteredMode = 'silent', filter } = req.body;
+    const { 
+      url, 
+      maxLatest, 
+      notifyMode = 'filtered', 
+      filteredMode = 'silent', 
+      filter,
+      multiStationOptions = {}
+    } = req.body;
 
     // Validate required parameters
     if (!url) {
@@ -181,11 +189,21 @@ app.post('/crawl', async (req, res) => {
       });
     }
 
+    // Check if URL has multiple stations
+    const urlStationInfo = getUrlStationInfo(url);
     const filterInfo = filter ? JSON.stringify(filter) : 'none';
-    logWithTimestamp(`API crawl request: url=${url}, maxLatest=${maxLatest}, notifyMode=${notifyMode}, filteredMode=${filteredMode}, filter=${filterInfo}`);
+    const multiStationInfo = urlStationInfo.hasMultiple ? 
+      ` stations=${urlStationInfo.stations.join(',')}, multiStationOptions=${JSON.stringify(multiStationOptions)}` : '';
+    
+    logWithTimestamp(`API crawl request: url=${url}, maxLatest=${maxLatest}, notifyMode=${notifyMode}, filteredMode=${filteredMode}, filter=${filterInfo}${multiStationInfo}`);
 
     // Execute crawler with notifications service
-    const result = await crawlWithNotifications(url, maxLatest, { notifyMode, filteredMode, filter });
+    const result = await crawlWithNotifications(url, maxLatest, { 
+      notifyMode, 
+      filteredMode, 
+      filter,
+      multiStationOptions
+    });
 
     // Return success response with detailed property data and notification status
     res.json({
@@ -204,7 +222,12 @@ app.post('/crawl', async (req, res) => {
         notificationsSent: result.summary.notificationsSent,
         properties: result.rentals,  // deprecated, use rentals
         rentals: result.rentals,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        // Multi-station specific fields
+        multiStation: result.summary.multiStation || false,
+        stationCount: result.summary.stationCount || 1,
+        stations: result.summary.stations || [],
+        crawlErrors: result.summary.crawlErrors || []
       }
     });
 
