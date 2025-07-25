@@ -49,8 +49,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
         req.on('error', () => process.exit(1)); \
         req.end();"
 
-# Default command - run API server
-CMD ["bun", "run", "api"]
+# Debug environment variables at startup
+CMD ["sh", "-c", "echo 'Environment variables:' && echo 'NODE_ENV='$NODE_ENV && echo 'API_KEY='$API_KEY && echo 'PORT='$PORT && echo 'API_PORT='$API_PORT && echo 'Starting API server...' && bun run api"]
 
 # Labels for metadata
 LABEL maintainer="iml885203" \
