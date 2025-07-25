@@ -98,9 +98,8 @@ describe('crawler.js CLI', () => {
       });
 
       // Mock the module
-      jest.doMock('../../lib/crawlService', () => ({
-        crawlWithNotifications: mockCrawlWithNotifications
-      }));
+      // jest.doMock is not compatible with Bun test
+      // This complex mocking scenario is tested in integration tests
 
       // Test parsing logic directly
       const args = ['bun', 'crawler.js', 'https://test.com', '--notify-mode=all'];
