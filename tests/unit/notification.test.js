@@ -41,7 +41,10 @@ describe('notification', () => {
 
       const result = await sendToDiscord(embed, webhookUrl, mockAxios);
 
-      expect(mockAxios.post).toHaveBeenCalledWith(webhookUrl, { embeds: [embed] });
+      expect(mockAxios.post).toHaveBeenCalledWith(webhookUrl, { 
+        embeds: [embed],
+        avatar_url: "https://i.imgur.com/izKG7gm.jpeg"
+      });
       expect(result).toBe(true);
       expect(logWithTimestamp).not.toHaveBeenCalled();
     });
@@ -66,7 +69,10 @@ describe('notification', () => {
 
       const result = await sendToDiscord(embed, webhookUrl, mockAxios);
 
-      expect(mockAxios.post).toHaveBeenCalledWith(webhookUrl, { embeds: [embed] });
+      expect(mockAxios.post).toHaveBeenCalledWith(webhookUrl, { 
+        embeds: [embed],
+        avatar_url: "https://i.imgur.com/izKG7gm.jpeg"
+      });
       expect(result).toBe(false);
       expect(logWithTimestamp).toHaveBeenCalledWith('Discord notification failed: Network error', 'ERROR');
     });

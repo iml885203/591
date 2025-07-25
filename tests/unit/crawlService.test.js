@@ -10,18 +10,28 @@ jest.mock('../../lib/crawler', () => ({
 }));
 
 jest.mock('../../lib/utils', () => ({
-  generateUrlKey: jest.fn(),
-  logWithTimestamp: jest.fn(),
-  getPropertyId: jest.fn(),
-  extractDistanceInMeters: jest.fn((metroValue) => {
-    if (!metroValue) return null;
-    const meterMatch = metroValue.match(/(\d+)\s*公尺/);
-    if (meterMatch) return parseInt(meterMatch[1]);
-    const minuteMatch = metroValue.match(/(\d+)\s*分鐘/);
-    if (minuteMatch) return parseInt(minuteMatch[1]) * 80;
-    return null;
-  })
+  logWithTimestamp: jest.fn()
 }));
+
+jest.mock('../../lib/domain/PropertyId', () => ({
+  createIdSet: jest.fn(),
+  fromProperty: jest.fn()
+}));
+
+jest.mock('../../lib/domain/SearchUrl', () => {
+  return jest.fn().mockImplementation(() => ({
+    getStorageKey: jest.fn().mockReturnValue('test-key')
+  }));
+});
+
+jest.mock('../../lib/Rental', () => {
+  return jest.fn().mockImplementation((data) => ({
+    ...data,
+    getDistanceToMRT: jest.fn().mockReturnValue(null),
+    isFarFromMRT: jest.fn().mockReturnValue(false),
+    shouldBeSilentNotification: jest.fn().mockReturnValue(false)
+  }));
+});
 
 jest.mock('../../lib/storage', () => ({
   loadPreviousData: jest.fn(),
@@ -36,7 +46,9 @@ jest.mock('../../lib/notification', () => ({
 }));
 
 const { crawl591 } = require('../../lib/crawler');
-const { generateUrlKey, logWithTimestamp, getPropertyId } = require('../../lib/utils');
+const { logWithTimestamp } = require('../../lib/utils');
+const PropertyId = require('../../lib/domain/PropertyId');
+const Rental = require('../../lib/Rental');
 const { loadPreviousData, savePreviousData, getDataFilePath } = require('../../lib/storage');
 const { sendDiscordNotifications, sendErrorNotification, extractDistanceInMeters } = require('../../lib/notification');
 
@@ -48,7 +60,8 @@ describe('crawlService', () => {
 
   describe('findNewRentals', () => {
     it('should return rentals that are not in previous list', () => {
-      getPropertyId.mockImplementation((prop) => prop.title);
+      PropertyId.createIdSet.mockReturnValue(new Set(['Property 1', 'Property 2']));
+      PropertyId.fromProperty.mockImplementation((prop) => ({ toString: () => prop.title }));
       
       const currentProperties = [
         { title: 'Property 1' },
@@ -68,7 +81,8 @@ describe('crawlService', () => {
     });
 
     it('should return empty array when no new properties', () => {
-      getPropertyId.mockImplementation((prop) => prop.title);
+      PropertyId.createIdSet.mockReturnValue(new Set(['Property 1', 'Property 2']));
+      PropertyId.fromProperty.mockImplementation((prop) => ({ toString: () => prop.title }));
       
       const currentProperties = [
         { title: 'Property 1' },
@@ -86,7 +100,8 @@ describe('crawlService', () => {
     });
 
     it('should return all properties when no previous properties exist', () => {
-      getPropertyId.mockImplementation((prop) => prop.title);
+      PropertyId.createIdSet.mockReturnValue(new Set());
+      PropertyId.fromProperty.mockImplementation((prop) => ({ toString: () => prop.title }));
       
       const currentProperties = [
         { title: 'Property 1' },
@@ -124,9 +139,8 @@ describe('crawlService', () => {
       
       getDataFilePath.mockReturnValue('/path/to/data.json');
       loadPreviousData.mockResolvedValue({});
-      generateUrlKey.mockReturnValue('test-key');
       savePreviousData.mockResolvedValue();
-      getPropertyId.mockReturnValue('prop1');
+      PropertyId.fromProperty.mockReturnValue({ toString: () => 'prop1' });
       
       // Mock that we find the rental as new (empty previous data)
       const expectedResult = [{ title: 'Property 1' }];
@@ -134,7 +148,6 @@ describe('crawlService', () => {
       const result = await getRentalsToNotify(rentals, null, 'https://test.com', mockFs);
 
       expect(loadPreviousData).toHaveBeenCalledWith('/path/to/data.json', mockFs);
-      expect(generateUrlKey).toHaveBeenCalledWith('https://test.com');
       expect(result).toHaveLength(1);
     });
 
@@ -144,8 +157,7 @@ describe('crawlService', () => {
       
       getDataFilePath.mockReturnValue('/path/to/data.json');
       loadPreviousData.mockResolvedValue({});
-      generateUrlKey.mockReturnValue('test-key');
-      getPropertyId.mockReturnValue('prop1');
+      PropertyId.fromProperty.mockReturnValue({ toString: () => 'prop1' });
 
       const result = await getRentalsToNotify(rentals, null, 'https://test.com', mockFs);
 
@@ -163,12 +175,8 @@ describe('crawlService', () => {
       
       const rentalsToNotify = [{ title: 'Property 1', metroValue: '500公尺' }];
       
-      getPropertyId.mockImplementation((prop) => prop.title);
-      extractDistanceInMeters.mockImplementation((metro) => {
-        if (metro === '500公尺') return 500;
-        if (metro === '1000公尺') return 1000;
-        return null;
-      });
+      PropertyId.createIdSet.mockReturnValue(new Set(['Property 1']));
+      PropertyId.fromProperty.mockImplementation((prop) => ({ toString: () => prop.title }));
 
       const result = addNotificationMetadata(allRentals, rentalsToNotify, { 
         notifyMode: 'all',
@@ -189,8 +197,16 @@ describe('crawlService', () => {
       
       const rentalsToNotify = [{ title: 'Property 1', metroValue: '1200公尺' }];
       
-      getPropertyId.mockImplementation((prop) => prop.title);
-      extractDistanceInMeters.mockReturnValue(1200);
+      PropertyId.createIdSet.mockReturnValue(new Set(['Property 1']));
+      PropertyId.fromProperty.mockImplementation((prop) => ({ toString: () => prop.title }));
+      
+      // Mock Rental instance methods for this specific test
+      Rental.mockImplementation((data) => ({
+        ...data,
+        getDistanceToMRT: jest.fn().mockReturnValue(1200),
+        isFarFromMRT: jest.fn().mockReturnValue(true),
+        shouldBeSilentNotification: jest.fn().mockReturnValue(true)
+      }));
 
       const result = addNotificationMetadata(allRentals, rentalsToNotify, { 
         notifyMode: 'filtered', 
@@ -211,7 +227,7 @@ describe('crawlService', () => {
       ];
 
       crawl591.mockResolvedValue(mockRentals);
-      getPropertyId.mockImplementation((prop) => prop.title);
+      PropertyId.fromProperty.mockImplementation((prop) => ({ toString: () => prop.title }));
       extractDistanceInMeters.mockImplementation((metro) => {
         if (metro === '500公尺') return 500;
         if (metro === '900公尺') return 900;
@@ -241,13 +257,12 @@ describe('crawlService', () => {
       ];
 
       crawl591.mockResolvedValue(mockRentals);
-      getPropertyId.mockImplementation((prop) => prop.title);
+      PropertyId.fromProperty.mockImplementation((prop) => ({ toString: () => prop.title }));
       extractDistanceInMeters.mockImplementation((metro) => {
         if (metro === '500公尺') return 500;
         if (metro === '1200公尺') return 1200;
         return null;
       });
-      generateUrlKey.mockReturnValue('test-key');
       getDataFilePath.mockReturnValue('/path/to/data.json');
       loadPreviousData.mockResolvedValue({});
       savePreviousData.mockResolvedValue();
@@ -266,7 +281,6 @@ describe('crawlService', () => {
       const mockRentals = [];
 
       crawl591.mockResolvedValue(mockRentals);
-      generateUrlKey.mockReturnValue('test-key');
       getDataFilePath.mockReturnValue('/path/to/data.json');
       loadPreviousData.mockResolvedValue({});
       savePreviousData.mockResolvedValue();
@@ -285,9 +299,8 @@ describe('crawlService', () => {
       const mockRentals = [{ title: 'Property 1', metroValue: '500公尺' }];
 
       crawl591.mockResolvedValue(mockRentals);
-      getPropertyId.mockImplementation((prop) => prop.title);
-      extractDistanceInMeters.mockReturnValue(500);
-      generateUrlKey.mockReturnValue('test-key');
+      PropertyId.createIdSet.mockReturnValue(new Set());
+      PropertyId.fromProperty.mockImplementation((prop) => ({ toString: () => prop.title }));
       getDataFilePath.mockReturnValue('/path/to/data.json');
       loadPreviousData.mockResolvedValue({});
       savePreviousData.mockResolvedValue();
@@ -312,9 +325,8 @@ describe('crawlService', () => {
       ];
 
       crawl591.mockResolvedValue(mockRentals);
-      getPropertyId.mockImplementation((prop) => prop.title);
+      PropertyId.fromProperty.mockImplementation((prop) => ({ toString: () => prop.title }));
       extractDistanceInMeters.mockReturnValue(1200);
-      generateUrlKey.mockReturnValue('test-key');
       getDataFilePath.mockReturnValue('/path/to/data.json');
       loadPreviousData.mockResolvedValue({});
       savePreviousData.mockResolvedValue();
