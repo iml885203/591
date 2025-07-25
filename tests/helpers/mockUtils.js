@@ -1,101 +1,40 @@
 /**
  * Bun-compatible mock utilities
- * Replaces Jest mocking functionality with Bun-compatible alternatives
+ * Uses Bun's native mock functions for full compatibility with expect() matchers
  */
 
+import { mock } from 'bun:test';
+
 /**
- * Creates a mock function similar to jest.fn()
+ * Creates a mock function using Bun's native mock() function
  * @param {*} returnValue - Default return value
- * @returns {Function} Mock function with call tracking
+ * @returns {Function} Bun mock function with call tracking
  */
 export const createMockFunction = (returnValue) => {
-  const fn = (...args) => {
-    fn.calls.push(args);
-    fn.callCount++;
-    
-    if (fn._implementation) {
-      return fn._implementation(...args);
-    }
-    
-    if (fn._returnValues.length > 0) {
-      return fn._returnValues.shift();
-    }
-    
-    if (fn._rejectedValues.length > 0) {
-      const error = fn._rejectedValues.shift();
-      throw error;
-    }
-    
-    return fn._defaultReturnValue;
-  };
+  // Create a Bun native mock function with the default return value
+  const fn = mock(() => returnValue);
   
-  // Initialize mock function properties
-  fn.calls = [];
-  fn.callCount = 0;
-  fn._defaultReturnValue = returnValue;
-  fn._returnValues = [];
-  fn._rejectedValues = [];
-  fn._implementation = null;
+  // If a return value was provided, set it up
+  if (returnValue !== undefined) {
+    fn.mockReturnValue(returnValue);
+  }
   
-  // Mock function methods
-  fn.mockReturnValue = (value) => {
-    fn._defaultReturnValue = value;
-    return fn;
-  };
+  // Add backward compatibility for the old 'calls' property
+  // This creates a getter that returns fn.mock.calls
+  Object.defineProperty(fn, 'calls', {
+    get() {
+      return this.mock.calls;
+    },
+    configurable: true
+  });
   
-  fn.mockReturnValueOnce = (value) => {
-    fn._returnValues.push(value);
-    return fn;
-  };
-  
-  fn.mockResolvedValue = (value) => {
-    fn._defaultReturnValue = Promise.resolve(value);
-    return fn;
-  };
-  
-  fn.mockResolvedValueOnce = (value) => {
-    fn._returnValues.push(Promise.resolve(value));
-    return fn;
-  };
-  
-  fn.mockRejectedValue = (error) => {
-    fn._defaultReturnValue = Promise.reject(error);
-    return fn;
-  };
-  
-  fn.mockRejectedValueOnce = (error) => {
-    fn._rejectedValues.push(error);
-    return fn;
-  };
-  
-  fn.mockImplementation = (impl) => {
-    fn._implementation = impl;
-    return fn;
-  };
-  
-  fn.mockImplementationOnce = (impl) => {
-    const originalImpl = fn._implementation;
-    fn._implementation = (...args) => {
-      fn._implementation = originalImpl;
-      return impl(...args);
-    };
-    return fn;
-  };
-  
-  fn.mockClear = () => {
-    fn.calls = [];
-    fn.callCount = 0;
-    return fn;
-  };
-  
-  fn.mockReset = () => {
-    fn.mockClear();
-    fn._defaultReturnValue = undefined;
-    fn._returnValues = [];
-    fn._rejectedValues = [];
-    fn._implementation = null;
-    return fn;
-  };
+  // Add backward compatibility for callCount
+  Object.defineProperty(fn, 'callCount', {
+    get() {
+      return this.mock.calls.length;
+    },
+    configurable: true
+  });
   
   return fn;
 };
@@ -108,15 +47,44 @@ export const createMockFunction = (returnValue) => {
  */
 export const createSpy = (object, methodName) => {
   const originalMethod = object[methodName];
-  const spy = createMockFunction();
   
-  spy.mockImplementation((...args) => {
+  // Create a Bun native mock that calls the original method
+  const spy = mock((...args) => {
     return originalMethod.apply(object, args);
   });
   
-  spy.mockRestore = () => {
-    object[methodName] = originalMethod;
-  };
+  // Add backward compatibility for the old 'calls' property
+  Object.defineProperty(spy, 'calls', {
+    get() {
+      return this.mock.calls;
+    },
+    configurable: true
+  });
+  
+  // Add backward compatibility for callCount
+  Object.defineProperty(spy, 'callCount', {
+    get() {
+      return this.mock.calls.length;
+    },
+    configurable: true
+  });
+  
+  // Use a different property name for restore since mockRestore might be readonly
+  Object.defineProperty(spy, 'restore', {
+    value: () => {
+      object[methodName] = originalMethod;
+    },
+    configurable: true
+  });
+  
+  // Also try to add mockRestore if possible
+  try {
+    spy.mockRestore = () => {
+      object[methodName] = originalMethod;
+    };
+  } catch (e) {
+    // If mockRestore is readonly, we'll use the 'restore' method instead
+  }
   
   object[methodName] = spy;
   return spy;
@@ -124,14 +92,18 @@ export const createSpy = (object, methodName) => {
 
 /**
  * Clears all mocks in an object
- * @param {Object} mocks - Object containing mock functions
+ * @param {Object} mocks - Object containing mock functions or nested objects
  */
 export const clearAllMocks = (mocks) => {
-  Object.values(mocks).forEach(mock => {
-    if (typeof mock === 'function' && mock.mockClear) {
-      mock.mockClear();
+  const clearMock = (obj) => {
+    if (typeof obj === 'function' && obj.mockClear) {
+      obj.mockClear();
+    } else if (obj && typeof obj === 'object') {
+      Object.values(obj).forEach(clearMock);
     }
-  });
+  };
+  
+  clearMock(mocks);
 };
 
 /**
