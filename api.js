@@ -12,7 +12,7 @@ const { specs } = require('./lib/swagger');
 const { crawlWithNotifications } = require('./lib/crawlService');
 const { hasMultipleStations, getUrlStationInfo } = require('./lib/multiStationCrawler');
 const { logWithTimestamp } = require('./lib/utils');
-const QueryStorage = require('./lib/storage/queryStorage');
+const DatabaseStorage = require('./lib/storage/DatabaseStorage');
 const QueryId = require('./lib/domain/QueryId');
 const SearchUrl = require('./lib/domain/SearchUrl');
 const UrlNormalizer = require('./lib/domain/UrlNormalizer');
@@ -468,8 +468,9 @@ app.get('/query/:queryId/rentals', authenticateApiKey, async (req, res) => {
     const { queryId } = req.params;
     const { limit, sinceDate } = req.query;
 
-    const queryStorage = new QueryStorage();
-    const queryData = await queryStorage.getQueryRentals(queryId, {
+    const databaseStorage = new DatabaseStorage();
+    await databaseStorage.initialize();
+    const queryData = await databaseStorage.getRentalsForQuery(queryId, {
       limit: limit ? parseInt(limit) : undefined,
       sinceDate
     });
@@ -591,8 +592,9 @@ app.get('/queries', authenticateApiKey, async (req, res) => {
   try {
     const { region, sinceDate, hasRentals, limit, offset } = req.query;
     
-    const queryStorage = new QueryStorage();
-    const result = await queryStorage.listQueries({
+    const databaseStorage = new DatabaseStorage();
+    await databaseStorage.initialize();
+    const result = await databaseStorage.listQueries({
       region,
       sinceDate,
       hasRentals: hasRentals === 'true',
@@ -675,8 +677,9 @@ app.get('/query/:queryId/similar', authenticateApiKey, async (req, res) => {
     const { queryId } = req.params;
     const { limit } = req.query;
 
-    const queryStorage = new QueryStorage();
-    const similarQueries = await queryStorage.findSimilarQueries(queryId, {
+    const databaseStorage = new DatabaseStorage();
+    await databaseStorage.initialize();
+    const similarQueries = await databaseStorage.findSimilarQueries(queryId, {
       limit: limit ? parseInt(limit) : undefined
     });
 
@@ -747,8 +750,9 @@ app.get('/query/:queryId/similar', authenticateApiKey, async (req, res) => {
  */
 app.get('/query/statistics', authenticateApiKey, async (req, res) => {
   try {
-    const queryStorage = new QueryStorage();
-    const statistics = await queryStorage.getStatistics();
+    const databaseStorage = new DatabaseStorage();
+    await databaseStorage.initialize();
+    const statistics = await databaseStorage.getStorageStatistics();
 
     res.json({
       success: true,
