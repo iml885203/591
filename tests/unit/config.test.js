@@ -23,8 +23,8 @@ describe('config', () => {
       expect(config).toHaveProperty('validation');
       expect(config).toHaveProperty('development');
       
-      // Test some default values
-      expect(config.server.port).toBe(3000);
+      // Test some default values (considering test environment override)
+      expect(config.server.port).toBe(parseInt(process.env.API_PORT) || 3000);
       expect(config.discord.notificationDelay).toBe(1000);
       expect(config.mrt.walkingSpeedMPerMin).toBe(80);
       expect(config.crawler.maxRetries).toBe(3);

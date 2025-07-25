@@ -6,7 +6,6 @@ const { crawl591 } = require('../../lib/crawler');
 
 // Mock all dependencies
 jest.mock('../../lib/utils', () => ({
-  isValid591Url: jest.fn(),
   logWithTimestamp: jest.fn()
 }));
 
@@ -19,7 +18,12 @@ jest.mock('../../lib/fetcher', () => ({
   getDefaultHeaders: jest.fn()
 }));
 
-const { isValid591Url, logWithTimestamp } = require('../../lib/utils');
+jest.mock('../../lib/domain/SearchUrl', () => ({
+  isValid: jest.fn()
+}));
+
+const { logWithTimestamp } = require('../../lib/utils');
+const SearchUrl = require('../../lib/domain/SearchUrl');
 const { parseRentals } = require('../../lib/parser');
 const { fetchWithRetry, getDefaultHeaders } = require('../../lib/fetcher');
 
@@ -35,7 +39,7 @@ describe('crawler', () => {
         { title: 'Rental 2', link: 'https://rent.591.com.tw/house/2' }
       ];
 
-      isValid591Url.mockReturnValue(true);
+      SearchUrl.isValid.mockReturnValue(true);
       getDefaultHeaders.mockReturnValue({ 'User-Agent': 'test-agent' });
       fetchWithRetry.mockResolvedValue({ data: '<html>mock</html>' });
       parseRentals.mockReturnValue(mockRentals);
@@ -48,7 +52,7 @@ describe('crawler', () => {
         cheerio: mockCheerio
       });
 
-      expect(isValid591Url).toHaveBeenCalledWith('https://rent.591.com.tw/list?region=1');
+      expect(SearchUrl.isValid).toHaveBeenCalledWith('https://rent.591.com.tw/list?region=1');
       expect(fetchWithRetry).toHaveBeenCalledWith(
         'https://rent.591.com.tw/list?region=1',
         { headers: { 'User-Agent': 'test-agent' } },
@@ -61,7 +65,7 @@ describe('crawler', () => {
     });
 
     it('should handle invalid URL error', async () => {
-      isValid591Url.mockReturnValue(false);
+      SearchUrl.isValid.mockReturnValue(false);
 
       await expect(crawl591('https://invalid.com')).rejects.toThrow('Please provide a valid 591.com.tw URL');
       expect(logWithTimestamp).toHaveBeenCalledWith('Crawl error: Please provide a valid 591.com.tw URL', 'ERROR');
@@ -70,7 +74,7 @@ describe('crawler', () => {
     it('should handle fetch error', async () => {
       const error = new Error('Network error');
       
-      isValid591Url.mockReturnValue(true);
+      SearchUrl.isValid.mockReturnValue(true);
       getDefaultHeaders.mockReturnValue({ 'User-Agent': 'test-agent' });
       fetchWithRetry.mockRejectedValue(error);
 
@@ -81,7 +85,7 @@ describe('crawler', () => {
     it('should use default dependencies when not provided', async () => {
       const mockRentals = [];
       
-      isValid591Url.mockReturnValue(true);
+      SearchUrl.isValid.mockReturnValue(true);
       getDefaultHeaders.mockReturnValue({ 'User-Agent': 'test-agent' });
       fetchWithRetry.mockResolvedValue({ data: '<html>empty</html>' });
       parseRentals.mockReturnValue(mockRentals);

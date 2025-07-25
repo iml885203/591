@@ -152,7 +152,12 @@ describe('MultiStationCrawler', () => {
         crawl591: mockCrawl591
       });
 
-      expect(result.rentals).toEqual([mockRental1]);
+      expect(result.rentals).toHaveLength(1);
+      expect(result.rentals[0].title).toBe('Test Rental 1');
+      expect(result.rentals[0].link).toBe('https://rent.591.com.tw/12345');
+      expect(result.rentals[0].metroTitle).toBe('距台北車站');
+      expect(result.rentals[0].metroValue).toBe('500公尺');
+      expect(result.rentals[0].rooms).toBe('2房1廳');
       expect(result.errors).toHaveLength(1);
       expect(result.errors[0].error).toBe('Network error');
       expect(result.successfulStations).toBe(1);
