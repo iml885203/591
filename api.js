@@ -830,21 +830,51 @@ app.use((error, req, res, next) => {
 
 // Start server only if this file is run directly (not imported)
 if (require.main === module) {
-  const server = app.listen(PORT, () => {
-    logWithTimestamp(`591 Crawler API server started on port ${PORT}`);
-    logWithTimestamp(`Available endpoints:`);
-    logWithTimestamp(`  GET  http://localhost:${PORT}/health - Health check`);
-    logWithTimestamp(`  POST http://localhost:${PORT}/crawl - Execute crawler`);
-    logWithTimestamp(`  GET  http://localhost:${PORT}/swagger - Swagger API Documentation`);
-  });
-
-  server.on('error', (err) => {
-    if (err.code === 'EADDRINUSE') {
-      logWithTimestamp(`Port ${PORT} is already in use. Please try a different port or stop the existing service.`);
-    } else {
-      logWithTimestamp(`Failed to start server: ${err.message}`);
+  // Check database configuration on startup
+  const checkDatabaseOnStartup = async () => {
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+    
+    try {
+      logWithTimestamp('Checking database configuration...');
+      logWithTimestamp(`DATABASE_PROVIDER: ${process.env.DATABASE_PROVIDER || 'not set'}`);
+      logWithTimestamp(`DATABASE_URL: ${process.env.DATABASE_URL ? 'configured' : 'not set'}`);
+      logWithTimestamp(`NODE_ENV: ${process.env.NODE_ENV || 'not set'}`);
+      
+      // Test database connection
+      await prisma.$connect();
+      logWithTimestamp('✅ Database connection successful');
+      
+      // Check if tables exist
+      const queryCount = await prisma.query.count();
+      const rentalCount = await prisma.rental.count();
+      logWithTimestamp(`📊 Database stats: ${queryCount} queries, ${rentalCount} rentals`);
+      
+      await prisma.$disconnect();
+    } catch (error) {
+      logWithTimestamp(`❌ Database connection failed: ${error.message}`, 'ERROR');
+      logWithTimestamp('Please check your DATABASE_URL and ensure the database is accessible', 'ERROR');
+      // Don't exit - let the API start anyway
     }
-    process.exit(1);
+  };
+  
+  checkDatabaseOnStartup().then(() => {
+    const server = app.listen(PORT, () => {
+      logWithTimestamp(`591 Crawler API server started on port ${PORT}`);
+      logWithTimestamp(`Available endpoints:`);
+      logWithTimestamp(`  GET  http://localhost:${PORT}/health - Health check`);
+      logWithTimestamp(`  POST http://localhost:${PORT}/crawl - Execute crawler`);
+      logWithTimestamp(`  GET  http://localhost:${PORT}/swagger - Swagger API Documentation`);
+    });
+
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        logWithTimestamp(`Port ${PORT} is already in use. Please try a different port or stop the existing service.`);
+      } else {
+        logWithTimestamp(`Failed to start server: ${err.message}`);
+      }
+      process.exit(1);
+    });
   });
 }
 
