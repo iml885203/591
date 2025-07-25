@@ -1,0 +1,37 @@
+name: Deploy to Railway on Tag
+
+on:
+  push:
+    tags:
+      - 'v*'      # 只有 v 開頭的標籤才觸發
+      - '20*'     # 或年份開頭的標籤 (如 2025.07.25)
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Deploy to Railway
+        run: |
+          echo "Deploying tag: ${{ github.ref_name }}"
+          curl -f "https://backboard.railway.app/graphql" \
+            -H "Authorization: Bearer ${{ secrets.RAILWAY_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "query": "mutation serviceInstanceRedeploy($serviceId: String!, $environmentId: String!) { serviceInstanceRedeploy(serviceId: $serviceId, environmentId: $environmentId) }",
+              "variables": {
+                "serviceId": "${{ secrets.RAILWAY_SERVICE_ID }}",
+                "environmentId": "${{ secrets.RAILWAY_ENVIRONMENT_ID }}"
+              }
+            }'
+
+      - name: Wait for deployment
+        run: sleep 30
+        
+      - name: Health check
+        run: |
+          curl -f https://591-crawler-production.up.railway.app/health || exit 1
+          echo "Deployment successful!"
