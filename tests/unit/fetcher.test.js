@@ -36,7 +36,9 @@ describe('fetcher', () => {
       expect(result).toBe(mockResponse);
       expect(mockAxios.get).toHaveBeenCalledTimes(1);
       expect(mockAxios.get).toHaveBeenCalledWith('https://example.com', {
-        timeout: 30000
+        timeout: 30000,
+        responseType: 'text',
+        responseEncoding: 'utf8'
       });
     });
 
@@ -78,7 +80,9 @@ describe('fetcher', () => {
 
       expect(mockAxios.get).toHaveBeenCalledWith('https://example.com', {
         ...requestOptions,
-        timeout: 30000
+        timeout: 30000,
+        responseType: 'text',
+        responseEncoding: 'utf8'
       });
     });
 
@@ -90,7 +94,9 @@ describe('fetcher', () => {
       await fetchWithRetry('https://example.com', {}, mockAxios);
 
       expect(mockAxios.get).toHaveBeenCalledWith('https://example.com', {
-        timeout: expect.any(Number) // Should use default timeout
+        timeout: expect.any(Number), // Should use default timeout
+        responseType: 'text',
+        responseEncoding: 'utf8'
       });
     });
 
@@ -107,7 +113,9 @@ describe('fetcher', () => {
       await fetchWithRetry('https://example.com', {}, mockAxios, customConfig);
 
       expect(mockAxios.get).toHaveBeenCalledWith('https://example.com', {
-        timeout: 10000
+        timeout: 10000,
+        responseType: 'text',
+        responseEncoding: 'utf8'
       });
     });
 

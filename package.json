@@ -16,6 +16,10 @@
     "test:coverage": "bun test --coverage",
     "test:unit": "bun test tests/unit",
     "test:integration": "bun test tests/integration",
+    "test:integration:database": "bun test tests/integration/database.test.js",
+        "test:postgres:start": "bash scripts/test-postgres.sh start",
+        "test:postgres:setup": "bash scripts/test-postgres.sh setup",
+        "test:postgres:stop": "bash scripts/test-postgres.sh stop",
     "test:verbose": "VERBOSE_TESTS=1 bun test --verbose",
     "deploy:docker": "bash scripts/deploy.sh",
     "deploy:docker:logs": "bun run deploy:docker && docker-compose logs -f",
@@ -75,9 +79,11 @@
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
+    "@testcontainers/postgresql": "^11.4.0",
     "jsdom": "^26.1.0",
     "nock": "^14.0.6",
     "prisma": "^6.12.0",
-    "supertest": "^7.1.3"
+    "supertest": "^7.1.3",
+    "testcontainers": "^11.4.0"
   }
 }

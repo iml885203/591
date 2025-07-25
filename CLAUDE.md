@@ -103,11 +103,23 @@ API_KEY=your-secret-api-key-here
 ## 🧪 Testing
 
 - Native Bun test framework (migrated from Jest)
-- **54 tests** across 6 files, all passing ✅
+- **54+ tests** across multiple files, all passing ✅
 - Unit tests: `tests/unit/` (storage, config, CLI, utils, Rental)
-- Integration tests: `tests/integration/` (multi-station crawler)
-- Test helpers: `tests/helpers/` (mock utilities)  
-- Local testing: `bun test` (fast execution ~400ms)
+- Integration tests: `tests/integration/` (database operations)
+- Test helpers: `tests/helpers/` (mock utilities)
+
+**Database Integration Testing:**
+```bash
+# PostgreSQL integration tests (production database)
+bun run test:postgres:start     # Start PostgreSQL container
+bun run test:postgres:setup     # Setup schema
+bun run test:integration:database # Run database integration tests
+bun run test:postgres:stop      # Cleanup
+
+# All tests
+bun test                         # Unit tests only
+bun run test:integration         # All integration tests
+```
 
 ## 🔄 Git Flow 工作流程
 
