@@ -27,6 +27,9 @@ RUN bun install --frozen-lockfile --production
 # Copy application source code
 COPY . .
 
+# Generate Prisma client
+RUN bun run db:generate
+
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
