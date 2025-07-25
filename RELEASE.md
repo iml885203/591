@@ -1,13 +1,13 @@
 # Release Process
 
-This document outlines the release process for the 591-crawler project using CalVer (Calendar Versioning).
+This document outlines the release process for the 591-crawler project using CalVer (Calendar Versioning) and Git Flow workflow.
 
 ## Version Format
 
 We use **CalVer** with the format `YYYY.MM.PATCH`:
 
 - `YYYY`: Full year (e.g., 2025)
-- `MM`: Zero-padded month (e.g., 01, 07, 12)
+- `MM`: Zero-padded month (e.g., 01, 07, 12)  
 - `PATCH`: Incremental number within the month, starting from 1
 
 ### Examples
@@ -15,129 +15,131 @@ We use **CalVer** with the format `YYYY.MM.PATCH`:
 - `2025.07.2` - Second release in July 2025
 - `2025.08.1` - First release in August 2025
 
+## Git Flow Workflow
+
+### Branch Strategy
+- `develop` - Daily development branch
+- `main` - Production branch (triggers Railway deployment)
+
+### Development Process
+```bash
+# 1. Work on develop branch
+git checkout develop
+git pull origin develop
+
+# 2. Make changes and commit
+git add .
+git commit -m "feat: your changes"
+git push origin develop
+
+# 3. Test locally
+bun test
+```
+
 ## Release Workflow
 
 ### 1. Pre-Release Checklist
 
 Before creating a new release, ensure:
 
-- [ ] All tests pass: `pnpm test`
-- [ ] Code is properly linted and formatted
-- [ ] All changes are committed to the main branch
+- [ ] All features are completed on `develop` branch
+- [ ] All tests pass locally: `bun test`
+- [ ] Code is properly committed to `develop`
 - [ ] Working directory is clean: `git status`
 
-### 2. Version Update
+### 2. Merge to Main Branch
+
+```bash
+# Switch to main and merge develop
+git checkout main
+git pull origin main
+git merge develop
+```
+
+### 3. Version Update
 
 Use the automated version update script:
 
 ```bash
-# Update version and create git tag
-pnpm run version:update
+# Update version (on main branch)
+bun run version:update
 ```
 
 This script will:
 - Calculate the next version based on current date
 - Update `package.json` version field
-- Stage the package.json changes
-- Create a git tag (e.g., `v2025.07.1`)
+- Provide commands for commit and push
 
-### 3. Review Changes
+### 4. Commit and Deploy
 
 ```bash
-# Review staged changes
-git diff --cached
-
-# Current version
-pnpm run version:show
+# Follow the script's suggested commands:
+git add package.json
+git commit -m "chore: bump version to 2025.07.1"  
+git push origin main
 ```
 
-### 4. Commit Release
+This will:
+- Commit the version update to main branch
+- Trigger Railway automatic deployment via CI/CD
+- No manual Docker deployment needed
+
+### 5. Verify Deployment
 
 ```bash
-# Commit the version update
-git commit -m "bump: Release version $(pnpm run version:show --silent)"
+# Check API version (once deployed)
+curl -s https://your-railway-url/info | jq '.version'
 
-# Example output: "bump: Release version 2025.07.1"
-```
-
-### 5. Push to Remote
-
-```bash
-# Push commits and tags
-git push && git push --tags
-```
-
-### 6. Deploy
-
-```bash
-# Deploy updated version
-pnpm run deploy:docker
-
-# Optional: Follow deployment logs  
-pnpm run deploy:docker:logs
-```
-
-### 7. Verify Deployment
-
-```bash
-# Check API version
-curl -s http://localhost:3000/info | jq '.version'
-
-# Check container status
-pnpm run docker:status
+# Monitor Railway deployment in dashboard
 ```
 
 ## Hotfix Process
 
 For urgent fixes within the same month:
 
-1. Create a hotfix branch: `git checkout -b hotfix/urgent-fix`
+1. Create a hotfix branch from main: `git checkout main && git checkout -b hotfix/urgent-fix`
 2. Make necessary changes
-3. Run tests: `pnpm test`
+3. Test locally: `bun test`
 4. Merge to main: `git checkout main && git merge hotfix/urgent-fix`
 5. Follow normal release process (version will auto-increment patch number)
+6. Consider merging back to develop: `git checkout develop && git merge main`
 
 ## Rollback Process
 
-If a deployment needs to be rolled back:
+If a Railway deployment needs to be rolled back:
 
-```bash
-# Rollback to previous Docker image
-pnpm run docker:rollback
-
-# Check rollback status
-pnpm run docker:status
-```
+1. **Via Railway Dashboard**: Use Railway's rollback feature to previous deployment
+2. **Via Git**: Revert commit and push
+   ```bash
+   git checkout main
+   git revert HEAD  # Revert last commit
+   git push origin main  # This triggers new deployment
+   ```
 
 ## Version History
 
-You can view all releases and their git tags:
+You can view all releases by checking the git commit history:
 
 ```bash
-# List all version tags
-git tag --list | sort -V
+# List commits with version updates
+git log --oneline --grep="chore: bump version"
 
-# Show tag details
-git show v2025.07.1
+# Show specific version commit
+git show HEAD  # Show latest version details
 ```
 
-## Automated Integration
+## CI/CD Integration
 
-### GitHub Actions (Future)
-
-When setting up CI/CD, the release process can be automated:
+The project uses GitHub Actions for automated deployment:
 
 ```yaml
-# .github/workflows/release.yml (example)
-name: Release
+# .github/workflows/deploy.yml  
+name: CI/CD for Railway Deployment
 on:
   push:
-    tags: ['v*']
-steps:
-  - name: Deploy
-    run: |
-      pnpm run deploy:docker
-      # Additional deployment steps
+    branches: [main]  # Only deploys on main branch
+  pull_request:
+    branches: [main]  # CI checks on PRs
 ```
 
 ### Version API Endpoint
@@ -146,32 +148,37 @@ The API automatically reports the current version:
 
 ```bash
 # Get version via API
-curl -s http://localhost:3000/info | jq '{name, version, versionInfo}'
+curl -s https://your-railway-app.railway.app/info | jq '{name, version}'
 ```
 
 ## Notes
 
-- **No breaking changes**: Follow semantic versioning principles for API compatibility
-- **Docker tags**: Each deployment creates timestamped Docker images for rollback
-- **Git tags**: All versions are tagged for easy reference and checkout
-- **Automated**: Version calculation is automatic based on calendar date
-- **Team coordination**: Coordinate releases to avoid conflicts within the same month
+- **Git Flow**: Use `develop` for development, `main` for production
+- **Railway deployment**: Automatic deployment on main branch push
+- **No manual Docker**: Railway handles container deployment
+- **Automated versioning**: Version calculation based on calendar date
+- **Branch protection**: Only push to main when ready to deploy
 
 ## Troubleshooting
 
-### Tag Already Exists
-If `pnpm run version:update` reports that a tag already exists:
-- Check current version: `pnpm run version:show`  
-- Verify git tags: `git tag --list | grep $(date +%Y.%m)`
-- The script will skip tag creation but still update package.json
+### Version Update Issues
+If `bun run version:update` has issues:
+- Check current version: `bun run version:show`  
+- Ensure you're on main branch: `git branch --show-current`
+- Make sure working directory is clean: `git status`
 
-### Version Mismatch
-If API shows different version than package.json:
-- Redeploy: `pnpm run deploy:docker`
-- Check container: `docker exec 591-crawler_crawler-api_1 cat /app/package.json | jq .version`
+### Railway Deployment Issues
+If Railway deployment fails:
+- Check Railway dashboard for deployment logs
+- Verify GitHub Actions logs for CI failures
+- Test locally first: `bun test && bun run api`
 
-### Failed Deployment
-If deployment fails:
-- Check logs: `pnpm run docker:logs`
-- Rollback if needed: `pnpm run docker:rollback`
-- Fix issues and re-deploy
+### Branch Sync Issues
+If branches get out of sync:
+```bash
+# Sync develop with main after release
+git checkout develop
+git pull origin develop
+git merge main
+git push origin develop
+```
