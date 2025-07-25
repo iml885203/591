@@ -1,4 +1,4 @@
-name: Deploy to Railway on Tag
+name: CI/CD for Railway Deployment
 
 on:
   push:
@@ -7,31 +7,33 @@ on:
       - '20*'     # 或年份開頭的標籤 (如 2025.07.25)
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         
-      - name: Deploy to Railway
-        run: |
-          echo "Deploying tag: ${{ github.ref_name }}"
-          curl -f "https://backboard.railway.app/graphql" \
-            -H "Authorization: Bearer ${{ secrets.RAILWAY_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "query": "mutation serviceInstanceRedeploy($serviceId: String!, $environmentId: String!) { serviceInstanceRedeploy(serviceId: $serviceId, environmentId: $environmentId) }",
-              "variables": {
-                "serviceId": "${{ secrets.RAILWAY_SERVICE_ID }}",
-                "environmentId": "${{ secrets.RAILWAY_ENVIRONMENT_ID }}"
-              }
-            }'
-
-      - name: Wait for deployment
-        run: sleep 30
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+          
+      - name: Install dependencies
+        run: bun install
         
-      - name: Health check
+      - name: Run tests
+        run: bun test
+        
+      - name: Run linting (if available)
         run: |
-          curl -f https://591-crawler-production.up.railway.app/health || exit 1
-          echo "Deployment successful!"
+          if bun run lint --help > /dev/null 2>&1; then
+            bun run lint
+          else
+            echo "No lint script found, skipping"
+          fi
+          
+      - name: Tag deployment ready
+        run: |
+          echo "✅ All tests passed for tag: ${{ github.ref_name }}"
+          echo "🚀 Railway will automatically deploy after this CI succeeds"
