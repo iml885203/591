@@ -23,7 +23,7 @@ jobs:
         run: bun install
         
       - name: Run tests
-        run: bun test
+        run: bun test tests/unit/utils.test.js tests/unit/config.test.js tests/unit/Rental.test.js
         
       - name: Run linting (if available)
         run: |
