@@ -102,10 +102,11 @@ API_KEY=your-secret-api-key-here
 
 ## 🧪 Testing
 
-- 70%+ coverage with Bun test
+- Native Bun test framework (migrated from Jest)
 - Unit tests: `tests/unit/`  
 - Integration tests: `tests/integration/`
 - Multi-station tests: `tests/integration/multiStationCrawler.test.js`
+- Test helpers: `tests/helpers/`
 - Dev scripts: `dev/`
 
 ## 📁 Project Structure
