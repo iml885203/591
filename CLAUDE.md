@@ -103,11 +103,11 @@ API_KEY=your-secret-api-key-here
 ## 🧪 Testing
 
 - Native Bun test framework (migrated from Jest)
-- Unit tests: `tests/unit/`  
-- Integration tests: `tests/integration/`
-- Multi-station tests: `tests/integration/multiStationCrawler.test.js`
-- Test helpers: `tests/helpers/`
-- Dev scripts: `dev/`
+- **54 tests** across 6 files, all passing ✅
+- Unit tests: `tests/unit/` (storage, config, CLI, utils, Rental)
+- Integration tests: `tests/integration/` (multi-station crawler)
+- Test helpers: `tests/helpers/` (mock utilities)  
+- Local testing: `bun test` (fast execution ~400ms)
 
 ## 🔄 Git Flow 工作流程
 
