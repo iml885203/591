@@ -1,0 +1,229 @@
+// Prisma schema for 591-crawler PostgreSQL database
+// Supports both SQLite (local development) and PostgreSQL (Railway production)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Queries represent unique search criteria (e.g., region + stations + price range)
+model Query {
+  id          String   @id // QueryId string like "region1_kind0_stations4232-4233_price15000,30000"
+  description String   // Human-readable Chinese description
+  url         String   // Original search URL
+  
+  // Parsed query components for efficient querying
+  region      String?  // Region ID (e.g., "1")
+  kind        String?  // Property kind (e.g., "0" for rentals)
+  stations    String?  // Station IDs as comma-separated string (e.g., "4232,4233")
+  metro       String?  // Metro line ID
+  priceMin    Int?     // Minimum price
+  priceMax    Int?     // Maximum price
+  sections    String?  // Section IDs as comma-separated string
+  rooms       String?  // Room counts as comma-separated string
+  floorRange  String?  // Floor range specification
+  
+  // Metadata
+  groupHash   String   // Hash for grouping similar queries
+  isValid     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relationships
+  crawlSessions CrawlSession[]
+  rentals       QueryRental[]
+  
+  @@index([region])
+  @@index([groupHash])
+  @@index([stations])
+  @@index([priceMin, priceMax])
+  @@index([createdAt])
+  @@map("queries")
+}
+
+// Crawl sessions track each execution of the crawler for a specific query
+model CrawlSession {
+  id        String   @id @default(cuid())
+  timestamp DateTime @default(now())
+  
+  // Query relationship
+  queryId   String
+  query     Query    @relation(fields: [queryId], references: [id], onDelete: Cascade)
+  
+  // Crawl metadata
+  url              String    // Original crawl URL (may differ slightly from query URL)
+  maxLatest        Int?      // Max results requested
+  notifyMode       String?   // Notification mode used
+  filteredMode     String?   // Filtered notification sub-mode
+  filterConfig     Json?     // Filter configuration as JSON
+  
+  // Results summary
+  totalRentals     Int       @default(0)
+  newRentals       Int       @default(0)
+  duplicateRentals Int       @default(0)
+  notificationsSent Boolean  @default(false)
+  
+  // Multi-station crawling metadata
+  isMultiStation   Boolean   @default(false)
+  stationsCrawled  String?   // Station IDs crawled in this session (comma-separated)
+  maxConcurrent    Int?      // Concurrency limit used
+  delayBetweenReqs Int?      // Delay between requests in ms
+  enableMerging    Boolean   @default(true)
+  
+  // Migration metadata
+  isMigrated       Boolean   @default(false)
+  originalUrlKey   String?   // Original base64 URL key from JSON storage
+  migrationDate    DateTime?
+  
+  // Error tracking
+  hasErrors        Boolean   @default(false)
+  errorMessage     String?
+  
+  // Relationships
+  rentals          CrawlSessionRental[]
+  
+  @@index([queryId])
+  @@index([timestamp])
+  @@index([isMigrated])
+  @@map("crawl_sessions")
+}
+
+// Rentals represent unique properties with full historical data
+model Rental {
+  id       String   @id @default(cuid())
+  
+  // Core property information
+  propertyId String  @unique // Generated from PropertyId domain model
+  title      String
+  link       String  @unique // 591.com.tw property URL
+  rooms      String
+  
+  // Metro/MRT information
+  metroTitle String? // Primary MRT station name
+  metroValue String? // Primary MRT distance string
+  
+  // Property features
+  tags       String?  // Property tags/features (comma-separated)
+  imgUrls    String?  // Image URLs (comma-separated)
+  
+  // Pricing and location (extracted from listings)
+  price      Int?     // Monthly rent in TWD
+  deposit    Int?     // Security deposit
+  area       Float?   // Property area in ping
+  floor      String?  // Floor information
+  address    String?  // Property address
+  
+  // Metadata
+  firstSeen  DateTime @default(now())
+  lastSeen   DateTime @default(now())
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  // Relationships
+  metroDistances MetroDistance[]
+  queryRentals   QueryRental[]
+  crawlSessions  CrawlSessionRental[]
+  
+  @@index([propertyId])
+  @@index([link])
+  @@index([firstSeen])
+  @@index([lastSeen])
+  @@index([price])
+  @@index([isActive])
+  @@map("rentals")
+}
+
+// Metro distances for properties (supports multiple MRT stations per property)
+model MetroDistance {
+  id       String @id @default(cuid())
+  
+  // Rental relationship
+  rentalId String
+  rental   Rental @relation(fields: [rentalId], references: [id], onDelete: Cascade)
+  
+  // Station information
+  stationId   String? // MRT station ID (if available)
+  stationName String  // MRT station name
+  distance    Int?    // Distance in meters
+  metroValue  String  // Original metro value string from 591
+  
+  // Metadata
+  createdAt DateTime @default(now())
+  
+  @@unique([rentalId, stationId, stationName])
+  @@index([stationId])
+  @@index([distance])
+  @@map("metro_distances")
+}
+
+// Junction table linking queries to rentals (many-to-many)
+model QueryRental {
+  queryId  String
+  rentalId String
+  
+  query   Query  @relation(fields: [queryId], references: [id], onDelete: Cascade)
+  rental  Rental @relation(fields: [rentalId], references: [id], onDelete: Cascade)
+  
+  // First time this rental appeared for this query
+  firstAppeared DateTime @default(now())
+  lastAppeared  DateTime @default(now())
+  
+  // Notification tracking
+  wasNotified   Boolean @default(false)
+  notifiedAt    DateTime?
+  
+  @@id([queryId, rentalId])
+  @@index([firstAppeared])
+  @@map("query_rentals")
+}
+
+// Junction table for crawl session results
+model CrawlSessionRental {
+  sessionId String
+  rentalId  String
+  
+  session CrawlSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  rental  Rental       @relation(fields: [rentalId], references: [id], onDelete: Cascade)
+  
+  // Rental state during this crawl
+  wasNew        Boolean @default(false)
+  wasNotified   Boolean @default(false)
+  notifyMode    String?
+  silentNotify  Boolean @default(false)
+  
+  @@id([sessionId, rentalId])
+  @@map("crawl_session_rentals")
+}
+
+// Statistics and analytics (optional - can be computed on-demand)
+model QueryStatistics {
+  queryId String @id
+  
+  // Computed statistics
+  totalCrawls        Int @default(0)
+  totalRentals       Int @default(0)
+  uniqueRentals      Int @default(0)
+  avgRentalsPerCrawl Float @default(0)
+  maxRentalsInCrawl  Int @default(0)
+  
+  // Price analytics
+  avgPrice       Float?
+  medianPrice    Float?
+  minPrice       Int?
+  maxPrice       Int?
+  priceRanges    Json? // Price distribution data
+  
+  // Activity metrics
+  lastCrawl      DateTime?
+  crawlFrequency Float @default(0) // Crawls per day
+  
+  // Update tracking
+  lastUpdated    DateTime @default(now())
+  
+  @@map("query_statistics")
+}

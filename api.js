@@ -12,6 +12,10 @@ const { specs } = require('./lib/swagger');
 const { crawlWithNotifications } = require('./lib/crawlService');
 const { hasMultipleStations, getUrlStationInfo } = require('./lib/multiStationCrawler');
 const { logWithTimestamp } = require('./lib/utils');
+const QueryStorage = require('./lib/storage/queryStorage');
+const QueryId = require('./lib/domain/QueryId');
+const SearchUrl = require('./lib/domain/SearchUrl');
+const UrlNormalizer = require('./lib/domain/UrlNormalizer');
 
 const app = express();
 const PORT = process.env.PORT || process.env.API_PORT || 3000;
@@ -280,6 +284,488 @@ app.post('/crawl', authenticateApiKey, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /query/parse:
+ *   post:
+ *     summary: Parse URL to generate query ID and description
+ *     description: |
+ *       Analyzes a 591.com.tw URL to generate a deterministic query ID and human-readable description.
+ *       This endpoint helps identify and group search queries that represent the same criteria.
+ *     tags: [Query]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               url:
+ *                 type: string
+ *                 description: 591.com.tw search URL to parse
+ *                 example: "https://rent.591.com.tw/list?region=1&kind=0&station=4232,4233&rentprice=15000,30000"
+ *             required:
+ *               - url
+ *     responses:
+ *       200:
+ *         description: URL parsed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     queryId:
+ *                       type: string
+ *                       example: "region1_kind0_stations4232-4233_price15000,30000"
+ *                     description:
+ *                       type: string
+ *                       example: "台北市 近2個捷運站 15,000-30,000元"
+ *                     normalizedUrl:
+ *                       type: string
+ *                     equivalentUrls:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *     security:
+ *       - ApiKeyAuth: []
+ */
+app.post('/query/parse', authenticateApiKey, async (req, res) => {
+  try {
+    const { url } = req.body;
+
+    if (!url) {
+      return res.status(400).json({
+        success: false,
+        error: 'URL is required',
+        message: 'Please provide a 591.com.tw search URL'
+      });
+    }
+
+    const searchUrl = new SearchUrl(url);
+    
+    if (!searchUrl.isValid) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid URL',
+        message: 'URL must be a valid 591.com.tw search URL'
+      });
+    }
+
+    const queryId = searchUrl.getQueryId();
+    const description = searchUrl.getQueryDescription();
+    const normalized = UrlNormalizer.normalize(url);
+    const equivalentUrls = UrlNormalizer.getEquivalentVariations(url);
+
+    res.json({
+      success: true,
+      data: {
+        queryId,
+        description,
+        originalUrl: url,
+        normalizedUrl: normalized.originalUrl,
+        equivalentUrls,
+        searchCriteria: {
+          region: searchUrl.getRegion(),
+          stations: searchUrl.getStationIds(),
+          metro: searchUrl.getMetro(),
+          hasMultipleStations: searchUrl.hasMultipleStations(),
+          params: searchUrl.getParams()
+        }
+      }
+    });
+
+  } catch (error) {
+    logWithTimestamp(`Query parse error: ${error.message}`, 'ERROR');
+    
+    res.status(500).json({
+      success: false,
+      error: 'Parse failed',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /query/{queryId}/rentals:
+ *   get:
+ *     summary: Get historical rentals for a specific query
+ *     description: |
+ *       Retrieves all historical rental data found for a specific search query.
+ *       Results include rental properties discovered across multiple crawl sessions.
+ *     tags: [Query]
+ *     parameters:
+ *       - in: path
+ *         name: queryId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Query ID to retrieve rentals for
+ *         example: "region1_kind0_stations4232-4233_price15000,30000"
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 100
+ *         description: Maximum number of rentals to return
+ *       - in: query
+ *         name: sinceDate
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: Only include crawls since this date
+ *     responses:
+ *       200:
+ *         description: Rentals retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     queryId:
+ *                       type: string
+ *                     description:
+ *                       type: string
+ *                     totalCrawls:
+ *                       type: integer
+ *                     totalRentals:
+ *                       type: integer
+ *                     uniqueRentals:
+ *                       type: integer
+ *                     firstCrawl:
+ *                       type: string
+ *                       format: date-time
+ *                     lastCrawl:
+ *                       type: string
+ *                       format: date-time
+ *                     rentals:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *       404:
+ *         description: Query not found
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *     security:
+ *       - ApiKeyAuth: []
+ */
+app.get('/query/:queryId/rentals', authenticateApiKey, async (req, res) => {
+  try {
+    const { queryId } = req.params;
+    const { limit, sinceDate } = req.query;
+
+    const queryStorage = new QueryStorage();
+    const queryData = await queryStorage.getQueryRentals(queryId, {
+      limit: limit ? parseInt(limit) : undefined,
+      sinceDate
+    });
+
+    if (!queryData) {
+      return res.status(404).json({
+        success: false,
+        error: 'Query not found',
+        message: `No data found for query ID: ${queryId}`
+      });
+    }
+
+    res.json({
+      success: true,
+      data: queryData
+    });
+
+  } catch (error) {
+    logWithTimestamp(`Query rentals error: ${error.message}`, 'ERROR');
+    
+    res.status(500).json({
+      success: false,
+      error: 'Query failed',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /queries:
+ *   get:
+ *     summary: List all stored queries
+ *     description: |
+ *       Returns a list of all stored search queries with summary information.
+ *       Supports filtering by region, date range, and other criteria.
+ *     tags: [Query]
+ *     parameters:
+ *       - in: query
+ *         name: region
+ *         schema:
+ *           type: string
+ *         description: Filter by region ID
+ *       - in: query
+ *         name: sinceDate
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: Only include queries crawled since this date
+ *       - in: query
+ *         name: hasRentals
+ *         schema:
+ *           type: boolean
+ *         description: Only include queries that have found rentals
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 50
+ *         description: Maximum number of queries to return
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Number of queries to skip for pagination
+ *     responses:
+ *       200:
+ *         description: Queries retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     queries:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           queryId:
+ *                             type: string
+ *                           description:
+ *                             type: string
+ *                           region:
+ *                             type: string
+ *                           stations:
+ *                             type: array
+ *                             items:
+ *                               type: string
+ *                           totalCrawls:
+ *                             type: integer
+ *                           totalRentals:
+ *                             type: integer
+ *                           uniqueRentals:
+ *                             type: integer
+ *                           firstCrawl:
+ *                             type: string
+ *                             format: date-time
+ *                           lastCrawl:
+ *                             type: string
+ *                             format: date-time
+ *                     total:
+ *                       type: integer
+ *                     offset:
+ *                       type: integer
+ *                     limit:
+ *                       type: integer
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *     security:
+ *       - ApiKeyAuth: []
+ */
+app.get('/queries', authenticateApiKey, async (req, res) => {
+  try {
+    const { region, sinceDate, hasRentals, limit, offset } = req.query;
+    
+    const queryStorage = new QueryStorage();
+    const result = await queryStorage.listQueries({
+      region,
+      sinceDate,
+      hasRentals: hasRentals === 'true',
+      limit: limit ? parseInt(limit) : undefined,
+      offset: offset ? parseInt(offset) : undefined
+    });
+
+    res.json({
+      success: true,
+      data: result
+    });
+
+  } catch (error) {
+    logWithTimestamp(`Queries list error: ${error.message}`, 'ERROR');
+    
+    res.status(500).json({
+      success: false,
+      error: 'Query failed',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /query/{queryId}/similar:
+ *   get:
+ *     summary: Find similar queries
+ *     description: |
+ *       Finds queries with similar search criteria to the specified query.
+ *       Useful for discovering related searches and grouping similar queries.
+ *     tags: [Query]
+ *     parameters:
+ *       - in: path
+ *         name: queryId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Query ID to find similar queries for
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Maximum number of similar queries to return
+ *     responses:
+ *       200:
+ *         description: Similar queries found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       queryId:
+ *                         type: string
+ *                       description:
+ *                         type: string
+ *                       similarity:
+ *                         type: number
+ *                         description: Similarity score (0-100)
+ *                       totalRentals:
+ *                         type: integer
+ *                       lastCrawl:
+ *                         type: string
+ *                         format: date-time
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *     security:
+ *       - ApiKeyAuth: []
+ */
+app.get('/query/:queryId/similar', authenticateApiKey, async (req, res) => {
+  try {
+    const { queryId } = req.params;
+    const { limit } = req.query;
+
+    const queryStorage = new QueryStorage();
+    const similarQueries = await queryStorage.findSimilarQueries(queryId, {
+      limit: limit ? parseInt(limit) : undefined
+    });
+
+    res.json({
+      success: true,
+      data: similarQueries
+    });
+
+  } catch (error) {
+    logWithTimestamp(`Similar queries error: ${error.message}`, 'ERROR');
+    
+    res.status(500).json({
+      success: false,
+      error: 'Query failed',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /query/statistics:
+ *   get:
+ *     summary: Get query storage statistics
+ *     description: |
+ *       Returns overall statistics about stored queries, including totals,
+ *       regional breakdown, and crawl frequency metrics.
+ *     tags: [Query]
+ *     responses:
+ *       200:
+ *         description: Statistics retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     totalQueries:
+ *                       type: integer
+ *                     totalCrawls:
+ *                       type: integer
+ *                     totalRentals:
+ *                       type: integer
+ *                     lastUpdate:
+ *                       type: string
+ *                       format: date-time
+ *                     regionBreakdown:
+ *                       type: object
+ *                       additionalProperties:
+ *                         type: integer
+ *                     crawlFrequency:
+ *                       type: object
+ *                       properties:
+ *                         today:
+ *                           type: integer
+ *                         thisWeek:
+ *                           type: integer
+ *                         thisMonth:
+ *                           type: integer
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *     security:
+ *       - ApiKeyAuth: []
+ */
+app.get('/query/statistics', authenticateApiKey, async (req, res) => {
+  try {
+    const queryStorage = new QueryStorage();
+    const statistics = await queryStorage.getStatistics();
+
+    res.json({
+      success: true,
+      data: statistics
+    });
+
+  } catch (error) {
+    logWithTimestamp(`Query statistics error: ${error.message}`, 'ERROR');
+    
+    res.status(500).json({
+      success: false,
+      error: 'Query failed',
+      message: error.message
+    });
+  }
+});
+
 
 /**
  * @swagger
@@ -319,7 +805,16 @@ app.use('*', (req, res) => {
     success: false,
     error: 'Endpoint not found',
     message: `Route ${req.method} ${req.originalUrl} not found`,
-    availableEndpoints: ['/health', '/crawl', '/swagger']
+    availableEndpoints: [
+      '/health', 
+      '/crawl', 
+      '/swagger',
+      '/query/parse',
+      '/queries',
+      '/query/{queryId}/rentals',
+      '/query/{queryId}/similar',
+      '/query/statistics'
+    ]
   });
 });
 

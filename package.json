@@ -26,7 +26,18 @@
     "docker:status": "docker-compose ps",
     "docker:rollback": "bash scripts/rollback.sh",
     "version:update": "bun scripts/update-version.js",
-    "version:show": "bun -p \"require('./package.json').version\""
+    "version:show": "bun -p \"require('./package.json').version\"",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio",
+    "db:setup": "bun run scripts/setup-database.js setup",
+    "db:status": "bun run scripts/setup-database.js status",
+    "db:test": "bun run scripts/setup-database.js test",
+    "db:reset": "bun run scripts/setup-database.js reset",
+    "migrate:json-to-db": "bun run scripts/migrate-to-database.js migrate",
+    "migrate:verify": "bun run scripts/migrate-to-database.js verify"
   },
   "keywords": [
     "591",
@@ -54,6 +65,7 @@
     "bun": ">=1.0.0"
   },
   "dependencies": {
+    "@prisma/client": "^6.12.0",
     "axios": "^1.10.0",
     "cheerio": "^1.1.2",
     "dotenv": "^17.2.0",
@@ -65,6 +77,7 @@
   "devDependencies": {
     "jsdom": "^26.1.0",
     "nock": "^14.0.6",
+    "prisma": "^6.12.0",
     "supertest": "^7.1.3"
   }
 }

@@ -1,7 +1,8 @@
 [build]
-builder = "dockerfile" 
+buildCommand = "bun install && bun run db:generate"
 
 [deploy]
-startCommand = "bun run api"
+startCommand = "bun run db:push && bun start"
 healthcheckPath = "/health"
+healthcheckTimeout = 300
 restartPolicyType = "on_failure"
