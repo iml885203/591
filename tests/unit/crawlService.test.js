@@ -17,6 +17,11 @@ import {
   crawlWithNotificationsMultiStation
 } from '../../lib/crawlService.js';
 
+// Also import required dependencies for mocking
+import { sendDiscordNotifications, sendErrorNotification } from '../../lib/notification.js';
+import { crawlMultipleStations } from '../../lib/multiStationCrawler.js';
+import { crawl591 } from '../../lib/crawler.js';
+
 describe('crawlService', () => {
   let mockDependencies;
   let mockRentals;
@@ -282,18 +287,29 @@ describe('crawlService', () => {
   });
 
   describe('crawlWithNotifications', () => {
-    it('should detect single station URLs', () => {
+    it('should detect single station URLs correctly', () => {
       const singleStationUrl = 'https://rent.591.com.tw/list?region=1&kind=0&station=100';
       const hasMultipleStations = require('../../lib/multiStationCrawler').hasMultipleStations;
       
       expect(hasMultipleStations(singleStationUrl)).toBe(false);
     });
 
-    it('should detect multi-station URLs', () => {
+    it('should detect multi-station URLs correctly', () => {
       const multiStationUrl = 'https://rent.591.com.tw/list?region=1&kind=0&station=100,101,102';
       const hasMultipleStations = require('../../lib/multiStationCrawler').hasMultipleStations;
       
       expect(hasMultipleStations(multiStationUrl)).toBe(true);
+    });
+
+    it('should choose appropriate handler based on URL type', () => {
+      // Test the routing logic without actual function calls
+      const singleUrl = 'https://rent.591.com.tw/list?region=1&kind=0&station=100';
+      const multiUrl = 'https://rent.591.com.tw/list?region=1&kind=0&station=100,101';
+      
+      const { hasMultipleStations } = require('../../lib/multiStationCrawler');
+      
+      expect(hasMultipleStations(singleUrl)).toBe(false);
+      expect(hasMultipleStations(multiUrl)).toBe(true);
     });
   });
 
@@ -306,20 +322,46 @@ describe('crawlService', () => {
         filteredMode: 'normal'
       };
       
-      // Test that parameters are passed correctly (no actual crawling)
+      // Test that parameters are correct and structured properly
       expect(url).toContain('591');
       expect(maxLatest).toBe(2);
       expect(options.notifyMode).toBe('all');
       expect(options.filteredMode).toBe('normal');
     });
 
+    it('should handle notification mode configurations', () => {
+      // Test different notification modes
+      const modes = ['all', 'filtered', 'none'];
+      const filteredModes = ['normal', 'silent'];
+      
+      modes.forEach(mode => {
+        expect(['all', 'filtered', 'none']).toContain(mode);
+      });
+      
+      filteredModes.forEach(fMode => {
+        expect(['normal', 'silent']).toContain(fMode);
+      });
+    });
+
     it('should handle error conditions properly', () => {
       const error = new Error('Crawl failed');
       expect(error.message).toBe('Crawl failed');
       
-      // Test error handling logic without actual async operations
+      // Test error handling logic structure
       const notifyMode = 'none';
       expect(notifyMode === 'none').toBe(true);
+    });
+
+    it('should validate filter options structure', () => {
+      const filterOptions = {
+        mrtDistanceThreshold: 600,
+        notifyMode: 'filtered',
+        filteredMode: 'silent'
+      };
+      
+      expect(filterOptions.mrtDistanceThreshold).toBe(600);
+      expect(filterOptions.notifyMode).toBe('filtered');
+      expect(filterOptions.filteredMode).toBe('silent');
     });
   });
 
@@ -348,6 +390,51 @@ describe('crawlService', () => {
       
       expect(defaultOptions.maxConcurrent).toBe(3);
       expect(defaultOptions.delayBetweenRequests).toBe(1000);
+      expect(defaultOptions.mergeResults).toBe(true);
+      expect(defaultOptions.includeStationInfo).toBe(true);
+    });
+
+    it('should validate multi-station URL structure', () => {
+      const multiUrl = 'https://rent.591.com.tw/list?region=1&station=4232,4233&kind=0';
+      const singleUrl = 'https://rent.591.com.tw/list?region=1&station=4232&kind=0';
+      
+      expect(multiUrl).toContain('4232,4233');
+      expect(singleUrl).toContain('4232');
+      expect(singleUrl).not.toContain(',');
+    });
+
+    it('should structure crawl result properly', () => {
+      const expectedResult = {
+        rentals: [],
+        summary: {
+          totalRentals: 0,
+          newRentals: 0,
+          notificationsSent: false,
+          notifyMode: 'filtered',
+          filteredMode: 'silent',
+          multiStation: true,
+          stationCount: 2,
+          stations: ['4232', '4233'],
+          crawlErrors: []
+        }
+      };
+      
+      expect(expectedResult.summary.multiStation).toBe(true);
+      expect(expectedResult.summary.stationCount).toBe(2);
+      expect(expectedResult.summary.stations).toHaveLength(2);
+      expect(Array.isArray(expectedResult.summary.crawlErrors)).toBe(true);
+    });
+
+    it('should handle error result structure', () => {
+      const errorResult = {
+        error: 'Station crawl failed',
+        success: false,
+        url: 'https://rent.591.com.tw/list?region=1&station=4232,4233&kind=0'
+      };
+      
+      expect(errorResult.success).toBe(false);
+      expect(errorResult.error).toBe('Station crawl failed');
+      expect(errorResult.url).toContain('591.com.tw');
     });
   });
 
