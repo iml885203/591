@@ -68,21 +68,14 @@ function main() {
     // Update package.json
     updatePackageJson(newVersion);
     
-    // Stage the change
-    execSync('git add package.json', { stdio: 'inherit' });
-    
-    // Create git tag
-    const tagCreated = createGitTag(newVersion);
-    
     console.log(`✅ Version updated to ${newVersion}`);
-    console.log(`📝 Next steps:`);
-    console.log(`   1. Review changes: git diff --cached`);
-    console.log(`   2. Commit: git commit -m "bump: Release version ${newVersion}"`);
-    if (tagCreated) {
-      console.log(`   3. Push with tags: git push && git push --tags`);
-    } else {
-      console.log(`   3. Push: git push`);
-    }
+    console.log(`📝 Next steps for release:`);
+    console.log(`   1. git add package.json`);
+    console.log(`   2. git commit -m "chore: bump version to ${newVersion}"`);
+    console.log(`   3. git push origin main  # This will trigger deployment`);
+    console.log(``)
+    console.log(`💡 Or use the quick release command:`);
+    console.log(`   git add package.json && git commit -m "chore: bump version to ${newVersion}" && git push origin main`);
     
   } catch (error) {
     console.error('❌ Error updating version:', error.message);

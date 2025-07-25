@@ -2,9 +2,11 @@ name: CI/CD for Railway Deployment
 
 on:
   push:
-    tags:
-      - 'v*'      # 只有 v 開頭的標籤才觸發
-      - '20*'     # 或年份開頭的標籤 (如 2025.07.25)
+    branches:
+      - main      # 只有推送到 main 分支才觸發部署
+  pull_request:
+    branches:
+      - main      # PR 到 main 分支時也運行 CI 檢查
 
 jobs:
   test:
@@ -33,7 +35,7 @@ jobs:
             echo "No lint script found, skipping"
           fi
           
-      - name: Tag deployment ready
+      - name: Deployment ready
         run: |
-          echo "✅ All tests passed for tag: ${{ github.ref_name }}"
+          echo "✅ All tests passed for branch: ${{ github.ref_name }}"
           echo "🚀 Railway will automatically deploy after this CI succeeds"

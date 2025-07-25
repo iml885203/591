@@ -109,6 +109,43 @@ API_KEY=your-secret-api-key-here
 - Test helpers: `tests/helpers/`
 - Dev scripts: `dev/`
 
+## 🔄 Git Flow 工作流程
+
+**分支策略：**
+- `main` - Production 分支，連結 Railway 自動部署
+- `develop` - 開發分支，日常開發使用
+
+**開發流程：**
+```bash
+# 1. 切換到 develop 分支進行開發
+git checkout develop
+git pull origin develop
+
+# 2. 建立功能分支（可選）
+git checkout -b feature/new-feature
+
+# 3. 開發完成後推送到 develop
+git checkout develop
+git merge feature/new-feature
+git push origin develop
+
+# 4. 準備發布時 merge 到 main
+git checkout main
+git pull origin main
+git merge develop
+
+# 5. 更新版號並推送（觸發部署）
+bun run version:update
+git add package.json
+git commit -m "chore: bump version to $(cat package.json | grep version | cut -d'"' -f4)"
+git push origin main
+```
+
+**CI/CD 觸發條件：**
+- 推送到 `main` 分支：觸發 CI + Railway 部署
+- PR 到 `main` 分支：僅觸發 CI 檢查
+- `develop` 分支：不觸發 CI，本地測試即可
+
 ## 📁 Project Structure
 
 ```
