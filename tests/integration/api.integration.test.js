@@ -14,8 +14,12 @@ jest.mock('../../lib/crawlService', () => ({
 const { crawlWithNotifications } = require('../../lib/crawlService');
 
 describe('API Integration Tests', () => {
+  const TEST_API_KEY = 'test-api-key';
+  
   beforeEach(() => {
     jest.clearAllMocks();
+    // Set test API key for authentication
+    process.env.API_KEY = TEST_API_KEY;
   });
 
   describe('GET /health', () => {
@@ -25,7 +29,7 @@ describe('API Integration Tests', () => {
         .expect(200);
 
       expect(response.body).toMatchObject({
-        status: 'ok',
+        status: 'healthy',
         service: '591-crawler-api'
       });
       expect(response.body.timestamp).toBeDefined();
@@ -55,6 +59,7 @@ describe('API Integration Tests', () => {
     it('should require URL parameter', async () => {
       const response = await request(app)
         .post('/crawl')
+        .set('x-api-key', TEST_API_KEY)
         .send({})
         .expect(400);
 
@@ -67,6 +72,7 @@ describe('API Integration Tests', () => {
     it('should validate 591.com.tw URL', async () => {
       const response = await request(app)
         .post('/crawl')
+        .set('x-api-key', TEST_API_KEY)
         .send({ url: 'https://invalid-site.com' })
         .expect(400);
 
@@ -82,6 +88,7 @@ describe('API Integration Tests', () => {
 
       const response = await request(app)
         .post('/crawl')
+        .set('x-api-key', TEST_API_KEY)
         .send({
           url: 'https://rent.591.com.tw/list?region=1&kind=0'
         })
@@ -102,7 +109,12 @@ describe('API Integration Tests', () => {
       expect(crawlWithNotifications).toHaveBeenCalledWith(
         'https://rent.591.com.tw/list?region=1&kind=0',
         undefined,
-        { notifyMode: 'filtered', filteredMode: 'silent' }
+        { 
+          notifyMode: 'filtered', 
+          filteredMode: 'silent',
+          filter: undefined,
+          multiStationOptions: {}
+        }
       );
     });
 
@@ -118,6 +130,7 @@ describe('API Integration Tests', () => {
 
       const response = await request(app)
         .post('/crawl')
+        .set('x-api-key', TEST_API_KEY)
         .send({
           url: 'https://rent.591.com.tw/list?region=1&kind=0',
           notifyMode: 'all',
@@ -132,7 +145,12 @@ describe('API Integration Tests', () => {
       expect(crawlWithNotifications).toHaveBeenCalledWith(
         'https://rent.591.com.tw/list?region=1&kind=0',
         5,
-        { notifyMode: 'all', filteredMode: 'normal' }
+        { 
+          notifyMode: 'all', 
+          filteredMode: 'normal',
+          filter: undefined,
+          multiStationOptions: {}
+        }
       );
     });
 
@@ -141,6 +159,7 @@ describe('API Integration Tests', () => {
 
       const response = await request(app)
         .post('/crawl')
+        .set('x-api-key', TEST_API_KEY)
         .send({
           url: 'https://rent.591.com.tw/list?region=1&kind=0'
         })
@@ -158,6 +177,7 @@ describe('API Integration Tests', () => {
 
       const response = await request(app)
         .post('/crawl')
+        .set('x-api-key', TEST_API_KEY)
         .send({
           url: 'https://rent.591.com.tw/list?region=1&kind=0'
         })
@@ -201,6 +221,7 @@ describe('API Integration Tests', () => {
 
       const response = await request(app)
         .post('/crawl')
+        .set('x-api-key', TEST_API_KEY)
         .send({ url: 'https://rent.591.com.tw/list?region=1&kind=0' })
         .expect(500);
 
