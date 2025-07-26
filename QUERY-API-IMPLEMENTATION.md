@@ -59,9 +59,9 @@ queryId.getPriceRange()  // {min: 15000, max: 30000, raw: "15000,30000"}
 queryId.isSimilarTo(otherQueryId) // boolean
 ```
 
-### 5. Query-Based Storage System
-- **File**: `/home/logan/591-crawler/lib/storage/queryStorage.js`
-- **Purpose**: Organize crawl data by query IDs for historical tracking
+### 5. PostgreSQL Database Storage System
+- **File**: `/home/logan/591-crawler/lib/storage/DatabaseStorage.js`
+- **Purpose**: Organize crawl data by query IDs for historical tracking using PostgreSQL
 - **Storage Structure**:
   ```
   data/

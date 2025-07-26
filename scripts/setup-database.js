@@ -2,7 +2,7 @@
 
 /**
  * Database Setup Script
- * Handles initial database setup for both SQLite (local) and PostgreSQL (Railway)
+ * Handles initial database setup for PostgreSQL
  */
 
 const fs = require('fs-extra');
@@ -27,10 +27,7 @@ class DatabaseSetup {
       validateDatabaseConfig(this.config);
       logWithTimestamp(`Database provider: ${this.config.provider}`);
       
-      // Ensure data directory exists for SQLite
-      if (this.config.provider === 'sqlite') {
-        await this.ensureDataDirectory();
-      }
+      // PostgreSQL setup only
       
       // Generate Prisma schema if needed
       await this.generatePrismaSchema();
@@ -52,18 +49,6 @@ class DatabaseSetup {
     }
   }
 
-  /**
-   * Ensure data directory exists for SQLite
-   */
-  async ensureDataDirectory() {
-    if (this.config.provider === 'sqlite') {
-      const dbPath = this.config.url.replace('file:', '');
-      const dataDir = path.dirname(dbPath);
-      
-      await fs.ensureDir(dataDir);
-      logWithTimestamp(`Data directory created: ${dataDir}`);
-    }
-  }
 
   /**
    * Generate Prisma schema with correct database configuration
@@ -116,15 +101,9 @@ class DatabaseSetup {
     logWithTimestamp('Pushing schema to database...');
     
     try {
-      if (this.config.provider === 'sqlite') {
-        // For SQLite, use db push which creates tables directly
-        await this.runCommand('bunx', ['prisma', 'db', 'push']);
-        logWithTimestamp('Schema pushed to SQLite database');
-      } else {
-        // For PostgreSQL on Railway, use migration deploy
-        await this.runCommand('bunx', ['prisma', 'migrate', 'deploy']);
-        logWithTimestamp('Migrations deployed to PostgreSQL database');
-      }
+      // For PostgreSQL, use migration deploy
+      await this.runCommand('bunx', ['prisma', 'migrate', 'deploy']);
+      logWithTimestamp('Migrations deployed to PostgreSQL database');
     } catch (error) {
       logWithTimestamp('Failed to push schema to database', 'ERROR');
       throw error;
@@ -236,10 +215,7 @@ class DatabaseSetup {
     logWithTimestamp(`- Provider: ${this.config.provider}`);
     logWithTimestamp(`- URL: ${this.config.url.replace(/\/\/[^:]+:[^@]+@/, '//***:***@')}`); // Hide credentials
     logWithTimestamp(`- Environment: ${process.env.NODE_ENV || 'development'}`);
-    
-    if (this.config.provider === 'postgresql') {
-      logWithTimestamp(`- SSL: ${this.config.ssl ? 'enabled' : 'disabled'}`);
-    }
+    logWithTimestamp(`- SSL: ${this.config.ssl ? 'enabled' : 'disabled'}`);
     
     try {
       const { PrismaClient } = require('@prisma/client');

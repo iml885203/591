@@ -155,8 +155,7 @@ class ExecutionLock {
 ### 9. 資料庫層 (Database Layer)
 ```javascript
 // lib/database.js - 新增檔案
-- SQLite 本地資料庫 (初期)
-- 支援後續升級至 PostgreSQL
+- PostgreSQL 資料庫
 ```
 
 **資料表結構:**
@@ -311,7 +310,7 @@ CREATE TABLE property_snapshots (
 │   └── middleware/         # Express 中介軟體
 ├── management-api.js        # 新增 - 管理 API 伺服器
 ├── data/
-│   └── management.db       # 新增 - SQLite 資料庫
+│   └── postgresql/         # PostgreSQL 資料
 ├── planning/              # 計畫文件
 │   └── features/
 │       └── crawler-management-system-plan.md
@@ -564,7 +563,7 @@ async function recoverSystemState() {
 
 ## 技術棧
 
-- **後端**: Node.js, Express.js, SQLite (可升級至 PostgreSQL)
+- **後端**: Node.js, Express.js, PostgreSQL
 - **前端**: HTML5, CSS3, JavaScript (Vanilla 或 Vue.js)
 - **排程**: node-cron
 - **即時通訊**: WebSocket 或 Server-Sent Events

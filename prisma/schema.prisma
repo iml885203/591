@@ -1,5 +1,4 @@
 // Prisma schema for 591-crawler PostgreSQL database
-// Supports both SQLite (local development) and PostgreSQL (Railway production)
 
 generator client {
   provider = "prisma-client-js"

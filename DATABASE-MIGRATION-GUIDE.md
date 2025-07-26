@@ -33,17 +33,7 @@ The 591-crawler is migrating from JSON file storage to a PostgreSQL database usi
 
 ## Environment Setup
 
-### Local Development (SQLite)
-
-```bash
-# Copy environment template
-cp .env.example .env
-
-# Edit .env file
-DATABASE_PROVIDER=sqlite
-DATABASE_URL="file:./data/crawler.db"
-NODE_ENV=development
-```
+### Environment Configuration
 
 ### Railway Production (PostgreSQL)
 
@@ -71,19 +61,7 @@ bun run db:generate
 
 ### 2. Database Setup
 
-For local development:
-```bash
-# Setup SQLite database
-bun run db:setup
-
-# Check database status
-bun run db:status
-
-# Test connection
-bun run db:test
-```
-
-For Railway deployment:
+For database setup:
 ```bash
 # Deploy migrations to Railway PostgreSQL
 bun run db:migrate:deploy
@@ -95,7 +73,7 @@ bun run db:test
 ### 3. Schema Management
 
 ```bash
-# Push schema changes (SQLite)
+# Push schema changes
 bun run db:push
 
 # Create and apply migrations (PostgreSQL)
@@ -218,10 +196,10 @@ CREATE INDEX rentals_last_seen_idx ON rentals(last_seen);
 
 ## Local Development Workflow
 
-### SQLite Setup
+### Database Setup
 
 ```bash
-# Initialize local database
+# Initialize database
 bun run db:setup
 
 # Run migrations if needed
@@ -234,7 +212,7 @@ bun run api
 ### Testing with Local Data
 
 ```bash
-# Migrate existing JSON data to SQLite
+# Migrate existing JSON data
 bun run migrate:json-to-db
 
 # Test crawler with database storage

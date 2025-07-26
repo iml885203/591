@@ -1,0 +1,1 @@
+run `timeout 5 railway logs`

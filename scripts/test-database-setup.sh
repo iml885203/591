@@ -7,49 +7,37 @@ set -e
 
 echo "🗄️  Setting up database integration test environment..."
 
-# Check if we should use PostgreSQL or SQLite
-if [ "$USE_POSTGRESQL" = "true" ]; then
-    echo "📊 Setting up PostgreSQL test environment..."
+# Setup PostgreSQL test environment
+echo "📊 Setting up PostgreSQL test environment..."
+
+# Start PostgreSQL container if not running
+CONTAINER_NAME="postgres-test-591"
+
+if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+    echo "🚀 Starting PostgreSQL test container..."
+    docker run -d \
+        --name $CONTAINER_NAME \
+        -e POSTGRES_USER=test_user \
+        -e POSTGRES_PASSWORD=test_password \
+        -e POSTGRES_DB=test_crawler \
+        -p 5433:5432 \
+        postgres:15-alpine
     
-    # Start PostgreSQL container if not running
-    CONTAINER_NAME="postgres-test-591"
+    echo "⏳ Waiting for PostgreSQL to be ready..."
+    sleep 5
     
-    if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-        echo "🚀 Starting PostgreSQL test container..."
-        docker run -d \
-            --name $CONTAINER_NAME \
-            -e POSTGRES_USER=test_user \
-            -e POSTGRES_PASSWORD=test_password \
-            -e POSTGRES_DB=test_crawler \
-            -p 5433:5432 \
-            postgres:15-alpine
-        
-        echo "⏳ Waiting for PostgreSQL to be ready..."
-        sleep 5
-        
-        # Wait for PostgreSQL to be ready
-        until docker exec $CONTAINER_NAME pg_isready -U test_user -d test_crawler; do
-            echo "Waiting for PostgreSQL..."
-            sleep 2
-        done
-    else
-        echo "✅ PostgreSQL container already running"
-    fi
-    
-    # Set environment variables for PostgreSQL
-    export DATABASE_URL="postgresql://test_user:test_password@localhost:5433/test_crawler"
-    export DATABASE_PROVIDER="postgresql"
-    
+    # Wait for PostgreSQL to be ready
+    until docker exec $CONTAINER_NAME pg_isready -U test_user -d test_crawler; do
+        echo "Waiting for PostgreSQL..."
+        sleep 2
+    done
 else
-    echo "📊 Setting up SQLite test environment..."
-    
-    # Set environment variables for SQLite
-    export DATABASE_URL="file:./data/test-crawler.db"
-    export DATABASE_PROVIDER="sqlite"
-    
-    # Create data directory
-    mkdir -p data
+    echo "✅ PostgreSQL container already running"
 fi
+
+# Set environment variables for PostgreSQL
+export DATABASE_URL="postgresql://test_user:test_password@localhost:5433/test_crawler"
+export DATABASE_PROVIDER="postgresql"
 
 echo "🔧 Environment variables:"
 echo "  DATABASE_PROVIDER: $DATABASE_PROVIDER"

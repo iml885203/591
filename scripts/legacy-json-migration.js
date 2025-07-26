@@ -1,23 +1,24 @@
 #!/usr/bin/env bun
 
 /**
- * Database Migration Script
+ * LEGACY: JSON to Database Migration Script
+ * This script is kept for historical purposes and emergency data recovery.
+ * The system now uses PostgreSQL exclusively.
+ * 
  * Migrates existing JSON storage (both previous_data.json and query-based JSON files) 
- * to the new PostgreSQL/SQLite database using Prisma
+ * to PostgreSQL database using Prisma
  */
 
 const fs = require('fs-extra');
 const path = require('path');
 const { logWithTimestamp } = require('../lib/utils');
 const DatabaseStorage = require('../lib/storage/DatabaseStorage');
-const QueryStorage = require('../lib/storage/queryStorage');
 const SearchUrl = require('../lib/domain/SearchUrl');
 const PropertyId = require('../lib/domain/PropertyId');
 
 class DatabaseMigration {
   constructor() {
     this.databaseStorage = new DatabaseStorage();
-    this.queryStorage = new QueryStorage();
     this.migrationStats = {
       // Legacy JSON migration
       legacyUrlEntries: 0,
