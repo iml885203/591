@@ -28,18 +28,18 @@ jobs:
         API_KEY=${{ secrets.API_KEY }}
         NOTIFICATION_DELAY=1000
         API_PORT=3000
-        SAVE_DEBUG_HTML=true
+        SAVE_DEBUG_HTML="true"
         EOF
         
     - name: Stop existing containers
       run: |
-        docker compose -f docker-compose.yml down || true
-        docker compose -f docker-compose.production.yml down || true
+        docker-compose -f docker-compose.yml down || true
+        docker-compose -f docker-compose.production.yml down || true
         
     - name: Pull latest images and deploy
       run: |
-        docker compose -f docker-compose.production.yml pull || true
-        docker compose -f docker-compose.production.yml up -d --build
+        docker-compose -f docker-compose.production.yml pull || true
+        docker-compose -f docker-compose.production.yml up -d --build
         
     - name: Wait for services to be ready
       run: |
@@ -59,32 +59,40 @@ jobs:
     - name: Send deployment notification
       if: always()
       run: |
+        # Choose webhook URL (maintenance webhook has priority)
+        WEBHOOK_URL="${{ secrets.MAINTENANCE_WEBHOOK_URL }}"
+        if [ -z "$WEBHOOK_URL" ]; then
+          WEBHOOK_URL="${{ secrets.DISCORD_WEBHOOK_URL }}"
+        fi
+        
         if [ "${{ job.status }}" == "success" ]; then
-          curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+          curl -X POST "$WEBHOOK_URL" \
             -H "Content-Type: application/json" \
             -d "{
               \"embeds\": [{
-                \"title\": \"🚀 Deployment Successful\",
+                \"title\": \"🚀 Local Deployment Successful\",
                 \"description\": \"591 Crawler deployed successfully to local Docker\",
                 \"color\": 3066993,
                 \"fields\": [
                   {\"name\": \"Commit\", \"value\": \"$COMMIT_SHA\", \"inline\": true},
                   {\"name\": \"Time\", \"value\": \"$DEPLOYMENT_TIME\", \"inline\": true},
-                  {\"name\": \"Environment\", \"value\": \"Local Docker\", \"inline\": true}
+                  {\"name\": \"Environment\", \"value\": \"Local Docker (Port 3001)\", \"inline\": true},
+                  {\"name\": \"URL\", \"value\": \"http://localhost:3001\", \"inline\": true}
                 ]
               }]
             }" || true
         else
-          curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+          curl -X POST "$WEBHOOK_URL" \
             -H "Content-Type: application/json" \
             -d "{
               \"embeds\": [{
-                \"title\": \"❌ Deployment Failed\",
-                \"description\": \"591 Crawler deployment failed\",
+                \"title\": \"❌ Local Deployment Failed\",
+                \"description\": \"591 Crawler deployment to local Docker failed\",
                 \"color\": 15158332,
                 \"fields\": [
                   {\"name\": \"Commit\", \"value\": \"$COMMIT_SHA\", \"inline\": true},
-                  {\"name\": \"Time\", \"value\": \"$DEPLOYMENT_TIME\", \"inline\": true}
+                  {\"name\": \"Time\", \"value\": \"$DEPLOYMENT_TIME\", \"inline\": true},
+                  {\"name\": \"Check\", \"value\": \"View GitHub Actions logs for details\", \"inline\": false}
                 ]
               }]
             }" || true

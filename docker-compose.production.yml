@@ -38,7 +38,7 @@ services:
       API_KEY: ${API_KEY}
       NOTIFICATION_DELAY: 1000
       API_PORT: 3000
-      SAVE_DEBUG_HTML: true
+      SAVE_DEBUG_HTML: "true"
     volumes:
       - debug_html:/tmp/debug-html
       - ./logs:/app/logs

@@ -44,7 +44,7 @@ log_info "Commit message: $COMMIT_MSG"
 
 # 停止現有容器
 log_info "Stopping existing containers..."
-docker compose -f docker-compose.production.yml down 2>/dev/null || true
+docker-compose -f docker-compose.production.yml down 2>/dev/null || true
 
 # 清理舊的 images (可選)
 log_info "Cleaning up old images..."
@@ -52,7 +52,7 @@ docker image prune -f > /dev/null 2>&1 || true
 
 # 構建並啟動新容器
 log_info "Building and starting containers..."
-docker compose -f docker-compose.production.yml up -d --build
+docker-compose -f docker-compose.production.yml up -d --build
 
 # 等待服務就緒
 log_info "Waiting for services to be ready..."
@@ -77,7 +77,7 @@ done
 
 # 檢查資料庫連接
 log_info "Checking database connection..."
-if docker compose -f docker-compose.production.yml exec -T postgres pg_isready -U postgres > /dev/null 2>&1; then
+if docker-compose -f docker-compose.production.yml exec -T postgres pg_isready -U postgres > /dev/null 2>&1; then
     log_info "✅ Database is ready!"
 else
     log_warn "⚠️ Database connection check failed"
@@ -95,9 +95,26 @@ echo "  • Health: http://localhost:3001/health"
 echo "  • Swagger: http://localhost:3001/swagger"
 echo ""
 
-# 可選：發送 Discord 通知
-if [ -n "$DISCORD_WEBHOOK_URL" ] && command -v curl > /dev/null; then
-    log_info "Sending Discord notification..."
+# 發送維護通知 (使用分離的 webhook)
+if [ -n "$MAINTENANCE_WEBHOOK_URL" ] && command -v curl > /dev/null; then
+    log_info "Sending maintenance notification..."
+    curl -X POST "$MAINTENANCE_WEBHOOK_URL" \
+        -H "Content-Type: application/json" \
+        -d "{
+            \"embeds\": [{
+                \"title\": \"🚀 Local Deployment Successful\",
+                \"description\": \"591 Crawler deployed to local Docker\",
+                \"color\": 3066993,
+                \"fields\": [
+                    {\"name\": \"Commit\", \"value\": \"$COMMIT_SHA\", \"inline\": true},
+                    {\"name\": \"Time\", \"value\": \"$DEPLOY_TIME\", \"inline\": true},
+                    {\"name\": \"Message\", \"value\": \"$COMMIT_MSG\", \"inline\": false},
+                    {\"name\": \"URL\", \"value\": \"http://localhost:3001\", \"inline\": true}
+                ]
+            }]
+        }" > /dev/null 2>&1 || log_warn "Maintenance notification failed"
+elif [ -n "$DISCORD_WEBHOOK_URL" ] && command -v curl > /dev/null; then
+    log_info "Sending Discord notification (fallback)..."
     curl -X POST "$DISCORD_WEBHOOK_URL" \
         -H "Content-Type: application/json" \
         -d "{
@@ -108,10 +125,11 @@ if [ -n "$DISCORD_WEBHOOK_URL" ] && command -v curl > /dev/null; then
                 \"fields\": [
                     {\"name\": \"Commit\", \"value\": \"$COMMIT_SHA\", \"inline\": true},
                     {\"name\": \"Time\", \"value\": \"$DEPLOY_TIME\", \"inline\": true},
-                    {\"name\": \"Message\", \"value\": \"$COMMIT_MSG\", \"inline\": false}
+                    {\"name\": \"Message\", \"value\": \"$COMMIT_MSG\", \"inline\": false},
+                    {\"name\": \"URL\", \"value\": \"http://localhost:3001\", \"inline\": true}
                 ]
             }]
         }" > /dev/null 2>&1 || log_warn "Discord notification failed"
 fi
 
-log_info "🔄 Use 'docker compose -f docker-compose.production.yml logs -f' to view logs"
+log_info "🔄 Use 'docker-compose -f docker-compose.production.yml logs -f' to view logs"
