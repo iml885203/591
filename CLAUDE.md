@@ -44,6 +44,15 @@ curl -X POST http://localhost:3000/crawl \
       "showStationInfo": false
     }
   }'
+
+# Debug HTML download (production)
+# Set SAVE_DEBUG_HTML=true in production to start saving HTML files
+curl -X GET http://localhost:3000/debug/html \
+  -H "x-api-key: your-secret-api-key-here"
+
+curl -X GET http://localhost:3000/debug/html/crawl-2025-07-26T10-30-00-000Z.html \
+  -H "x-api-key: your-secret-api-key-here" \
+  -o "production-sample.html"
 ```
 
 ## 🏗️ Architecture
@@ -77,6 +86,7 @@ DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
 NOTIFICATION_DELAY=1000
 API_PORT=3000
 API_KEY=your-secret-api-key-here
+SAVE_DEBUG_HTML=true   # Save HTML files to /tmp/debug-html for debugging (production only)
 ```
 
 **Distance filtering via API only:**

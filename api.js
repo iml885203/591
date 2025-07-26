@@ -989,6 +989,190 @@ app.get('/query/statistics', authenticateApiKey, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /debug/html:
+ *   get:
+ *     summary: List saved debug HTML files
+ *     description: |
+ *       Returns a list of HTML files saved from production crawls for debugging purposes.
+ *       Files are automatically saved when SAVE_DEBUG_HTML=true environment variable is set.
+ *     tags: [Debug]
+ *     responses:
+ *       200:
+ *         description: HTML files listed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     files:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           filename:
+ *                             type: string
+ *                           size:
+ *                             type: number
+ *                           created:
+ *                             type: string
+ *                             format: date-time
+ *                     total:
+ *                       type: integer
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       500:
+ *         description: Debug directory not found or access error
+ *     security:
+ *       - ApiKeyAuth: []
+ */
+app.get('/debug/html', authenticateApiKey, async (req, res) => {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const debugDir = '/tmp/debug-html';
+    
+    // Check if debug directory exists
+    if (!fs.existsSync(debugDir)) {
+      return res.json({
+        success: true,
+        data: {
+          files: [],
+          total: 0,
+          message: 'No debug HTML files found. Set SAVE_DEBUG_HTML=true to start saving.'
+        }
+      });
+    }
+    
+    // Read directory and get file stats
+    const files = fs.readdirSync(debugDir)
+      .filter(file => file.endsWith('.html'))
+      .map(filename => {
+        const filePath = path.join(debugDir, filename);
+        const stats = fs.statSync(filePath);
+        return {
+          filename,
+          size: stats.size,
+          created: stats.birthtime.toISOString()
+        };
+      })
+      .sort((a, b) => new Date(b.created) - new Date(a.created)); // Most recent first
+    
+    res.json({
+      success: true,
+      data: {
+        files,
+        total: files.length
+      }
+    });
+    
+  } catch (error) {
+    logWithTimestamp(`Debug HTML list error: ${error.message}`, 'ERROR');
+    
+    res.status(500).json({
+      success: false,
+      error: 'Failed to list debug files',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /debug/html/{filename}:
+ *   get:
+ *     summary: Download a specific debug HTML file
+ *     description: |
+ *       Downloads a saved HTML file from production crawls for local analysis.
+ *       Use /debug/html endpoint to get list of available files first.
+ *     tags: [Debug]
+ *     parameters:
+ *       - in: path
+ *         name: filename
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Name of the HTML file to download
+ *         example: "crawl-2025-07-26T10-30-00-000Z.html"
+ *     responses:
+ *       200:
+ *         description: HTML file content
+ *         content:
+ *           text/html:
+ *             schema:
+ *               type: string
+ *       404:
+ *         description: File not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 error:
+ *                   type: string
+ *                   example: "File not found"
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *     security:
+ *       - ApiKeyAuth: []
+ */
+app.get('/debug/html/:filename', authenticateApiKey, async (req, res) => {
+  try {
+    const { filename } = req.params;
+    const fs = require('fs');
+    const path = require('path');
+    
+    // Validate filename (security: prevent path traversal)
+    if (!filename || filename.includes('..') || filename.includes('/') || !filename.endsWith('.html')) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid filename',
+        message: 'Filename must be a valid HTML file without path separators'
+      });
+    }
+    
+    const debugDir = '/tmp/debug-html';
+    const filePath = path.join(debugDir, filename);
+    
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({
+        success: false,
+        error: 'File not found',
+        message: `HTML file '${filename}' not found`
+      });
+    }
+    
+    // Set headers for HTML download
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    
+    // Stream the file
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+    
+    logWithTimestamp(`📥 Debug HTML downloaded: ${filename}`);
+    
+  } catch (error) {
+    logWithTimestamp(`Debug HTML download error: ${error.message}`, 'ERROR');
+    
+    res.status(500).json({
+      success: false,
+      error: 'Download failed',
+      message: error.message
+    });
+  }
+});
+
 
 /**
  * @swagger
@@ -1036,7 +1220,9 @@ app.use('*', (req, res) => {
       '/queries',
       '/query/{queryId}/rentals',
       '/query/{queryId}/similar',
-      '/query/statistics'
+      '/query/statistics',
+      '/debug/html',
+      '/debug/html/{filename}'
     ]
   });
 });
@@ -1090,6 +1276,8 @@ if (require.main === module) {
       logWithTimestamp(`  POST   http://localhost:${PORT}/query/parse - Parse query URL`);
       logWithTimestamp(`  DELETE http://localhost:${PORT}/query/{id}/clear?confirm=true - Clear query data`);
       logWithTimestamp(`  GET    http://localhost:${PORT}/query/{id}/rentals - Get query rentals`);
+      logWithTimestamp(`  GET    http://localhost:${PORT}/debug/html - List debug HTML files`);
+      logWithTimestamp(`  GET    http://localhost:${PORT}/debug/html/{filename} - Download debug HTML`);
       logWithTimestamp(`  GET    http://localhost:${PORT}/swagger - Swagger API Documentation`);
     });
 
