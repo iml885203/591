@@ -255,13 +255,10 @@ app.post('/crawl', authenticateApiKey, async (req, res) => {
         maxLatest: maxLatest,
         notifyMode: notifyMode,
         filteredMode: filteredMode,
-        // Backward compatibility: include both old and new field names
-        propertiesFound: result.rentals.length,  // deprecated, use rentalsFound
-        newProperties: result.summary.newRentals,  // deprecated, use newRentals
+        // Only include rentals field (removed deprecated properties field)
         rentalsFound: result.rentals.length,
         newRentals: result.summary.newRentals,
         notificationsSent: result.summary.notificationsSent,
-        properties: result.rentals,  // deprecated, use rentals
         rentals: result.rentals,
         timestamp: new Date().toISOString(),
         // Multi-station specific fields

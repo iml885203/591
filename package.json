@@ -1,6 +1,6 @@
 {
   "name": "591-crawler",
-  "version": "2025.07.15",
+  "version": "2025.07.16",
   "description": "A Node.js web scraper for 591.com.tw rental properties with Discord notifications",
   "main": "crawler.js",
   "bin": {
@@ -17,9 +17,9 @@
     "test:unit": "bun test tests/unit",
     "test:integration": "bun test tests/integration",
     "test:integration:database": "bun test tests/integration/database.test.js",
-        "test:postgres:start": "bash scripts/test-postgres.sh start",
-        "test:postgres:setup": "bash scripts/test-postgres.sh setup",
-        "test:postgres:stop": "bash scripts/test-postgres.sh stop",
+    "test:postgres:start": "bash scripts/test-postgres.sh start",
+    "test:postgres:setup": "bash scripts/test-postgres.sh setup",
+    "test:postgres:stop": "bash scripts/test-postgres.sh stop",
     "test:verbose": "VERBOSE_TESTS=1 bun test --verbose",
     "deploy:docker": "bash scripts/deploy.sh",
     "deploy:docker:logs": "bun run deploy:docker && docker-compose logs -f",
