@@ -34,11 +34,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Setup Bun
-      uses: oven-sh/setup-bun@v1
-      with:
-        bun-version: latest
-        
     - name: Set up environment
       run: |
         echo "DEPLOYMENT_TIME=$(date '+%Y-%m-%d %H:%M:%S')" >> $GITHUB_ENV
@@ -62,9 +57,6 @@ jobs:
         echo "=== Created .env.production file ==="
         cat .env.production
         echo "=================================="
-        
-    - name: Install dependencies
-      run: bun install
         
     - name: Build new images
       run: |
