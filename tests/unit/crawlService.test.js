@@ -63,7 +63,7 @@ describe('crawlService', () => {
     mockRentals = [
       {
         title: 'Test Rental 1',
-        link: 'https://rent.591.com.tw/rent-detail-12345.html',
+        link: 'https://rent.591.com.tw/12345',
         address: 'Test Address 1',
         price: '25000',
         metroValue: '5分鐘', // ~400m
@@ -71,7 +71,7 @@ describe('crawlService', () => {
       },
       {
         title: 'Test Rental 2', 
-        link: 'https://rent.591.com.tw/rent-detail-67890.html',
+        link: 'https://rent.591.com.tw/67890',
         address: 'Test Address 2',
         price: '30000',
         metroValue: '10分鐘', // ~800m
@@ -79,7 +79,7 @@ describe('crawlService', () => {
       },
       {
         title: 'Test Rental 3',
-        link: 'https://rent.591.com.tw/rent-detail-11111.html',
+        link: 'https://rent.591.com.tw/11111',
         address: 'Test Address 3',
         price: '20000',
         metroValue: '15分鐘', // ~1200m
@@ -90,7 +90,7 @@ describe('crawlService', () => {
     mockPreviousRentals = [
       {
         title: 'Previous Rental 1',
-        link: 'https://rent.591.com.tw/rent-detail-99999.html',
+        link: 'https://rent.591.com.tw/99999',
         address: 'Previous Address 1',
         price: '22000',
         metroValue: '8分鐘',
@@ -107,7 +107,7 @@ describe('crawlService', () => {
 
   describe('findNewRentals', () => {
     it('should return all rentals when no previous rentals exist', () => {
-      const result = findNewRentals(mockRentals, []);
+      const result = findNewRentals(mockRentals, new Set());
       expect(result).toHaveLength(3);
       expect(result).toEqual(mockRentals);
     });
@@ -118,61 +118,76 @@ describe('crawlService', () => {
         mockPreviousRentals[0] // Include one duplicate
       ];
       
-      const result = findNewRentals(currentRentals, mockPreviousRentals);
+      // Create a Set of existing property IDs
+      const existingIds = new Set(['99999']); // ID from mockPreviousRentals
+      const result = findNewRentals(currentRentals, existingIds);
       expect(result).toHaveLength(3); // Should exclude the duplicate
       expect(result).toEqual(mockRentals);
     });
 
     it('should return empty array when all rentals are duplicates', () => {
-      const result = findNewRentals(mockPreviousRentals, mockPreviousRentals);
+      const existingIds = new Set(['99999']); // ID from mockPreviousRentals
+      const result = findNewRentals(mockPreviousRentals, existingIds);
       expect(result).toHaveLength(0);
     });
 
     it('should handle empty current rentals', () => {
-      const result = findNewRentals([], mockPreviousRentals);
+      const existingIds = new Set(['12345', '67890']);
+      const result = findNewRentals([], existingIds);
       expect(result).toHaveLength(0);
     });
   });
 
   describe('getRentalsToNotify', () => {
+    let mockDatabaseStorage;
+    
+    beforeEach(() => {
+      mockDatabaseStorage = {
+        getExistingPropertyIds: createMockFunction(() => Promise.resolve(new Set()))
+      };
+    });
+    
     it('should return latest N rentals when maxLatest is specified', async () => {
-      const result = await getRentalsToNotify(mockRentals, 2, 'https://test.com', mockDependencies.fs);
+      const result = await getRentalsToNotify(mockRentals, 2, 'https://test.com', mockDatabaseStorage);
       expect(result).toHaveLength(2);
       expect(result).toEqual(mockRentals.slice(0, 2));
     });
 
     it('should return all rentals when maxLatest exceeds array length', async () => {
-      const result = await getRentalsToNotify(mockRentals, 10, 'https://test.com', mockDependencies.fs);
+      const result = await getRentalsToNotify(mockRentals, 10, 'https://test.com', mockDatabaseStorage);
       expect(result).toHaveLength(3);
       expect(result).toEqual(mockRentals);
     });
 
     it('should return new rentals when maxLatest is null', async () => {
-      // Mock fs to return previous data
-      mockDependencies.fs.readFile.mockResolvedValueOnce(
-        JSON.stringify({
-          'region_1_kind_0': mockPreviousRentals
-        })
-      );
+      // Mock database to return existing property IDs
+      const existingIds = new Set(['99999', '88888']); // Different from mockRentals
+      mockDatabaseStorage.getExistingPropertyIds.mockResolvedValueOnce(existingIds);
 
-      const result = await getRentalsToNotify(mockRentals, null, 'https://rent.591.com.tw/list?region=1&kind=0', mockDependencies.fs);
-      expect(result).toHaveLength(3); // All are new
-      expect(mockDependencies.fs.writeJson).toHaveBeenCalled(); // Should save data
+      const result = await getRentalsToNotify(mockRentals, null, 'https://rent.591.com.tw/list?region=1&kind=0', mockDatabaseStorage);
+      expect(result).toHaveLength(3); // All are new since IDs don't match
     });
 
-    it('should handle file read errors gracefully', async () => {
-      mockDependencies.fs.readJson.mockImplementationOnce(() => 
-        Promise.reject(new Error('File not found'))
-      );
+    it('should filter out existing rentals', async () => {
+      // Mock database to return one existing property ID
+      const existingIds = new Set(['12345']); // Matches first rental
+      mockDatabaseStorage.getExistingPropertyIds.mockResolvedValueOnce(existingIds);
 
-      const result = await getRentalsToNotify(mockRentals, null, 'https://test.com', mockDependencies.fs);
-      expect(result).toHaveLength(3); // Should treat as all new
+      const result = await getRentalsToNotify(mockRentals, null, 'https://rent.591.com.tw/list?region=1&kind=0', mockDatabaseStorage);
+      expect(result).toHaveLength(2); // Should exclude the first rental
+      expect(result[0].link).toContain('67890');
+    });
+
+    it('should return empty array for invalid query ID', async () => {
+      const result = await getRentalsToNotify(mockRentals, null, 'https://invalid-url.com', mockDatabaseStorage);
+      expect(result).toHaveLength(0);
     });
 
     it('should return all rentals when maxLatest is 0 (treated as null)', async () => {
       // maxLatest = 0 is falsy, so it goes to the new-only mode
-      const result = await getRentalsToNotify(mockRentals, 0, 'https://test.com', mockDependencies.fs);
-      expect(result).toHaveLength(3); // All are treated as new since no previous data
+      mockDatabaseStorage.getExistingPropertyIds.mockResolvedValueOnce(new Set());
+      const result = await getRentalsToNotify(mockRentals, 0, 'https://rent.591.com.tw/list?region=1&kind=0', mockDatabaseStorage);
+      expect(result).toHaveLength(3); // All are treated as new since no existing IDs
     });
   });
 
@@ -458,17 +473,14 @@ describe('crawlService', () => {
       }).not.toThrow();
     });
 
-    it('should handle file system errors in getRentalsToNotify', async () => {
-      mockDependencies.fs.readJson.mockImplementationOnce(() => 
-        Promise.reject(new Error('Permission denied'))
-      );
-      mockDependencies.fs.writeJson.mockImplementationOnce(() => 
-        Promise.reject(new Error('Disk full'))
-      );
+    it('should handle database errors in getRentalsToNotify', async () => {
+      const mockDbError = {
+        getExistingPropertyIds: createMockFunction(() => Promise.reject(new Error('Database connection failed')))
+      };
 
-      // Should still work with empty previous data
-      const result = await getRentalsToNotify(mockRentals, null, 'https://test.com', mockDependencies.fs);
-      expect(result).toEqual(mockRentals); // All treated as new
+      // Should treat all as new on database error to avoid missing notifications
+      const result = await getRentalsToNotify(mockRentals, null, 'https://rent.591.com.tw/list?region=1', mockDbError);
+      expect(result).toEqual(mockRentals); // Treats all as new on error
     });
   });
 
