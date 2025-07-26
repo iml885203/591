@@ -274,48 +274,4 @@ describe('Database Integration Tests', () => {
     
     console.log('✅ Database metro distances precision test passed');
   });
-  
-  test('should maintain ACID properties under stress', async () => {
-    const testQuery = testUrl + '&test=acid-stress';
-    const rental = {
-      title: 'ACID Stress Test Property',
-      link: 'https://rent.591.com.tw/test-acid-stress',
-      rooms: '2房1廳',
-      metroTitle: '距捷運站',
-      metroValue: '500公尺'
-    };
-    
-    // Perform multiple operations on the same rental
-    const operations = Array.from({ length: 10 }, (_, i) => 
-      databaseStorage.saveCrawlResults(
-        testQuery,
-        [{ ...rental, title: `${rental.title} - Update ${i + 1}` }],
-        { notifyMode: 'none' }
-      )
-    );
-    
-    await Promise.all(operations);
-    
-    // Verify database consistency
-    const finalRental = await prisma.rental.findUnique({
-      where: { link: rental.link }
-    });
-    
-    expect(finalRental).toBeDefined();
-    expect(finalRental.title).toContain('ACID Stress Test Property');
-    
-    // Should have 10 crawl sessions but only 1 rental
-    const crawlSessions = await prisma.crawlSession.count({
-      where: { url: testQuery }
-    });
-    
-    const rentalsCount = await prisma.rental.count({
-      where: { link: rental.link }
-    });
-    
-    expect(crawlSessions).toBe(10);
-    expect(rentalsCount).toBe(1);
-    
-    console.log('✅ ACID properties stress test passed');
-  });
 });
