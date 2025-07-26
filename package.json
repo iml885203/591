@@ -7,8 +7,8 @@
     "591-crawler": "./crawler.js"
   },
   "scripts": {
-    "start": "bun run scripts/start-with-optimization.js",
-    "api": "bun run scripts/start-with-optimization.js",
+    "start": "bun run scripts/start-production.js",
+    "api": "bun run scripts/start-production.js",
     "crawl": "bun run crawler.js",
     "example": "bun run crawler.js \"https://rent.591.com.tw/list?region=1&kind=0\" 3",
     "test": "bun test",
