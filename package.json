@@ -45,7 +45,8 @@
     "db:indexes": "echo 'SELECT * FROM v_index_usage ORDER BY idx_scan DESC LIMIT 10;' | psql $DATABASE_URL",
     "migrate:legacy-json": "bun run scripts/legacy-json-migration.js migrate",
     "migrate:verify": "bun run scripts/legacy-json-migration.js verify",
-    "migrate:update-legacy": "bun run scripts/update-legacy-rentals.js"
+    "migrate:update-legacy": "bun run scripts/update-legacy-rentals.js",
+    "prepare": "husky"
   },
   "keywords": [
     "591",
@@ -84,6 +85,7 @@
   },
   "devDependencies": {
     "@testcontainers/postgresql": "^11.4.0",
+    "husky": "^9.1.7",
     "jsdom": "^26.1.0",
     "nock": "^14.0.6",
     "prisma": "^6.12.0",

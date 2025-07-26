@@ -6,7 +6,7 @@ Node.js web scraper for 591.com.tw rental monitoring with Discord notifications 
 
 ```bash
 # Development
-bun install
+bun install  # Automatically sets up Git hooks via Husky
 bun test
 bun run api
 

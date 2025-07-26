@@ -1,0 +1,29 @@
+#!/usr/bin/env sh
+
+# Husky pre-push hook for auto-incrementing version on main branch
+
+# Get the branch being pushed
+protected_branch='main'
+current_branch=$(git symbolic-ref HEAD | sed -e 's,.*/\(.*\),\1,')
+
+# Check if we're pushing to main
+if [ "$current_branch" = "$protected_branch" ]; then
+    echo "🔄 Auto-incrementing version for main branch push..."
+    
+    # Update version
+    bun run version:update
+    
+    # Check if version changed
+    if ! git diff --quiet package.json; then
+        NEW_VERSION=$(cat package.json | grep '"version"' | cut -d'"' -f4)
+        echo "📦 Updated version to $NEW_VERSION"
+        
+        # Stage and commit version bump
+        git add package.json
+        git commit -m "chore: bump version to $NEW_VERSION"
+        
+        echo "✅ Version bump committed"
+    else
+        echo "ℹ️  No version change needed"
+    fi
+fi
