@@ -81,7 +81,8 @@ jobs:
                   {\"name\": \"Environment\", \"value\": \"Local Docker (Port 3001)\", \"inline\": true},
                   {\"name\": \"URL\", \"value\": \"http://localhost:3001\", \"inline\": true}
                 ]
-              }]
+              }],
+              \"flags\": 4096
             }" || true
         else
           curl -X POST "${{ secrets.MAINTENANCE_WEBHOOK_URL }}" \
