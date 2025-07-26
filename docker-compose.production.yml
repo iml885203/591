@@ -1,27 +1,6 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: crawler-postgres-prod
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: crawler
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-crawler_password}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    ports:
-      - "5433:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - app-network
-
   api:
     build:
       context: .
@@ -32,14 +11,9 @@ services:
       - "3001:3000"
     env_file:
       - .env.production
-    environment:
-      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-crawler_password}@postgres:5432/crawler
     volumes:
       - debug_html:/app/debug-html
       - ./logs:/app/logs
-    depends_on:
-      postgres:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
@@ -54,7 +28,5 @@ networks:
     driver: bridge
 
 volumes:
-  postgres_data:
-    driver: local
   debug_html:
     driver: local
