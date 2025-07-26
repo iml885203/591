@@ -1,6 +1,6 @@
 {
   "name": "591-crawler",
-  "version": "2025.07.18",
+  "version": "2025.07.19",
   "description": "A Node.js web scraper for 591.com.tw rental properties with Discord notifications",
   "main": "crawler.js",
   "bin": {
@@ -43,8 +43,8 @@
     "db:optimize": "bun run scripts/apply-database-optimizations.js",
     "db:stats": "echo 'SELECT * FROM v_performance_monitor LIMIT 10;' | psql $DATABASE_URL",
     "db:indexes": "echo 'SELECT * FROM v_index_usage ORDER BY idx_scan DESC LIMIT 10;' | psql $DATABASE_URL",
-    "migrate:json-to-db": "bun run scripts/migrate-to-database.js migrate",
-    "migrate:verify": "bun run scripts/migrate-to-database.js verify"
+    "migrate:legacy-json": "bun run scripts/legacy-json-migration.js migrate",
+    "migrate:verify": "bun run scripts/legacy-json-migration.js verify"
   },
   "keywords": [
     "591",
