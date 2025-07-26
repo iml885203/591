@@ -475,11 +475,13 @@ describe('crawlService', () => {
 
     it('should handle database errors in getRentalsToNotify', async () => {
       const mockDbError = {
-        getExistingPropertyIds: createMockFunction(() => Promise.reject(new Error('Database connection failed')))
+        getExistingPropertyIds: async () => {
+          throw new Error('Database connection failed');
+        }
       };
 
       // Should treat all as new on database error to avoid missing notifications
-      const result = await getRentalsToNotify(mockRentals, null, 'https://rent.591.com.tw/list?region=1', mockDbError);
+      const result = await getRentalsToNotify(mockRentals, null, 'https://rent.591.com.tw/list?region=1&kind=0', mockDbError);
       expect(result).toEqual(mockRentals); // Treats all as new on error
     });
   });

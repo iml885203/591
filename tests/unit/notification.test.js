@@ -30,7 +30,7 @@ describe('notification', () => {
       address: 'Test Address 1',
       price: '25000',
       metroValue: '5分鐘',
-      kind: '整層住家',
+      houseType: '整層住家',
       rooms: '2房1廳1衛',
       tags: ['有陽台', '可養寵物'],
       imgUrls: ['https://example.com/image1.jpg'],
@@ -112,7 +112,7 @@ describe('notification', () => {
         url: 'https://rent.591.com.tw/rent-detail-12345.html',
         color: 0x00ff00, // Green for close to MRT
         fields: expect.arrayContaining([
-          expect.objectContaining({ name: '🏠 房型', value: '2房1廳1衛' }),
+          expect.objectContaining({ name: '🏠 房型', value: '整層住家 2房1廳1衛' }),
           expect.objectContaining({ name: '🚇 捷運距離', value: expect.stringContaining('信義安和站') }),
           expect.objectContaining({ name: '🏷️ 標籤', value: '有陽台, 可養寵物' })
         ]),
