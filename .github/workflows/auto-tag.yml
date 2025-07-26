@@ -44,17 +44,9 @@ jobs:
         
         # Create annotated tag with version info
         COMMIT_INFO=$(git log -1 --pretty=format:'%h - %s')
-        RECENT_CHANGES=$(git log --oneline --since='1 day ago' | head -5)
         
-        git tag -a "v$NEW_VERSION" -m "Release v$NEW_VERSION
-
-Auto-generated tag for commit: $COMMIT_INFO
-
-Recent changes:
-$RECENT_CHANGES
-
-Deployment: Local Docker (port 3001)
-Swagger: http://localhost:3001/swagger"
+        # Create simple tag message
+        git tag -a "v$NEW_VERSION" -m "Release v$NEW_VERSION - Auto-generated tag for commit: $COMMIT_INFO"
         
         # Push tag
         git push origin "v$NEW_VERSION"
@@ -69,18 +61,11 @@ Swagger: http://localhost:3001/swagger"
         COMMIT_INFO=$(git log -1 --pretty=format:'%h - %s')
         RECENT_CHANGES=$(git log --oneline --since='1 day ago' | head -5)
         
+        # Create simple release notes
+        NOTES="Auto-generated release for v$VERSION. Latest commit: $COMMIT_INFO. Docker deployment available at http://localhost:3001"
+        
         # Create release from tag
         gh release create "v$VERSION" \
           --title "Release v$VERSION" \
-          --notes "Auto-generated release for v$VERSION
-          
-**Latest commit:** $COMMIT_INFO
-
-**Recent changes:**
-$RECENT_CHANGES
-
-**Docker Deployment:**
-- API: http://localhost:3001
-- Swagger: http://localhost:3001/swagger
-- Network: http://192.168.50.154:3001" \
+          --notes "$NOTES" \
           --latest
