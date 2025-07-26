@@ -9,6 +9,45 @@
 const { spawn } = require('child_process');
 const { logWithTimestamp } = require('../lib/utils');
 
+async function runMigrations() {
+  return new Promise((resolve) => {
+    logWithTimestamp('🔄 Running database migrations...');
+    
+    const migration = spawn('bun', 
+      process.env.NODE_ENV === 'production' 
+        ? ['run', 'db:migrate:deploy'] 
+        : ['run', 'db:migrate'], 
+      {
+        stdio: 'inherit',
+        env: process.env
+      }
+    );
+    
+    const timeout = setTimeout(() => {
+      logWithTimestamp('⏰ Migration timeout - proceeding anyway', 'WARN');
+      migration.kill('SIGTERM');
+      resolve(false);
+    }, 120000); // 2 minute timeout for migrations
+    
+    migration.on('close', (code) => {
+      clearTimeout(timeout);
+      if (code === 0) {
+        logWithTimestamp('✅ Database migrations completed successfully');
+        resolve(true);
+      } else {
+        logWithTimestamp(`⚠️  Database migrations failed with code ${code} - continuing anyway`, 'WARN');
+        resolve(false);
+      }
+    });
+    
+    migration.on('error', (error) => {
+      clearTimeout(timeout);
+      logWithTimestamp(`❌ Migration error: ${error.message} - continuing anyway`, 'ERROR');
+      resolve(false);
+    });
+  });
+}
+
 async function runOptimization() {
   // Check if optimization should be skipped
   if (process.env.SKIP_DB_OPTIMIZATION === 'true') {
@@ -83,7 +122,16 @@ async function main() {
   try {
     logWithTimestamp('🚀 Railway startup sequence initiated');
     
-    // Run optimization (with timeout protection)
+    // Step 1: Run database migrations first
+    const migrationSuccess = await runMigrations();
+    
+    if (migrationSuccess) {
+      logWithTimestamp('🎯 Database schema is up to date');
+    } else {
+      logWithTimestamp('⚠️  Database migrations skipped or failed - continuing anyway');
+    }
+    
+    // Step 2: Run optimization (with timeout protection)
     const optimizationSuccess = await runOptimization();
     
     if (optimizationSuccess) {
@@ -92,7 +140,7 @@ async function main() {
       logWithTimestamp('⚠️  Database optimization skipped or failed - API will still start');
     }
     
-    // Start API server regardless of optimization result
+    // Step 3: Start API server regardless of previous results
     await startApiServer();
     
   } catch (error) {
