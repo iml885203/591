@@ -1,6 +1,6 @@
 {
   "name": "591-crawler",
-  "version": "2025.07.21",
+  "version": "2025.07.22",
   "description": "A Node.js web scraper for 591.com.tw rental properties with Discord notifications",
   "main": "crawler.js",
   "bin": {
