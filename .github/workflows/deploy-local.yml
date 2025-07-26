@@ -45,18 +45,22 @@ jobs:
       run: |
         echo "🚀 Starting deployment with health check..."
         
-        # Check if containers are currently running
+        # Check if production containers are currently running
         OLD_API_RUNNING=$(docker ps --filter "name=crawler-api-prod" --format "{{.Names}}" || echo "")
-        OLD_DB_RUNNING=$(docker ps --filter "name=crawler-postgres-prod" --format "{{.Names}}" || echo "")
         
         if [ -n "$OLD_API_RUNNING" ]; then
           echo "📊 Current API status:"
           curl -sf http://localhost:3001/health || echo "API not responding"
         fi
         
-        # Deploy new containers (this will replace old ones due to same container names)
+        # Clean up existing production containers first
+        echo "🧹 Cleaning up existing production containers..."
+        docker stop crawler-api-prod crawler-postgres-prod 2>/dev/null || true
+        docker rm crawler-api-prod crawler-postgres-prod 2>/dev/null || true
+        
+        # Deploy new containers
         echo "🔄 Deploying new containers..."
-        docker-compose -f docker-compose.production.yml up -d --force-recreate
+        docker-compose -f docker-compose.production.yml up -d
         
         echo "⏳ Waiting for new containers to be ready..."
         
