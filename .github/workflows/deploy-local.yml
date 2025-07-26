@@ -55,8 +55,10 @@ jobs:
         
         # Clean up existing production containers first
         echo "🧹 Cleaning up existing production containers..."
-        docker stop crawler-api-prod crawler-postgres-prod 2>/dev/null || true
-        docker rm crawler-api-prod crawler-postgres-prod 2>/dev/null || true
+        docker stop $(docker ps --filter "name=crawler-api-prod" --format "{{.Names}}") 2>/dev/null || true
+        docker stop $(docker ps --filter "name=postgres" --filter "name=crawler" --format "{{.Names}}") 2>/dev/null || true
+        docker rm $(docker ps -a --filter "name=crawler-api-prod" --format "{{.Names}}") 2>/dev/null || true
+        docker rm $(docker ps -a --filter "name=postgres" --filter "name=crawler" --format "{{.Names}}") 2>/dev/null || true
         
         # Deploy new containers
         echo "🔄 Deploying new containers..."
@@ -65,7 +67,11 @@ jobs:
         echo "⏳ Waiting for new containers to be ready..."
         
         # Wait for database to be ready first
-        timeout 120 bash -c 'until docker exec crawler-postgres-prod pg_isready -U postgres > /dev/null 2>&1; do 
+        echo "Finding PostgreSQL container..."
+        POSTGRES_CONTAINER=$(docker ps --filter "name=postgres" --filter "name=crawler" --format "{{.Names}}" | head -1)
+        echo "Found PostgreSQL container: $POSTGRES_CONTAINER"
+        
+        timeout 120 bash -c 'until docker exec $POSTGRES_CONTAINER pg_isready -U postgres > /dev/null 2>&1; do 
           echo "Waiting for database..."
           sleep 3
         done'
