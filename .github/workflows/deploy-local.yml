@@ -31,6 +31,7 @@ jobs:
         API_PORT=3000
         SAVE_DEBUG_HTML="true"
         SKIP_DB_OPTIMIZATION="true"
+        DEBUG_LOGS="false"
         EOF
         echo "=== Created .env.production file ==="
         cat .env.production

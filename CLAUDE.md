@@ -87,6 +87,7 @@ NOTIFICATION_DELAY=1000
 API_PORT=3000
 API_KEY=your-secret-api-key-here
 SAVE_DEBUG_HTML=true   # Save HTML files to /app/debug-html for debugging (production only)
+DEBUG_LOGS=false       # Enable/disable debug logging (true/false)
 ```
 
 **Distance filtering via API only:**
