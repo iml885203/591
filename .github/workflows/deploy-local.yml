@@ -29,7 +29,11 @@ jobs:
         NOTIFICATION_DELAY=1000
         API_PORT=3000
         SAVE_DEBUG_HTML="true"
+        SKIP_DB_OPTIMIZATION="true"
         EOF
+        echo "=== Created .env.production file ==="
+        cat .env.production
+        echo "=================================="
         
     - name: Stop existing containers
       run: |
