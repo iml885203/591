@@ -39,3 +39,14 @@ These deprecated fields were maintained for backward compatibility but are now r
 - `storage.js` - Legacy JSON file storage functions (loadPreviousData, savePreviousData, getDataFilePath)
 
 These functions were replaced by the DatabaseStorage class and are no longer used in the codebase.
+
+## Planning Documents
+
+**Moved on:** 2025-07-26  
+**Reason:** Implementation completed, moved to archive for historical reference.
+
+**Files:**
+- `jest-to-bun-test-migration-plan.md` - Jest to Bun test migration plan (completed)
+- `data-persistence-plan.md` - Database migration plan (completed)
+
+These planning documents successfully guided the implementation and are now archived for reference.
