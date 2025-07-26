@@ -7,7 +7,7 @@
 
 -- Optimize getExistingPropertyIds() - most frequent query during crawling
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_query_rental_lookup 
-ON query_rental (query_id, rental_id) 
+ON query_rentals (query_id, rental_id) 
 INCLUDE (first_appeared, last_appeared);
 
 -- Optimize rental property lookups by property ID (used in upsert operations)
@@ -89,7 +89,7 @@ INCLUDE (property_id, title, rooms);
 
 -- Optimize query-rental relationship queries with time filtering
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_query_rental_time_filter 
-ON query_rental (query_id, last_appeared DESC) 
+ON query_rentals (query_id, last_appeared DESC) 
 INCLUDE (first_appeared, was_notified);
 
 -- =============================================================================
@@ -119,7 +119,7 @@ WHERE is_multi_station = true;
 ANALYZE queries;
 ANALYZE rentals;
 ANALYZE metro_distances;
-ANALYZE query_rental;
+ANALYZE query_rentals;
 ANALYZE crawl_sessions;
 
 -- =============================================================================
@@ -141,7 +141,7 @@ SELECT
   histogram_bounds
 FROM pg_stats 
 WHERE schemaname = 'public' 
-AND tablename IN ('queries', 'rentals', 'metro_distances', 'query_rental', 'crawl_sessions');
+AND tablename IN ('queries', 'rentals', 'metro_distances', 'query_rentals', 'crawl_sessions');
 
 -- Create view for index usage monitoring  
 CREATE OR REPLACE VIEW v_index_usage AS
@@ -161,14 +161,10 @@ ORDER BY idx_scan DESC;
 -- EXECUTION SUMMARY
 -- =============================================================================
 
-DO $$ 
-BEGIN 
-  RAISE NOTICE '✅ Database optimization completed!';
-  RAISE NOTICE '📊 Created % performance indexes', 16;
-  RAISE NOTICE '🎯 Optimized common query patterns:';
-  RAISE NOTICE '   - Property lookup and upsert operations';
-  RAISE NOTICE '   - Metro distance filtering'; 
-  RAISE NOTICE '   - Query search and analytics';
-  RAISE NOTICE '   - Transaction performance';
-  RAISE NOTICE '🔍 Use v_performance_monitor and v_index_usage views to monitor performance';
-END $$;
+-- Database optimization completed!
+-- Created 16 performance indexes for:
+--   - Property lookup and upsert operations
+--   - Metro distance filtering 
+--   - Query search and analytics
+--   - Transaction performance
+-- Use v_performance_monitor and v_index_usage views to monitor performance
