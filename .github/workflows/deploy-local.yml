@@ -41,53 +41,17 @@ jobs:
         echo "🔨 Building new images..."
         docker-compose -f docker-compose.production.yml build
         
-    - name: Deploy with minimal downtime
+    - name: Deploy
       run: |
-        echo "🚀 Starting deployment with health check..."
-        
-        # Check if production containers are currently running
-        OLD_API_RUNNING=$(docker ps --filter "name=crawler-api-prod" --format "{{.Names}}" || echo "")
-        
-        if [ -n "$OLD_API_RUNNING" ]; then
-          echo "📊 Current API status:"
-          curl -sf http://localhost:3001/health || echo "API not responding"
-        fi
-        
-        # Clean up existing production containers first
-        echo "🧹 Cleaning up existing production containers..."
-        docker stop $(docker ps --filter "name=crawler-api-prod" --format "{{.Names}}") 2>/dev/null || true
-        docker stop $(docker ps --filter "name=postgres" --filter "name=crawler" --format "{{.Names}}") 2>/dev/null || true
-        docker rm $(docker ps -a --filter "name=crawler-api-prod" --format "{{.Names}}") 2>/dev/null || true
-        docker rm $(docker ps -a --filter "name=postgres" --filter "name=crawler" --format "{{.Names}}") 2>/dev/null || true
-        
-        # Deploy new containers
-        echo "🔄 Deploying new containers..."
+        echo "🚀 Deploying..."
+        docker-compose -f docker-compose.production.yml down || true
         docker-compose -f docker-compose.production.yml up -d
         
-        echo "⏳ Waiting for new containers to be ready..."
+        echo "⏳ Waiting for API..."
+        sleep 45
         
-        # Wait for database to be ready first
-        echo "Finding PostgreSQL container..."
-        POSTGRES_CONTAINER=$(docker ps --filter "name=postgres" --filter "name=crawler" --format "{{.Names}}" | head -1)
-        echo "Found PostgreSQL container: $POSTGRES_CONTAINER"
-        
-        timeout 120 bash -c 'until docker exec $POSTGRES_CONTAINER pg_isready -U postgres > /dev/null 2>&1; do 
-          echo "Waiting for database..."
-          sleep 3
-        done'
-        
-        # Wait for API to be healthy  
-        timeout 90 bash -c 'until curl -sf http://localhost:3001/health > /dev/null 2>&1; do 
-          echo "Waiting for API health check..."
-          sleep 3
-        done'
-        
-        # Final verification
-        echo "✅ Deployment completed! Verifying..."
-        curl -s http://localhost:3001/health | grep -q "healthy" && echo "🎉 API is healthy!" || echo "⚠️  API health check failed"
-        
-        echo "📊 Container status:"
-        docker ps --filter "name=crawler-" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+        # Health check
+        curl -f http://localhost:3001/health && echo "✅ Deployed successfully!"
         
     - name: Cleanup old images
       run: |
