@@ -13,7 +13,7 @@ describe('Parser', () => {
 
   beforeAll(() => {
     // Load fresh HTML sample for testing
-    const htmlPath = path.join(__dirname, '../../samples/current_591_new.html');
+    const htmlPath = path.join(__dirname, '../../samples/sample_591.html');
     sampleHtml = fs.readFileSync(htmlPath, 'utf8');
     $ = cheerio.load(sampleHtml);
   });
