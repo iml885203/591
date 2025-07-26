@@ -78,7 +78,7 @@ jobs:
         RECENT_CHANGES=$(git log --oneline --since='1 day ago' | head -5)
         
         # Create simple release notes
-        NOTES="Auto-generated release for v$VERSION. Latest commit: $COMMIT_INFO. Docker deployment available at http://localhost:3001"
+        NOTES="Auto-generated release for v$VERSION. Latest commit: $COMMIT_INFO"
         
         # Create release from tag
         gh release create "v$VERSION" \
