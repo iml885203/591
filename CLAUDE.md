@@ -158,6 +158,56 @@ git push origin main
 - PR 到 `main` 分支：僅觸發 CI 檢查
 - `develop` 分支：不觸發 CI，本地測試即可
 
+## 🚄 Railway Production Management
+
+**使用 Railway CLI 管理 Production 部署：**
+
+```bash
+# 查看部署狀態
+railway status
+
+# 查看實時日誌（監控部署和運行狀態）
+railway logs
+railway logs --follow  # 持續監控
+
+# 強制重新部署（使用最新代碼）
+railway redeploy
+
+# 查看環境變數
+railway variables
+
+# 設定環境變數（如需要）
+railway variables --set "SKIP_DB_OPTIMIZATION=false"
+
+# 連接到 Production 數據庫
+railway connect
+```
+
+**Production 驗證流程：**
+```bash
+# 1. 推送到 main 觸發自動部署
+git push origin main
+
+# 2. 監控部署日誌確認優化執行
+railway logs --follow
+
+# 3. 驗證數據庫優化是否執行
+# 查找日誌中的優化訊息：
+# "🚀 Railway startup sequence initiated"
+# "🚀 Starting database optimization..."
+# "✅ Database optimization completed successfully"
+
+# 4. 測試 API 功能
+curl -X GET "https://your-railway-domain.railway.app/health"
+curl -X DELETE "https://your-railway-domain.railway.app/query/{queryId}/clear?confirm=true" \
+  -H "x-api-key: your-api-key"
+```
+
+**常見問題排除：**
+- 如果優化沒執行：檢查 `package.json` 中的 `api` 腳本是否正確
+- 如果出現 `databaseStorage` 錯誤：確認所有 API 端點都正確初始化數據庫
+- 如果部署卡住：使用 `railway redeploy` 強制重新部署
+
 ## 📁 Project Structure
 
 ```
