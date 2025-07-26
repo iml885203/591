@@ -10,6 +10,56 @@ const { spawn } = require('child_process');
 const path = require('path');
 const { logWithTimestamp } = require('../lib/utils');
 
+async function initializeDatabase() {
+  return new Promise((resolve) => {
+    logWithTimestamp('🔄 Initializing database schema...');
+    
+    // First try to push schema (works for empty databases)
+    const dbPush = spawn('bun', ['prisma', 'db', 'push', '--accept-data-loss'], {
+      stdio: 'pipe',
+      env: process.env
+    });
+    
+    let output = '';
+    let error = '';
+    
+    dbPush.stdout.on('data', (data) => {
+      const text = data.toString();
+      console.log(text);
+      output += text;
+    });
+    
+    dbPush.stderr.on('data', (data) => {
+      const text = data.toString();
+      console.error(text);
+      error += text;
+    });
+    
+    const timeout = setTimeout(() => {
+      logWithTimestamp('⏰ Database initialization timeout - trying migrations...', 'WARN');
+      dbPush.kill('SIGTERM');
+      runMigrations().then(resolve);
+    }, 120000); // 2 minute timeout
+    
+    dbPush.on('close', (code) => {
+      clearTimeout(timeout);
+      if (code === 0) {
+        logWithTimestamp('✅ Database schema initialized successfully');
+        resolve(true);
+      } else {
+        logWithTimestamp('🔄 Schema push failed, trying migrations...');
+        runMigrations().then(resolve);
+      }
+    });
+    
+    dbPush.on('error', (error) => {
+      clearTimeout(timeout);
+      logWithTimestamp(`❌ Schema push error: ${error.message}, trying migrations...`);
+      runMigrations().then(resolve);
+    });
+  });
+}
+
 async function runMigrations() {
   return new Promise((resolve) => {
     logWithTimestamp('🔄 Running database migrations...');
@@ -163,13 +213,13 @@ async function main() {
   try {
     logWithTimestamp('🚀 Railway startup sequence initiated');
     
-    // Step 1: Run database migrations first
-    const migrationSuccess = await runMigrations();
+    // Step 1: Initialize database schema first
+    const dbInitSuccess = await initializeDatabase();
     
-    if (migrationSuccess) {
+    if (dbInitSuccess) {
       logWithTimestamp('🎯 Database schema is up to date');
     } else {
-      logWithTimestamp('⚠️  Database migrations skipped or failed - continuing anyway');
+      logWithTimestamp('⚠️  Database initialization skipped or failed - continuing anyway');
     }
     
     // Step 2: Run optimization (with timeout protection)
