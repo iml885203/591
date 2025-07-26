@@ -23,6 +23,9 @@ jobs:
     
     - name: Generate version and create tag
       run: |
+        # Ensure we have all tags from remote
+        git fetch --tags --force
+        
         # Generate CalVer version (YYYY.MM.PATCH)
         YEAR=$(date +%Y)
         MONTH=$(date +%-m)
@@ -30,6 +33,8 @@ jobs:
         # Get all existing tags for current month to determine patch version
         # Use proper version sorting and ensure we get the highest patch number
         MONTH_TAGS=$(git tag -l "${YEAR}.${MONTH}.*" | grep -E "^${YEAR}\.${MONTH}\.[0-9]+$" | sort -t'.' -k3 -n)
+        
+        echo "Found existing tags for ${YEAR}.${MONTH}: $MONTH_TAGS"
         if [ -z "$MONTH_TAGS" ]; then
           PATCH=1
         else
