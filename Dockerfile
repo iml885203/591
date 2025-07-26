@@ -34,8 +34,8 @@ RUN bun run db:generate
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
-# Create data directory and set permissions
-RUN mkdir -p /app/data && \
+# Create data directory and debug HTML directory with proper permissions
+RUN mkdir -p /app/data /app/debug-html && \
     chown -R nodejs:nodejs /app
 
 # Switch to non-root user

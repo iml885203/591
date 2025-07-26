@@ -86,7 +86,7 @@ DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
 NOTIFICATION_DELAY=1000
 API_PORT=3000
 API_KEY=your-secret-api-key-here
-SAVE_DEBUG_HTML=true   # Save HTML files to /tmp/debug-html for debugging (production only)
+SAVE_DEBUG_HTML=true   # Save HTML files to /app/debug-html for debugging (production only)
 ```
 
 **Distance filtering via API only:**

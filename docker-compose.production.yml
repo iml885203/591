@@ -35,7 +35,7 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-crawler_password}@postgres:5432/crawler
     volumes:
-      - debug_html:/tmp/debug-html
+      - debug_html:/app/debug-html
       - ./logs:/app/logs
     depends_on:
       postgres:

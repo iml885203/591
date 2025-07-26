@@ -1059,7 +1059,7 @@ app.get('/debug/html', authenticateApiKey, async (req, res) => {
   try {
     const fs = require('fs');
     const path = require('path');
-    const debugDir = '/tmp/debug-html';
+    const debugDir = '/app/debug-html';
     
     // Check if debug directory exists
     if (!fs.existsSync(debugDir)) {
@@ -1163,7 +1163,7 @@ app.get('/debug/html/:filename', authenticateApiKey, async (req, res) => {
       });
     }
     
-    const debugDir = '/tmp/debug-html';
+    const debugDir = '/app/debug-html';
     const filePath = path.join(debugDir, filename);
     
     // Check if file exists
