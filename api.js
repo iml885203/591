@@ -102,7 +102,7 @@ app.get('/health', (req, res) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     service: '591-crawler-api',
-    version: process.env.npm_package_version || 'unknown',
+    version: require('./lib/getVersion').getVersion(),
     uptime: process.uptime()
   });
 });

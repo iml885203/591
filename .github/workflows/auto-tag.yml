@@ -1,0 +1,79 @@
+name: Auto Tag and Release
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  auto-tag:
+    runs-on: self-hosted
+    # Skip if commit message contains version bump
+    if: "!contains(github.event.head_commit.message, 'chore: bump version')"
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+    
+    - name: Generate version and create tag
+      run: |
+        # Generate CalVer version (YYYY.MM.PATCH)
+        YEAR=$(date +%Y)
+        MONTH=$(date +%-m)
+        
+        # Get today's existing tags to determine patch version
+        TODAY_TAGS=$(git tag -l "${YEAR}.${MONTH}.*" | sort -V)
+        if [ -z "$TODAY_TAGS" ]; then
+          PATCH=1
+        else
+          LATEST_PATCH=$(echo "$TODAY_TAGS" | tail -1 | cut -d'.' -f3)
+          PATCH=$((LATEST_PATCH + 1))
+        fi
+        
+        NEW_VERSION="${YEAR}.${MONTH}.${PATCH}"
+        echo "Generated version: v$NEW_VERSION"
+        
+        # Check if tag already exists
+        if git rev-parse "v$NEW_VERSION" >/dev/null 2>&1; then
+          echo "Tag v$NEW_VERSION already exists, skipping"
+          exit 0
+        fi
+        
+        # Create annotated tag with version info
+        git tag -a "v$NEW_VERSION" -m "Release v$NEW_VERSION
+
+Auto-generated tag for commit: $(git log -1 --pretty=format:'%h - %s')
+
+Recent changes:
+$(git log --oneline --since='1 day ago' | head -5)
+
+Deployment: Local Docker (port 3001)
+Swagger: http://localhost:3001/api-docs"
+        
+        # Push tag
+        git push origin "v$NEW_VERSION"
+        
+        echo "✅ Created and pushed tag v$NEW_VERSION"
+        echo "VERSION=$NEW_VERSION" >> $GITHUB_ENV
+    
+    - name: Create GitHub Release
+      if: env.VERSION
+      run: |
+        # Create release from tag
+        gh release create "v$VERSION" \
+          --title "Release v$VERSION" \
+          --notes "Auto-generated release for v$VERSION
+          
+**Latest commit:** $(git log -1 --pretty=format:'%h - %s')
+
+**Recent changes:**
+$(git log --oneline --since='1 day ago' | head -5)
+
+**Docker Deployment:**
+- API: http://localhost:3001
+- Swagger: http://localhost:3001/api-docs
+- Network: http://192.168.50.154:3001" \
+          --latest
