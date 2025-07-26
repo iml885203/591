@@ -59,14 +59,8 @@ jobs:
     - name: Send deployment notification
       if: always()
       run: |
-        # Choose webhook URL (maintenance webhook has priority)
-        WEBHOOK_URL="${{ secrets.MAINTENANCE_WEBHOOK_URL }}"
-        if [ -z "$WEBHOOK_URL" ]; then
-          WEBHOOK_URL="${{ secrets.DISCORD_WEBHOOK_URL }}"
-        fi
-        
         if [ "${{ job.status }}" == "success" ]; then
-          curl -X POST "$WEBHOOK_URL" \
+          curl -X POST "${{ secrets.MAINTENANCE_WEBHOOK_URL }}" \
             -H "Content-Type: application/json" \
             -d "{
               \"embeds\": [{
@@ -82,7 +76,7 @@ jobs:
               }]
             }" || true
         else
-          curl -X POST "$WEBHOOK_URL" \
+          curl -X POST "${{ secrets.MAINTENANCE_WEBHOOK_URL }}" \
             -H "Content-Type: application/json" \
             -d "{
               \"embeds\": [{
