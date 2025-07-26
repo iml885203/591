@@ -489,6 +489,10 @@ app.delete('/query/:queryId/clear', authenticateApiKey, async (req, res) => {
     
     logWithTimestamp(`🗑️  Clearing data for query: ${queryId}`);
     
+    // Initialize database storage
+    const databaseStorage = new DatabaseStorage();
+    await databaseStorage.initialize();
+    
     // Check if query exists
     const query = await databaseStorage.prisma.query.findUnique({
       where: { id: queryId },
