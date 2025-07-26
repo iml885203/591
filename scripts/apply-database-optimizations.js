@@ -37,11 +37,19 @@ async function applyOptimizations() {
     const sqlPath = path.join(__dirname, 'optimize-database.sql');
     const sqlContent = fs.readFileSync(sqlPath, 'utf8');
     
-    // Split SQL content by statements (basic approach)
+    // Split SQL content by statements (improved approach)
     const statements = sqlContent
       .split(';')
       .map(stmt => stmt.trim())
-      .filter(stmt => stmt && !stmt.startsWith('--') && !stmt.startsWith('/*'));
+      .filter(stmt => {
+        // Filter out empty statements, comments, and invalid fragments
+        if (!stmt) return false;
+        if (stmt.startsWith('--')) return false;
+        if (stmt.startsWith('/*')) return false;
+        if (/^(DO|RAISE|BEGIN|END)\s*(\$\$)?/i.test(stmt)) return false;
+        if (stmt.includes('$$')) return false; // Skip any dollar-quoted fragments
+        return true;
+      });
     
     logWithTimestamp(`📊 Executing ${statements.length} optimization statements...`);
     
@@ -50,8 +58,8 @@ async function applyOptimizations() {
     
     for (const [index, statement] of statements.entries()) {
       try {
-        // Skip comments and empty statements
-        if (!statement || statement.startsWith('--') || /^\s*(DO|RAISE)\s/i.test(statement)) {
+        // Skip comments, empty statements, and problematic fragments
+        if (!statement || statement.startsWith('--') || /^\s*(DO|RAISE|BEGIN|END)\s/i.test(statement) || statement.includes('$$')) {
           skipCount++;
           continue;
         }
@@ -78,7 +86,7 @@ async function applyOptimizations() {
     await prisma.$executeRaw`ANALYZE queries`;
     await prisma.$executeRaw`ANALYZE rentals`;
     await prisma.$executeRaw`ANALYZE metro_distances`;
-    await prisma.$executeRaw`ANALYZE query_rental`;
+    await prisma.$executeRaw`ANALYZE query_rentals`;
     await prisma.$executeRaw`ANALYZE crawl_sessions`;
     
     // Test some optimized queries
