@@ -7,7 +7,7 @@
 
 require('dotenv').config();
 const { crawlWithNotifications } = require('./lib/crawlService');
-const { logWithTimestamp } = require('./lib/utils');
+const logger = require('./lib/logger');
 const { getUrlStationInfo } = require('./lib/multiStationCrawler');
 
 // Main execution
@@ -80,10 +80,10 @@ if (require.main === module) {
   const multiStationInfo = urlStationInfo.hasMultiple ? 
     ` (multi-station: ${urlStationInfo.stations.join(',')})` : '';
   
-  logWithTimestamp(`Starting crawler with mode=${notifyMode}${notifyMode === 'filtered' ? `/${filteredMode}` : ''}, maxLatest=${maxLatest}${multiStationInfo}`);
+  logger.info(`Starting crawler with mode=${notifyMode}${notifyMode === 'filtered' ? `/${filteredMode}` : ''}, maxLatest=${maxLatest}${multiStationInfo}`);
   
   if (urlStationInfo.hasMultiple) {
-    logWithTimestamp(`Multi-station options: ${JSON.stringify(multiStationOptions)}`);
+    logger.info(`Multi-station options: ${JSON.stringify(multiStationOptions)}`);
   }
 
   // Run crawler with default dependencies (production mode)
