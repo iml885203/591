@@ -17,10 +17,10 @@ async function runBaselineMigration() {
     
     await databaseStorage.initialize();
     
-    // Check if houseType column exists (case-insensitive table name check)
+    // Check if houseType column exists (check both 'rental' and 'rentals' tables)
     const result = await databaseStorage.prisma.$queryRaw`
       SELECT column_name FROM information_schema.columns 
-      WHERE LOWER(table_name) = 'rental' AND column_name = 'houseType'
+      WHERE table_name IN ('rental', 'Rental', 'rentals') AND column_name = 'houseType'
     `;
     
     if (result.length === 0) {
@@ -32,8 +32,11 @@ async function runBaselineMigration() {
       
       logWithTimestamp(`📋 Available tables: ${tables.map(t => t.table_name).join(', ')}`);
       
-      // Try to find the rental table with any casing
-      const rentalTable = tables.find(t => t.table_name.toLowerCase() === 'rental');
+      // Try to find the rental table with any casing (rental or rentals)
+      const rentalTable = tables.find(t => 
+        t.table_name.toLowerCase() === 'rental' || 
+        t.table_name.toLowerCase() === 'rentals'
+      );
       
       if (!rentalTable) {
         throw new Error('Rental table not found in database');
