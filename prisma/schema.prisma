@@ -100,7 +100,8 @@ model Rental {
   propertyId String  @unique // Generated from PropertyId domain model
   title      String
   link       String  @unique // 591.com.tw property URL
-  rooms      String
+  houseType  String  // 房屋類型: 整層住家, 獨立套房, 分租套房, 雅房
+  rooms      String  // 房間格局: 3房1廳, 2房2廳, 套房 等
   
   // Metro/MRT information
   metroTitle String? // Primary MRT station name
