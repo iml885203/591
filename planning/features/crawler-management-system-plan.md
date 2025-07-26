@@ -312,8 +312,9 @@ CREATE TABLE property_snapshots (
 ├── management-api.js        # 新增 - 管理 API 伺服器
 ├── data/
 │   └── management.db       # 新增 - SQLite 資料庫
-├── plan/                   # 新增 - 計畫文件
-│   └── crawler-management-system-plan.md
+├── planning/              # 計畫文件
+│   └── features/
+│       └── crawler-management-system-plan.md
 └── ... (existing files)
 ```
 

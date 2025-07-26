@@ -393,6 +393,224 @@ app.post('/query/parse', authenticateApiKey, async (req, res) => {
 
 /**
  * @swagger
+ * /query/{queryId}/clear:
+ *   delete:
+ *     summary: Clear historical data for a specific query
+ *     description: |
+ *       Removes all crawl sessions, rentals, and related data for a query ID.
+ *       This operation is irreversible and requires explicit confirmation.
+ *       
+ *       **Warning:** This will permanently delete:
+ *       - All crawl sessions for this query
+ *       - All rental-query relationships
+ *       - Orphaned rental records (rentals not linked to other queries)
+ *       - Associated metro distance data
+ *     tags: [Query]
+ *     security:
+ *       - ApiKeyAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: queryId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The query ID to clear
+ *         example: "region1_kind0_stations4232-4233_price15000,30000"
+ *       - in: query
+ *         name: confirm
+ *         required: true
+ *         schema:
+ *           type: boolean
+ *         description: Must be true to confirm deletion
+ *         example: true
+ *     responses:
+ *       200:
+ *         description: Query data cleared successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Successfully cleared data for query: 台北市大安區租屋"
+ *                 queryId:
+ *                   type: string
+ *                   example: "region1_kind0_stations4232-4233"
+ *                 cleared:
+ *                   type: object
+ *                   properties:
+ *                     crawlSessions:
+ *                       type: number
+ *                       example: 15
+ *                     queryRentals:
+ *                       type: number
+ *                       example: 234
+ *                     metroDistances:
+ *                       type: number
+ *                       example: 45
+ *       400:
+ *         description: Bad request - confirmation required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 error:
+ *                   type: string
+ *                   example: "Confirmation required"
+ *                 message:
+ *                   type: string
+ *                   example: "Add ?confirm=true to confirm deletion"
+ *       404:
+ *         description: Query ID not found
+ *       500:
+ *         description: Internal server error
+ */
+app.delete('/query/:queryId/clear', authenticateApiKey, async (req, res) => {
+  const { queryId } = req.params;
+  const { confirm } = req.query;
+  
+  try {
+    // Require explicit confirmation to prevent accidental deletion
+    if (confirm !== 'true') {
+      return res.status(400).json({
+        success: false,
+        error: 'Confirmation required',
+        message: 'Add ?confirm=true to confirm deletion'
+      });
+    }
+    
+    logWithTimestamp(`🗑️  Clearing data for query: ${queryId}`);
+    
+    // Check if query exists
+    const query = await databaseStorage.prisma.query.findUnique({
+      where: { id: queryId },
+      include: {
+        _count: {
+          select: {
+            crawlSessions: true,
+            rentals: true
+          }
+        }
+      }
+    });
+    
+    if (!query) {
+      return res.status(404).json({
+        success: false,
+        error: 'Query not found',
+        message: `Query ID '${queryId}' does not exist`
+      });
+    }
+    
+    logWithTimestamp(`📊 Query found: ${query.description} (${query._count.crawlSessions} sessions, ${query._count.rentals} rentals)`);
+    
+    // Clear data in transaction
+    const cleared = await databaseStorage.prisma.$transaction(async (tx) => {
+      // Get rental IDs associated with this query for metro distance cleanup
+      const queryRentals = await tx.queryRental.findMany({
+        where: { queryId },
+        select: { rentalId: true }
+      });
+      
+      const rentalIds = queryRentals.map(qr => qr.rentalId);
+      
+      // Delete crawl session rentals first (foreign key constraint)
+      const crawlSessionRentalsDeleted = await tx.crawlSessionRental.deleteMany({
+        where: {
+          session: {
+            queryId: queryId
+          }
+        }
+      });
+      
+      // Delete crawl sessions
+      const crawlSessionsDeleted = await tx.crawlSession.deleteMany({
+        where: { queryId }
+      });
+      
+      // Delete query-rental relationships
+      const queryRentalsDeleted = await tx.queryRental.deleteMany({
+        where: { queryId }
+      });
+      
+      // Delete metro distances for rentals that are no longer referenced
+      let metroDistancesDeleted = { count: 0 };
+      if (rentalIds.length > 0) {
+        // Find rentals that are no longer referenced by any query
+        const orphanedRentals = await tx.rental.findMany({
+          where: {
+            id: { in: rentalIds },
+            queryRentals: {
+              none: {}
+            }
+          },
+          select: { id: true }
+        });
+        
+        const orphanedRentalIds = orphanedRentals.map(r => r.id);
+        
+        if (orphanedRentalIds.length > 0) {
+          // Delete metro distances for orphaned rentals
+          metroDistancesDeleted = await tx.metroDistance.deleteMany({
+            where: {
+              rentalId: { in: orphanedRentalIds }
+            }
+          });
+          
+          // Delete orphaned rentals
+          await tx.rental.deleteMany({
+            where: {
+              id: { in: orphanedRentalIds }
+            }
+          });
+        }
+      }
+      
+      return {
+        crawlSessions: crawlSessionsDeleted.count,
+        crawlSessionRentals: crawlSessionRentalsDeleted.count,
+        queryRentals: queryRentalsDeleted.count,
+        metroDistances: metroDistancesDeleted.count,
+        orphanedRentals: rentalIds.length
+      };
+    });
+    
+    logWithTimestamp(`✅ Cleared data for query ${queryId}:`);
+    logWithTimestamp(`   - Crawl sessions: ${cleared.crawlSessions}`);
+    logWithTimestamp(`   - Query-rental links: ${cleared.queryRentals}`);
+    logWithTimestamp(`   - Metro distances: ${cleared.metroDistances}`);
+    
+    res.json({
+      success: true,
+      message: `Successfully cleared data for query: ${query.description}`,
+      queryId,
+      cleared: {
+        crawlSessions: cleared.crawlSessions,
+        queryRentals: cleared.queryRentals,
+        metroDistances: cleared.metroDistances
+      }
+    });
+    
+  } catch (error) {
+    logWithTimestamp(`❌ Error clearing query data: ${error.message}`, 'ERROR');
+    res.status(500).json({
+      success: false,
+      error: 'Internal Server Error',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * @swagger
  * /query/{queryId}/rentals:
  *   get:
  *     summary: Get historical rentals for a specific query
@@ -863,9 +1081,12 @@ if (require.main === module) {
     const server = app.listen(PORT, () => {
       logWithTimestamp(`591 Crawler API server started on port ${PORT}`);
       logWithTimestamp(`Available endpoints:`);
-      logWithTimestamp(`  GET  http://localhost:${PORT}/health - Health check`);
-      logWithTimestamp(`  POST http://localhost:${PORT}/crawl - Execute crawler`);
-      logWithTimestamp(`  GET  http://localhost:${PORT}/swagger - Swagger API Documentation`);
+      logWithTimestamp(`  GET    http://localhost:${PORT}/health - Health check`);
+      logWithTimestamp(`  POST   http://localhost:${PORT}/crawl - Execute crawler`);
+      logWithTimestamp(`  POST   http://localhost:${PORT}/query/parse - Parse query URL`);
+      logWithTimestamp(`  DELETE http://localhost:${PORT}/query/{id}/clear?confirm=true - Clear query data`);
+      logWithTimestamp(`  GET    http://localhost:${PORT}/query/{id}/rentals - Get query rentals`);
+      logWithTimestamp(`  GET    http://localhost:${PORT}/swagger - Swagger API Documentation`);
     });
 
     server.on('error', (err) => {

@@ -7,7 +7,7 @@
     "591-crawler": "./crawler.js"
   },
   "scripts": {
-    "start": "bun run api.js",
+    "start": "bun run scripts/start-with-optimization.js",
     "api": "echo 'Environment variables:' && echo 'NODE_ENV='$NODE_ENV && echo 'API_KEY='$API_KEY && echo 'PORT='$PORT && echo 'API_PORT='$API_PORT && echo 'Starting API server...' && bun run api.js",
     "crawl": "bun run crawler.js",
     "example": "bun run crawler.js \"https://rent.591.com.tw/list?region=1&kind=0\" 3",
@@ -40,6 +40,9 @@
     "db:status": "bun run scripts/setup-database.js status",
     "db:test": "bun run scripts/setup-database.js test",
     "db:reset": "bun run scripts/setup-database.js reset",
+    "db:optimize": "bun run scripts/apply-database-optimizations.js",
+    "db:stats": "echo 'SELECT * FROM v_performance_monitor LIMIT 10;' | psql $DATABASE_URL",
+    "db:indexes": "echo 'SELECT * FROM v_index_usage ORDER BY idx_scan DESC LIMIT 10;' | psql $DATABASE_URL",
     "migrate:json-to-db": "bun run scripts/migrate-to-database.js migrate",
     "migrate:verify": "bun run scripts/migrate-to-database.js verify"
   },
