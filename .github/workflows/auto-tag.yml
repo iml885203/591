@@ -27,12 +27,13 @@ jobs:
         YEAR=$(date +%Y)
         MONTH=$(date +%-m)
         
-        # Get today's existing tags to determine patch version
-        TODAY_TAGS=$(git tag -l "${YEAR}.${MONTH}.*" | sort -V)
-        if [ -z "$TODAY_TAGS" ]; then
+        # Get all existing tags for current month to determine patch version
+        # Use proper version sorting and ensure we get the highest patch number
+        MONTH_TAGS=$(git tag -l "${YEAR}.${MONTH}.*" | grep -E "^${YEAR}\.${MONTH}\.[0-9]+$" | sort -t'.' -k3 -n)
+        if [ -z "$MONTH_TAGS" ]; then
           PATCH=1
         else
-          LATEST_PATCH=$(echo "$TODAY_TAGS" | tail -1 | cut -d'.' -f3)
+          LATEST_PATCH=$(echo "$MONTH_TAGS" | tail -1 | cut -d'.' -f3)
           PATCH=$((LATEST_PATCH + 1))
         fi
         
