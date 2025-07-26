@@ -1,0 +1,91 @@
+name: Deploy to Local Docker
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up environment
+      run: |
+        echo "DEPLOYMENT_TIME=$(date '+%Y-%m-%d %H:%M:%S')" >> $GITHUB_ENV
+        echo "COMMIT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+        
+    - name: Create deployment env file
+      run: |
+        cat > .env.production << EOF
+        NODE_ENV=production
+        DATABASE_PROVIDER=postgresql
+        DATABASE_URL=${{ secrets.DATABASE_URL }}
+        DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL }}
+        API_KEY=${{ secrets.API_KEY }}
+        NOTIFICATION_DELAY=1000
+        API_PORT=3000
+        SAVE_DEBUG_HTML=true
+        EOF
+        
+    - name: Stop existing containers
+      run: |
+        docker compose -f docker-compose.yml down || true
+        docker compose -f docker-compose.production.yml down || true
+        
+    - name: Pull latest images and deploy
+      run: |
+        docker compose -f docker-compose.production.yml pull || true
+        docker compose -f docker-compose.production.yml up -d --build
+        
+    - name: Wait for services to be ready
+      run: |
+        echo "Waiting for services to start..."
+        sleep 30
+        
+    - name: Health check
+      run: |
+        # Wait for API to be ready
+        timeout 60 bash -c 'until curl -f http://localhost:3001/health; do sleep 2; done'
+        echo "✅ Deployment successful!"
+        
+    - name: Cleanup old images
+      run: |
+        docker image prune -f || true
+        
+    - name: Send deployment notification
+      if: always()
+      run: |
+        if [ "${{ job.status }}" == "success" ]; then
+          curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"embeds\": [{
+                \"title\": \"🚀 Deployment Successful\",
+                \"description\": \"591 Crawler deployed successfully to local Docker\",
+                \"color\": 3066993,
+                \"fields\": [
+                  {\"name\": \"Commit\", \"value\": \"$COMMIT_SHA\", \"inline\": true},
+                  {\"name\": \"Time\", \"value\": \"$DEPLOYMENT_TIME\", \"inline\": true},
+                  {\"name\": \"Environment\", \"value\": \"Local Docker\", \"inline\": true}
+                ]
+              }]
+            }" || true
+        else
+          curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"embeds\": [{
+                \"title\": \"❌ Deployment Failed\",
+                \"description\": \"591 Crawler deployment failed\",
+                \"color\": 15158332,
+                \"fields\": [
+                  {\"name\": \"Commit\", \"value\": \"$COMMIT_SHA\", \"inline\": true},
+                  {\"name\": \"Time\", \"value\": \"$DEPLOYMENT_TIME\", \"inline\": true}
+                ]
+              }]
+            }" || true
+        fi

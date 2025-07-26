@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Node.js web scraper for 591.com.tw rental monitoring with Discord notifications.
+Node.js web scraper for 591.com.tw rental monitoring with Discord notifications and local Docker auto-deployment.
 
 ## 🚀 Quick Commands
 
