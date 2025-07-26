@@ -7,6 +7,7 @@
 
 const { logWithTimestamp } = require('../lib/utils');
 const DatabaseStorage = require('../lib/storage/DatabaseStorage');
+const { Prisma } = require('@prisma/client');
 
 async function runBaselineMigration() {
   const databaseStorage = new DatabaseStorage();
@@ -16,21 +17,38 @@ async function runBaselineMigration() {
     
     await databaseStorage.initialize();
     
-    // Check if houseType column exists
+    // Check if houseType column exists (case-insensitive table name check)
     const result = await databaseStorage.prisma.$queryRaw`
       SELECT column_name FROM information_schema.columns 
-      WHERE table_name = 'Rental' AND column_name = 'houseType'
+      WHERE LOWER(table_name) = 'rental' AND column_name = 'houseType'
     `;
     
     if (result.length === 0) {
-      // Add houseType column
-      logWithTimestamp('📦 Adding houseType column to production database...');
-      await databaseStorage.prisma.$executeRaw`
-        ALTER TABLE "Rental" ADD COLUMN "houseType" TEXT NOT NULL DEFAULT '房屋類型未明'
+      // First, let's check what tables exist
+      const tables = await databaseStorage.prisma.$queryRaw`
+        SELECT table_name FROM information_schema.tables 
+        WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
       `;
-      await databaseStorage.prisma.$executeRaw`
-        CREATE INDEX IF NOT EXISTS "Rental_houseType_idx" ON "Rental"("houseType")
-      `;
+      
+      logWithTimestamp(`📋 Available tables: ${tables.map(t => t.table_name).join(', ')}`);
+      
+      // Try to find the rental table with any casing
+      const rentalTable = tables.find(t => t.table_name.toLowerCase() === 'rental');
+      
+      if (!rentalTable) {
+        throw new Error('Rental table not found in database');
+      }
+      
+      const tableName = rentalTable.table_name;
+      logWithTimestamp(`📦 Adding houseType column to table: ${tableName}`);
+      
+      // Use string interpolation for dynamic table names
+      await databaseStorage.prisma.$executeRawUnsafe(
+        `ALTER TABLE "${tableName}" ADD COLUMN "houseType" TEXT NOT NULL DEFAULT '房屋類型未明'`
+      );
+      await databaseStorage.prisma.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "${tableName}_houseType_idx" ON "${tableName}"("houseType")`
+      );
       
       logWithTimestamp('✅ houseType column added successfully');
     } else {
