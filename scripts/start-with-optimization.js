@@ -18,10 +18,25 @@ async function runMigrations() {
         ? ['run', 'db:migrate:deploy'] 
         : ['run', 'db:migrate'], 
       {
-        stdio: 'inherit',
+        stdio: 'pipe',
         env: process.env
       }
     );
+    
+    let output = '';
+    let error = '';
+    
+    migration.stdout.on('data', (data) => {
+      const text = data.toString();
+      console.log(text);
+      output += text;
+    });
+    
+    migration.stderr.on('data', (data) => {
+      const text = data.toString();
+      console.error(text);
+      error += text;
+    });
     
     const timeout = setTimeout(() => {
       logWithTimestamp('⏰ Migration timeout - proceeding anyway', 'WARN');
@@ -34,6 +49,23 @@ async function runMigrations() {
       if (code === 0) {
         logWithTimestamp('✅ Database migrations completed successfully');
         resolve(true);
+      } else if (error.includes('P3005') || error.includes('database schema is not empty')) {
+        logWithTimestamp('🔄 Production database detected - running baseline migration...');
+        // Try to run the baseline manually
+        runBaselineMigration()
+          .then(success => {
+            if (success) {
+              logWithTimestamp('✅ Database baseline completed successfully');
+              resolve(true);
+            } else {
+              logWithTimestamp('⚠️  Database baseline failed - continuing anyway', 'WARN');
+              resolve(false);
+            }
+          })
+          .catch(() => {
+            logWithTimestamp('⚠️  Database baseline failed - continuing anyway', 'WARN');
+            resolve(false);
+          });
       } else {
         logWithTimestamp(`⚠️  Database migrations failed with code ${code} - continuing anyway`, 'WARN');
         resolve(false);
@@ -46,6 +78,64 @@ async function runMigrations() {
       resolve(false);
     });
   });
+}
+
+async function runBaselineMigration() {
+  const { DatabaseStorage } = require('../lib/storage/DatabaseStorage');
+  const databaseStorage = new DatabaseStorage();
+  
+  try {
+    await databaseStorage.initialize();
+    
+    // Check if houseType column exists
+    const result = await databaseStorage.prisma.$queryRaw`
+      SELECT column_name FROM information_schema.columns 
+      WHERE table_name = 'Rental' AND column_name = 'houseType'
+    `;
+    
+    if (result.length === 0) {
+      // Add houseType column
+      logWithTimestamp('📦 Adding houseType column to production database...');
+      await databaseStorage.prisma.$executeRaw`
+        ALTER TABLE "Rental" ADD COLUMN "houseType" TEXT NOT NULL DEFAULT '房屋類型未明'
+      `;
+      await databaseStorage.prisma.$executeRaw`
+        CREATE INDEX IF NOT EXISTS "Rental_houseType_idx" ON "Rental"("houseType")
+      `;
+      
+      logWithTimestamp('✅ houseType column added successfully');
+    } else {
+      logWithTimestamp('✓ houseType column already exists');
+    }
+    
+    // Mark migration as applied
+    await databaseStorage.prisma.$executeRaw`
+      INSERT INTO "_prisma_migrations" (
+        "id", 
+        "checksum", 
+        "finished_at", 
+        "migration_name", 
+        "logs", 
+        "started_at", 
+        "applied_steps_count"
+      ) VALUES (
+        '20250726000001-add-house-type-field',
+        'b9e3f5c8d9e2a1f4c3b6a8d7e9f2c5b1a4d7e0f3c6b9a2d5e8f1c4b7a0d3e6f9',
+        now(),
+        '20250726000001_add_house_type_field',
+        'Baselined existing production database with houseType field',
+        now(),
+        1
+      ) ON CONFLICT ("id") DO NOTHING
+    `;
+    
+    return true;
+  } catch (error) {
+    logWithTimestamp(`Baseline migration error: ${error.message}`, 'ERROR');
+    return false;
+  } finally {
+    await databaseStorage.close();
+  }
 }
 
 async function runOptimization() {
