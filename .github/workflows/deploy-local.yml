@@ -1,4 +1,4 @@
-name: Deploy to Local Docker
+name: Deploy to Local Docker (Main Branch)
 
 on:
   push:
@@ -21,9 +21,9 @@ jobs:
     - name: Install dependencies
       run: bun install
       
-    - name: Run tests
+    - name: Run pre-deployment tests
       run: |
-        echo "🧪 Running test suite..."
+        echo "🧪 Running pre-deployment test suite..."
         bun test
     
   deploy:
