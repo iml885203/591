@@ -235,6 +235,6 @@ curl -X DELETE "https://your-railway-domain.railway.app/query/{queryId}/clear?co
 │   ├── unit/           # Unit tests
 │   └── integration/    # Integration tests
 ├── dev/                # Dev scripts
-├── samples/            # HTML samples
+├── samples/            # HTML test samples (parser testing)
 └── scripts/            # Build scripts
 ```
