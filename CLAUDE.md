@@ -7,6 +7,12 @@ Node.js web scraper for 591.com.tw rental monitoring with Discord notifications 
 ```bash
 # Development
 bun install  # Automatically sets up Git hooks via Husky
+
+# Start development databases
+bun run dev:db:start  # PostgreSQL dev & test databases
+bun run dev:pgadmin   # Optional: pgAdmin web interface
+
+# Run tests and API
 bun test
 bun run api
 
@@ -121,11 +127,17 @@ DEBUG_LOGS=false       # Enable/disable debug logging (true/false)
 
 **Database Integration Testing:**
 ```bash
-# PostgreSQL integration tests (production database)
-bun run test:postgres:start     # Start PostgreSQL container
-bun run test:postgres:setup     # Setup schema
-bun run test:integration:database # Run database integration tests
-bun run test:postgres:stop      # Cleanup
+# Development databases (recommended)
+bun run dev:db:start             # Start dev & test PostgreSQL containers
+bun run dev:db:stop              # Stop development databases
+bun run dev:db:reset             # Reset databases (delete all data)
+bun run dev:db:logs              # View database logs
+bun run dev:pgadmin              # Start pgAdmin (http://localhost:8080)
+
+# Legacy test setup (alternative)
+bun run test:postgres:start      # Start PostgreSQL container
+bun run test:postgres:setup      # Setup schema
+bun run test:postgres:stop       # Cleanup
 
 # All tests
 bun test                         # Unit tests only
