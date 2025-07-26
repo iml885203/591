@@ -46,7 +46,7 @@
     "migrate:legacy-json": "bun run scripts/legacy-json-migration.js migrate",
     "migrate:verify": "bun run scripts/legacy-json-migration.js verify",
     "migrate:update-legacy": "bun run scripts/update-legacy-rentals.js",
-    "prepare": "node -e \"try { require('husky') } catch (e) { if (e.code !== 'MODULE_NOT_FOUND') throw e }\""
+    "prepare": "is-ci || husky"
   },
   "keywords": [
     "591",
@@ -80,6 +80,7 @@
     "dotenv": "^17.2.0",
     "express": "^4.21.2",
     "fs-extra": "^11.3.0",
+    "is-ci": "^4.1.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"
   },
