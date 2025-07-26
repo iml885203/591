@@ -30,16 +30,10 @@ services:
     restart: unless-stopped
     ports:
       - "3001:3000"
+    env_file:
+      - .env.production
     environment:
-      NODE_ENV: production
-      DATABASE_PROVIDER: postgresql
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-crawler_password}@postgres:5432/crawler
-      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL}
-      API_KEY: ${API_KEY}
-      NOTIFICATION_DELAY: 1000
-      API_PORT: 3000
-      SAVE_DEBUG_HTML: "true"
-      SKIP_DB_OPTIMIZATION: ${SKIP_DB_OPTIMIZATION:-false}
     volumes:
       - debug_html:/tmp/debug-html
       - ./logs:/app/logs
