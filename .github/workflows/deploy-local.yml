@@ -17,6 +17,7 @@ jobs:
       run: |
         echo "DEPLOYMENT_TIME=$(date '+%Y-%m-%d %H:%M:%S')" >> $GITHUB_ENV
         echo "COMMIT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+        echo "JOB_URL=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> $GITHUB_ENV
         
     - name: Create deployment env file
       run: |
@@ -112,7 +113,8 @@ jobs:
                 \"fields\": [
                   {\"name\": \"Commit\", \"value\": \"$COMMIT_SHA\", \"inline\": true},
                   {\"name\": \"Time\", \"value\": \"$DEPLOYMENT_TIME\", \"inline\": true},
-                  {\"name\": \"Check\", \"value\": \"View GitHub Actions logs for details\", \"inline\": false}
+                  {\"name\": \"CI Job\", \"value\": \"[View Logs]($JOB_URL)\", \"inline\": true},
+                  {\"name\": \"Action\", \"value\": \"Check the CI logs for detailed error information\", \"inline\": false}
                 ]
               }]
             }" || true
