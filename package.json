@@ -45,7 +45,7 @@
     "migrate:legacy-json": "bun run scripts/legacy-json-migration.js migrate",
     "migrate:verify": "bun run scripts/legacy-json-migration.js verify",
     "migrate:update-legacy": "bun run scripts/update-legacy-rentals.js",
-    "prepare": "is-ci || husky"
+    "prepare": "is-ci || (command -v husky >/dev/null 2>&1 && husky) || true"
   },
   "keywords": [
     "591",
