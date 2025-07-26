@@ -24,6 +24,29 @@ const PORT = process.env.PORT || process.env.API_PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// HTTP access logging middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  
+  // Override res.end to capture response info
+  const originalEnd = res.end;
+  res.end = function(chunk, encoding) {
+    const duration = Date.now() - start;
+    const logMessage = `${req.method} ${req.originalUrl} - ${res.statusCode} (${duration}ms) - ${req.ip}`;
+    
+    // Log API key info if present (but not the actual key)
+    const hasApiKey = !!(req.headers['x-api-key'] || req.query.apiKey);
+    const apiKeyInfo = hasApiKey ? ' [authenticated]' : ' [no-auth]';
+    
+    logWithTimestamp(`📡 ${logMessage}${apiKeyInfo}`);
+    
+    // Call original end method
+    originalEnd.call(this, chunk, encoding);
+  };
+  
+  next();
+});
+
 // API Key authentication middleware
 const authenticateApiKey = (req, res, next) => {
   const apiKey = req.headers['x-api-key'] || req.query.apiKey;
