@@ -41,6 +41,8 @@ model Query {
   @@index([stations])
   @@index([priceMin, priceMax])
   @@index([createdAt])
+  @@index([region, isValid, updatedAt(sort: Desc)])
+  @@index([priceMin, priceMax, region])
   @@map("queries")
 }
 
@@ -88,6 +90,8 @@ model CrawlSession {
   @@index([queryId])
   @@index([timestamp])
   @@index([isMigrated])
+  @@index([timestamp(sort: Desc), queryId])
+  @@index([isMultiStation, timestamp(sort: Desc)])
   @@map("crawl_sessions")
 }
 
@@ -131,10 +135,14 @@ model Rental {
   
   @@index([propertyId])
   @@index([link])
-  @@index([firstSeen])
   @@index([lastSeen])
   @@index([price])
   @@index([isActive])
+  @@index([propertyId, lastSeen(sort: Desc)])
+  @@index([isActive, price, firstSeen(sort: Desc)])
+  @@index([lastSeen(sort: Desc), isActive])
+  @@index([firstSeen(sort: Desc)])
+  @@index([price, firstSeen(sort: Desc)])
   @@map("rentals")
 }
 
@@ -158,6 +166,8 @@ model MetroDistance {
   @@unique([rentalId, stationId, stationName])
   @@index([stationId])
   @@index([distance])
+  @@index([rentalId, stationName])
+  @@index([distance, stationName])
   @@map("metro_distances")
 }
 
@@ -179,6 +189,8 @@ model QueryRental {
   
   @@id([queryId, rentalId])
   @@index([firstAppeared])
+  @@index([queryId, lastAppeared(sort: Desc)])
+  @@index([queryId, firstAppeared, lastAppeared])
   @@map("query_rentals")
 }
 

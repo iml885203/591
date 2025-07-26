@@ -8,24 +8,30 @@ Node.js web scraper for 591.com.tw that monitors rental listings and sends Disco
 - 🔔 **Discord alerts** - Real-time notifications with rental details  
 - 🚇 **Distance filtering** - Silent notifications for rentals far from MRT
 - 🎯 **Smart detection** - Only notifies about genuinely new rentals
+- 🗄️ **PostgreSQL storage** - Persistent data with Supabase
+- 🚀 **REST API** - Full API interface with Swagger docs
 
 ## Quick Start
 
 ```bash
-# Install
+# Install dependencies
 bun install
 
-# Configure Discord webhook
+# Configure environment
 cp .env.example .env
-# Edit .env with your Discord webhook URL
+# Edit .env with your configuration
+
+# Setup database
+bun run db:migrate
 
 # Run crawler
 bun crawler.js "https://rent.591.com.tw/list?region=1&kind=0"
 
-# Or use API
+# Or start API server
 bun run api
 curl -X POST http://localhost:3000/crawl \
   -H "Content-Type: application/json" \
+  -H "x-api-key: your-api-key" \
   -d '{"url": "https://rent.591.com.tw/list?region=1&kind=0"}'
 ```
 
@@ -33,7 +39,14 @@ curl -X POST http://localhost:3000/crawl \
 
 Edit `.env`:
 ```env
+# Database (Required)
+DATABASE_URL=postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres
+
+# Discord Notifications
 DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_URL
+
+# API Security
+API_KEY=your-secret-api-key-here
 ```
 
 ## Usage
@@ -51,15 +64,17 @@ bun run api  # Start on port 3000
 # Endpoints: GET /health, POST /crawl, GET /swagger
 ```
 
-**Docker:**
-```bash
-bun run deploy:docker
-```
-
-## Testing
+## Development
 
 ```bash
+# Run tests
 bun test
+
+# Database management
+bun run db:studio    # Visual database interface
+bun run db:status    # Check migration status
+
+# See DEV-SETUP.md for detailed setup instructions
 ```
 
 ## License

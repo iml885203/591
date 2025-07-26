@@ -1,12 +1,10 @@
 /**
  * Database Integration Tests
- * Tests database operations against a real Database database
+ * Tests database operations against Supabase PostgreSQL
  * 
  * Prerequisites:
- * 1. Database container running: `./scripts/test-postgres.sh start`
- * 2. Database setup: `./scripts/test-postgres.sh setup`
- * 3. Run tests: `bun test tests/integration/database.postgresql.test.js`
- * 4. Cleanup: `./scripts/test-postgres.sh stop`
+ * 1. Configure DATABASE_URL in .env for Supabase
+ * 2. Run tests: `bun test tests/integration/database.test.js`
  */
 
 const { describe, test, expect, beforeAll, afterAll, beforeEach } = require('bun:test');
@@ -18,11 +16,10 @@ const databaseUrl = process.env.DATABASE_URL;
 const isDatabase = databaseUrl && (databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://'));
 
 if (!isDatabase) {
-  console.log('⚠️  Database DATABASE_URL not configured - skipping Database integration tests');
-  console.log('💡 To run Database integration tests:');
-  console.log('   1. Start Database: ./scripts/test-postgres.sh start');
-  console.log('   2. Setup database: ./scripts/test-postgres.sh setup');
-  console.log('   3. Run tests: bun test tests/integration/database.test.js');
+  console.log('⚠️  Database DATABASE_URL not configured - skipping PostgreSQL integration tests');
+  console.log('💡 To run PostgreSQL integration tests:');
+  console.log('   1. Configure DATABASE_URL in .env for Supabase');
+  console.log('   2. Run tests: bun test tests/integration/database.test.js');
   process.exit(0);
 }
 

@@ -147,7 +147,7 @@ bun run test:integration         # All integration tests
 ## 🔄 Git Flow 工作流程
 
 **分支策略：**
-- `main` - Production 分支，連結 Railway 自動部署
+- `main` - Production 分支，連結 GitHub Actions 自動部署
 - `develop` - 開發分支，日常開發使用
 
 **開發流程：**
@@ -177,59 +177,47 @@ git push origin main
 ```
 
 **CI/CD 觸發條件：**
-- 推送到 `main` 分支：觸發 CI + Railway 部署
+- 推送到 `main` 分支：觸發 CI + GitHub Actions 部署
 - PR 到 `main` 分支：僅觸發 CI 檢查
 - `develop` 分支：不觸發 CI，本地測試即可
 
-## 🚄 Railway Production Management
+## 🚀 Production Deployment
 
-**使用 Railway CLI 管理 Production 部署：**
+**使用 GitHub Actions + Self-hosted Runner 部署：**
 
-```bash
-# 查看部署狀態
-railway status
-
-# 查看實時日誌（監控部署和運行狀態）
-railway logs
-railway logs --follow  # 持續監控
-
-# 強制重新部署（使用最新代碼）
-railway redeploy
-
-# 查看環境變數
-railway variables
-
-# 設定環境變數（如需要）
-railway variables --set "SKIP_DB_OPTIMIZATION=false"
-
-# 連接到 Production 數據庫
-railway connect
-```
-
-**Production 驗證流程：**
 ```bash
 # 1. 推送到 main 觸發自動部署
 git push origin main
 
-# 2. 監控部署日誌確認優化執行
-railway logs --follow
+# 2. 查看 GitHub Actions 部署狀態
+# 在 GitHub repo 的 Actions 頁面監控部署進度
 
-# 3. 驗證數據庫優化是否執行
-# 查找日誌中的優化訊息：
-# "🚀 Railway startup sequence initiated"
-# "🚀 Starting database optimization..."
-# "✅ Database optimization completed successfully"
+# 3. 查看 production server 日誌
+# 登入 production server 查看應用日誌
+docker logs <container-name>
 
 # 4. 測試 API 功能
-curl -X GET "https://your-railway-domain.railway.app/health"
-curl -X DELETE "https://your-railway-domain.railway.app/query/{queryId}/clear?confirm=true" \
+curl -X GET "https://your-domain.com/health"
+curl -X DELETE "https://your-domain.com/query/{queryId}/clear?confirm=true" \
   -H "x-api-key: your-api-key"
 ```
 
-**常見問題排除：**
-- 如果優化沒執行：檢查 `package.json` 中的 `api` 腳本是否正確
-- 如果出現 `databaseStorage` 錯誤：確認所有 API 端點都正確初始化數據庫
-- 如果部署卡住：使用 `railway redeploy` 強制重新部署
+**部署驗證流程：**
+```bash
+# 1. 推送到 main 觸發自動部署
+git push origin main
+
+# 2. 監控 GitHub Actions workflow
+# 確認 CI 測試通過和部署成功
+
+# 3. 驗證資料庫 migration 是否執行
+# 查找日誌中的訊息：
+# "🚀 Server startup initiated"
+# "🔄 Running database migrations..."
+# "✅ Database migrations completed successfully"
+
+# 4. 測試 API 功能正常
+```
 
 ## 📁 Project Structure
 
