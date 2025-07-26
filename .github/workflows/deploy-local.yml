@@ -37,6 +37,11 @@ jobs:
         cat .env.production
         echo "=================================="
         
+    - name: Run tests
+      run: |
+        echo "🧪 Running test suite..."
+        bun test
+        
     - name: Build new images
       run: |
         echo "🔨 Building new images..."
