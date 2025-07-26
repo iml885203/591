@@ -23,6 +23,10 @@ jobs:
     
     - name: Generate version and create tag
       run: |
+        # Configure git identity for tag creation
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        
         # Ensure we have all tags from remote
         git fetch --tags --force
         
