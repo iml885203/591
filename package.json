@@ -42,9 +42,6 @@
     "db:optimize": "bun run scripts/apply-database-optimizations.js",
     "db:stats": "echo 'SELECT * FROM v_performance_monitor LIMIT 10;' | psql $DATABASE_URL",
     "db:indexes": "echo 'SELECT * FROM v_index_usage ORDER BY idx_scan DESC LIMIT 10;' | psql $DATABASE_URL",
-    "migrate:legacy-json": "bun run scripts/legacy-json-migration.js migrate",
-    "migrate:verify": "bun run scripts/legacy-json-migration.js verify",
-    "migrate:update-legacy": "bun run scripts/update-legacy-rentals.js",
     "prepare": "is-ci || (command -v husky >/dev/null 2>&1 && husky) || true"
   },
   "keywords": [

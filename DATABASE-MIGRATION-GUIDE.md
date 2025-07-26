@@ -1,10 +1,12 @@
 # Database Migration Guide
 
-This guide covers the migration from JSON-based storage to PostgreSQL database for the 591-crawler project.
+**STATUS: MIGRATION COMPLETED** 🎉
+
+This guide covers the completed migration from JSON-based storage to PostgreSQL database for the 591-crawler project. The system now uses PostgreSQL exclusively.
 
 ## Overview
 
-The 591-crawler is migrating from JSON file storage to a PostgreSQL database using Prisma ORM. This provides:
+The 591-crawler has migrated from JSON file storage to PostgreSQL database using Prisma ORM. This provides:
 
 - **Better Performance**: Indexed queries and efficient data retrieval
 - **Data Integrity**: ACID transactions and referential integrity
@@ -83,54 +85,23 @@ bun run db:migrate
 bun run db:studio
 ```
 
-## Data Migration Process
+## Data Migration Process ✅ COMPLETED
 
-### Migration Order
+The migration from JSON to PostgreSQL database has been completed successfully. 
 
-1. **Legacy JSON (`previous_data.json`)** → Database
-2. **Query-based JSON files (`data/queries/*.json`)** → Database
-3. **Verification & Backup**
+### What Was Migrated
 
-### Migration Commands
+1. **Legacy JSON (`previous_data.json`)** ✅ Migrated to database
+2. **Query-based JSON files (`data/queries/*.json`)** ✅ Migrated to database  
+3. **Historical Data** ✅ Preserved with full traceability
 
-```bash
-# Full migration from JSON to database
-bun run migrate:json-to-db
+### Migration Scripts (Now Archived)
 
-# Verify migration integrity
-bun run migrate:verify
+Migration scripts have been moved to `archive/migration-scripts/` for historical reference:
+- `legacy-json-migration.js` - Main migration script
+- SQL cleanup scripts for legacy data normalization
 
-# Show migration statistics
-bun run scripts/migrate-to-database.js stats
-```
-
-### Migration Script Features
-
-- **Dual Source Support**: Migrates both legacy and query-based JSON data
-- **Data Validation**: Validates URLs and QueryIds during migration
-- **Error Handling**: Continues migration despite individual failures
-- **Backup Creation**: Automatically backs up original JSON files
-- **Progress Tracking**: Detailed logging and statistics
-- **Rollback Support**: Can restore from backups if needed
-
-### Migration Statistics
-
-The migration script provides detailed statistics:
-
-```json
-{
-  "migrationDate": "2025-07-25T10:30:00.000Z",
-  "migrationStats": {
-    "legacyUrlEntries": 50,
-    "legacyRentals": 1200,
-    "queryFiles": 25,
-    "totalQueries": 75,
-    "totalRentals": 2400,
-    "totalCrawlSessions": 150,
-    "errors": []
-  }
-}
-```
+**Note**: These scripts are no longer needed for normal operation as the system now uses PostgreSQL exclusively.
 
 ## API Compatibility
 
@@ -212,11 +183,8 @@ bun run api
 ### Testing with Local Data
 
 ```bash
-# Migrate existing JSON data
-bun run migrate:json-to-db
-
-# Test crawler with database storage
-STORAGE_TYPE=database bun run crawler.js "URL"
+# Test crawler with database storage (default behavior)
+bun run crawler.js "URL"
 
 # Verify data in Prisma Studio
 bun run db:studio
@@ -240,8 +208,7 @@ git push origin main
 # 2. Run migrations on Railway
 railway run bun run db:migrate:deploy
 
-# 3. Migrate production data (if needed)
-railway run bun run migrate:json-to-db
+# 3. Production data is already migrated ✅
 
 # 4. Verify deployment
 railway run bun run db:status
@@ -284,13 +251,13 @@ console.log(stats);
    bun run db:status
    ```
 
-2. **Migration Failures**
+2. **Data Issues**
    ```bash
-   # Check migration logs
-   bun run migrate:json-to-db
+   # Check database status
+   bun run db:status
    
    # Verify data integrity
-   bun run migrate:verify
+   bun run db:test
    ```
 
 3. **Schema Sync Issues**
