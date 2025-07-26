@@ -48,10 +48,17 @@ jobs:
         docker-compose -f docker-compose.production.yml up -d
         
         echo "⏳ Waiting for API..."
-        sleep 45
+        for i in {1..24}; do
+          if curl -sf http://localhost:3001/health > /dev/null; then
+            echo "✅ API is healthy after $((i*5)) seconds!"
+            break
+          fi
+          echo "Checking API health... (attempt $i/24)"
+          sleep 5
+        done
         
-        # Health check
-        curl -f http://localhost:3001/health && echo "✅ Deployed successfully!"
+        # Final verification
+        curl -f http://localhost:3001/health && echo "🎉 Deployment successful!"
         
     - name: Cleanup old images
       run: |
