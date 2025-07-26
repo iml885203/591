@@ -32,13 +32,14 @@ jobs:
         
         # Get all existing tags for current month to determine patch version
         # Use proper version sorting and ensure we get the highest patch number
-        MONTH_TAGS=$(git tag -l "${YEAR}.${MONTH}.*" | grep -E "^${YEAR}\.${MONTH}\.[0-9]+$" | sort -t'.' -k3 -n)
+        MONTH_TAGS=$(git tag -l "v${YEAR}.${MONTH}.*" | grep -E "^v${YEAR}\.${MONTH}\.[0-9]+$" | sort -t'.' -k3 -n)
         
         echo "Found existing tags for ${YEAR}.${MONTH}: $MONTH_TAGS"
         if [ -z "$MONTH_TAGS" ]; then
           PATCH=1
         else
-          LATEST_PATCH=$(echo "$MONTH_TAGS" | tail -1 | cut -d'.' -f3)
+          # Extract patch number from tag like "v2025.7.25" -> "25"
+          LATEST_PATCH=$(echo "$MONTH_TAGS" | tail -1 | sed 's/^v//' | cut -d'.' -f3)
           PATCH=$((LATEST_PATCH + 1))
         fi
         
