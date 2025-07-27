@@ -125,6 +125,7 @@ model Rental {
   firstSeen  DateTime @default(now())
   lastSeen   DateTime @default(now())
   isActive   Boolean  @default(true)
+  dataHash   String?  // MD5 hash for dirty data detection
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   
@@ -138,6 +139,8 @@ model Rental {
   @@index([lastSeen])
   @@index([price])
   @@index([isActive])
+  @@index([dataHash])
+  @@index([propertyId, dataHash])
   @@index([propertyId, lastSeen(sort: Desc)])
   @@index([isActive, price, firstSeen(sort: Desc)])
   @@index([lastSeen(sort: Desc), isActive])

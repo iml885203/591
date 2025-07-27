@@ -20,6 +20,10 @@ const UrlNormalizer = require('./lib/domain/UrlNormalizer');
 const app = express();
 const PORT = process.env.PORT || process.env.API_PORT || 3000;
 
+// Simple concurrency control for crawl requests
+let activeCrawls = 0;
+const MAX_CONCURRENT_CRAWLS = 2;
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -225,6 +229,17 @@ app.get('/health', (req, res) => {
  */
 // Main crawler endpoint
 app.post('/crawl', authenticateApiKey, async (req, res) => {
+  // Check concurrent crawl limit
+  if (activeCrawls >= MAX_CONCURRENT_CRAWLS) {
+    return res.status(503).json({
+      success: false,
+      error: 'Server busy',
+      message: `Too many concurrent crawl requests. Active: ${activeCrawls}/${MAX_CONCURRENT_CRAWLS}. Please try again later.`,
+      retryAfter: 30
+    });
+  }
+
+  activeCrawls++;
   try {
     const { 
       url, 
@@ -301,6 +316,9 @@ app.post('/crawl', authenticateApiKey, async (req, res) => {
       message: error.message,
       timestamp: new Date().toISOString()
     });
+  } finally {
+    activeCrawls--;
+    logWithTimestamp(`Active crawls: ${activeCrawls}/${MAX_CONCURRENT_CRAWLS}`);
   }
 });
 
