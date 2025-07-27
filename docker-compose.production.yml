@@ -11,9 +11,12 @@ services:
       - "3001:3000"
     env_file:
       - .env.production
+    environment:
+      - TZ=Asia/Taipei
     volumes:
       - debug_html:/app/debug-html
       - ./logs:/app/logs
+      - /etc/localtime:/etc/localtime:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
