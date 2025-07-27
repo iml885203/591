@@ -238,3 +238,7 @@ git push origin main
 ├── samples/            # HTML test samples (parser testing)
 └── scripts/            # Build scripts
 ```
+
+## 🧠 工作記憶
+
+- 更新記憶，避免直接操作本地的docker prod環境，且要遵循git flow
