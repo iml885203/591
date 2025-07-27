@@ -7,7 +7,7 @@
  */
 
 const { spawn } = require('child_process');
-const logger = require('../lib/logger');
+const logger = require('../lib/utils/logger');
 
 async function runMigrations() {
   logger.info('🔄 Running database migrations...');

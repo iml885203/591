@@ -5,7 +5,7 @@
 const {
   sleep,
   extractArrayFromElements
-} = require('../../../lib/utils');
+} = require('../../../lib/utils/helpers');
 
 describe('utils', () => {
   describe('sleep', () => {

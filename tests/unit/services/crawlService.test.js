@@ -15,11 +15,11 @@ import {
   crawlWithNotifications,
   crawlWithNotificationsSingle,
   crawlWithNotificationsMultiStation
-} from '../../../lib/crawlService.js';
+} from '../../../lib/services/CrawlService.js';
 
 // Also import required dependencies for mocking
-import { sendDiscordNotifications, sendErrorNotification } from '../../../lib/notification.js';
-import { crawlMultipleStations } from '../../../lib/multiStationCrawler.js';
+import { sendDiscordNotifications, sendErrorNotification } from '../../../lib/services/NotificationService.js';
+import { crawlMultipleStations } from '../../../lib/services/MultiStationCrawler.js';
 import { crawl591 } from '../../../lib/crawler.js';
 
 describe('crawlService', () => {

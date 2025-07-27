@@ -2,7 +2,7 @@
  * Unit tests for Multi-Station workflow utilities
  */
 
-const { hasMultipleStations, getUrlStationInfo } = require('../../../lib/multiStationCrawler');
+const { hasMultipleStations, getUrlStationInfo } = require('../../../lib/services/MultiStationCrawler');
 
 describe('Multi-Station Utilities', () => {
   describe('hasMultipleStations', () => {

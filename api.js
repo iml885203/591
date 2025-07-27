@@ -8,10 +8,10 @@
 require('dotenv').config({ silent: true });
 const express = require('express');
 const swaggerUi = require('swagger-ui-express');
-const { specs } = require('./lib/swagger');
-const { crawlWithNotifications } = require('./lib/crawlService');
-const { hasMultipleStations, getUrlStationInfo } = require('./lib/multiStationCrawler');
-const logger = require('./lib/logger');
+const { specs } = require('./lib/config/swagger');
+const { crawlWithNotifications } = require('./lib/services/CrawlService');
+const { hasMultipleStations, getUrlStationInfo } = require('./lib/services/MultiStationCrawler');
+const logger = require('./lib/utils/logger');
 const DatabaseStorage = require('./lib/storage/DatabaseStorage');
 const QueryId = require('./lib/domain/QueryId');
 const SearchUrl = require('./lib/domain/SearchUrl');
@@ -129,7 +129,7 @@ app.get('/health', (req, res) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     service: '591-crawler-api',
-    version: require('./lib/getVersion').getVersion(),
+    version: require('./lib/utils/version').getVersion(),
     uptime: process.uptime()
   });
 });

@@ -10,7 +10,7 @@ import {
   crawlMultipleStations,
   hasMultipleStations,
   getUrlStationInfo
-} from '../../../lib/multiStationCrawler.js';
+} from '../../../lib/services/MultiStationCrawler.js';
 
 describe('multiStationCrawler', () => {
   let mockCrawl591;

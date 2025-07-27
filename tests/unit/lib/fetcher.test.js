@@ -8,7 +8,7 @@ import { createMockFunction, createMockObject } from '../../helpers/mockUtils.js
 // Import functions to test
 import {
   fetchWithRetry
-} from '../../../lib/fetcher.js';
+} from '../../../lib/utils/http.js';
 
 describe('fetcher', () => {
   let mockAxios;
