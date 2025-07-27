@@ -1,27 +1,39 @@
-# Clean Architecture Refactoring Plan for 591 Crawler
+# Clean Architecture Refactoring Plan for 591 Crawler - Updated 2025
 
 ## 🏗️ Overview
 
-This plan outlines the refactoring of the 591 crawler to align with Clean Architecture principles as advocated by Martin Fowler and Robert C. Martin. The goal is to create clear architectural boundaries, improve testability, and ensure the domain logic remains independent of external concerns.
+This updated plan reflects the significant architectural progress made since the original plan was written. The 591 crawler has evolved from a simple script to a sophisticated rental monitoring system with a Query API, database integration, and domain-driven design patterns.
 
-**Node.js Approach**: This plan uses practical Node.js patterns including abstract base classes, factory functions, and composition patterns instead of formal interfaces, making it more suitable for JavaScript development.
+**Current State (2025)**: The project now includes mature domain models, database persistence with Prisma, comprehensive API endpoints, multi-station crawling, and extensive test coverage using Bun test framework.
 
-## 🎯 Current State Analysis
+## 🎯 Current State Analysis (Updated)
 
-### Strengths
-- ✅ Domain model (`Rental`) with business logic
-- ✅ Dependency injection for external dependencies
-- ✅ Good separation between CLI, API, and core logic
-- ✅ Comprehensive test coverage (70%+)
+### ✅ Major Achievements Since Original Plan
+- **✅ Rich Domain Models**: `SearchUrl`, `QueryId`, `PropertyId`, `Distance` domain models implemented
+- **✅ Database Integration**: Full PostgreSQL integration with Prisma ORM and optimized performance
+- **✅ Query API System**: Complete API for query management, rental tracking, and statistics
+- **✅ Multi-Station Architecture**: Sophisticated parallel crawling with rate limiting and merging
+- **✅ Storage Abstraction**: `DatabaseStorage` with `StorageAdapter` pattern and optimization layer
+- **✅ Advanced Testing**: Migrated to Bun test framework with integration tests using TestContainers
+- **✅ API Documentation**: Complete Swagger/OpenAPI documentation
+- **✅ Production Deployment**: GitHub Actions CI/CD with Docker containerization
 
-### Architectural Issues
-- ❌ Domain model imports infrastructure utilities
-- ❌ Business logic scattered across multiple layers
-- ❌ Missing use case layer
-- ❌ No repository abstractions
-- ❌ Direct coupling to external services
+### ✅ Current Architectural Strengths
+- **Domain-Driven Design**: Rich domain models with business logic encapsulation
+- **Dependency Injection**: Consistent DI patterns throughout the application
+- **Clean Separation**: CLI, API, and core logic are well-separated
+- **Comprehensive Testing**: 54+ tests with integration and unit testing
+- **Performance Optimization**: Database query optimization and caching
+- **Error Handling**: Robust error handling with proper logging and notifications
 
-## 🏛️ Target Architecture
+### 🔧 Remaining Architectural Improvements Needed
+- **Use Case Layer**: Business logic still mixed between services and controllers
+- **Repository Pattern**: `DatabaseStorage` serves as repository but lacks proper abstractions
+- **Domain Service Extraction**: Complex business rules scattered across multiple files
+- **Infrastructure Boundaries**: Some domain models still import infrastructure utilities
+- **Event-Driven Architecture**: Missing domain events for cross-cutting concerns
+
+## 🏛️ Target Architecture (Refined 2025)
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -33,11 +45,11 @@ This plan outlines the refactoring of the 591 crawler to align with Clean Archit
 └─────────────────────────────────────────────────────────────┘
                               │
 ┌─────────────────────────────────────────────────────────────┐
-│                     Use Cases Layer                         │
+│                   Application Layer                         │
 │  ┌─────────────────────────────────────────────────────────┐ │
-│  │              CrawlRentalsUseCase                        │ │
-│  │           NotifyNewRentalsUseCase                       │ │
-│  │           CompareRentalsUseCase                         │ │
+│  │  CrawlRentalsUseCase (包含多站)   │  ManageQueryUseCase    │ │
+│  │  NotifyRentalsUseCase  │  AnalyzeRentalsUseCase         │ │
+│  │  CompareRentalsUseCase │                                │ │
 │  └─────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
                               │
@@ -46,7 +58,9 @@ This plan outlines the refactoring of the 591 crawler to align with Clean Archit
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
 │  │  Entities   │  │Value Objects│  │  Services   │         │
 │  │   Rental    │  │  Distance   │  │RentalFilter │         │
-│  │             │  │  MetroInfo  │  │             │         │
+│  │   Query     │  │ SearchUrl   │  │NotifyPolicy │         │
+│  │  Session    │  │ QueryId     │  │ MergeRentals│         │
+│  │             │  │PropertyId   │  │             │         │
 │  └─────────────┘  └─────────────┘  └─────────────┘         │
 └─────────────────────────────────────────────────────────────┘
                               │
@@ -54,514 +68,534 @@ This plan outlines the refactoring of the 591 crawler to align with Clean Archit
 │                Infrastructure Layer                         │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
 │  │Repositories │  │  Gateways   │  │  External   │         │
-│  │FileStorage  │  │DiscordGW    │  │   Utils     │         │
-│  │             │  │Crawler591GW │  │             │         │
+│  │ QueryRepo   │  │ DiscordGW   │  │ PrismaClient│         │
+│  │ RentalRepo  │  │Crawler591GW │  │ AxiosHttp   │         │
+│  │DatabaseOpt  │  │MultiStationGW│  │ CheerioDOM  │         │
 │  └─────────────┘  └─────────────┘  └─────────────┘         │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## 📋 Implementation Plan
+## 📋 Implementation Plan (Updated for 2025)
 
-### Phase 1: Domain Layer Purification (Week 1)
+### Phase 1: Domain Service Extraction (Week 1-2) ✨ NEW FOCUS
 
-#### 1.1 Extract Value Objects
-- **File**: `lib/domain/value-objects/Distance.js`
-- **Purpose**: Encapsulate distance calculations and MRT proximity logic
+#### 1.1 Extract Notification Policy Domain Service
+- **File**: `lib/domain/services/NotificationPolicyService.js`
+- **Purpose**: Centralize notification decision logic currently scattered in `crawlService.js`
+- **Current Issue**: Business rules in `filterRentalsForNotification()` and `addNotificationMetadata()`
 - **Actions**:
   ```javascript
-  class Distance {
-    constructor(value, unit = 'meters') { /* ... */ }
-    isWithinThreshold(threshold) { /* ... */ }
-    static fromMetroValue(metroValue) { /* ... */ }
-  }
-  ```
-
-#### 1.2 Extract Value Objects - Metro Information
-- **File**: `lib/domain/value-objects/MetroInfo.js`
-- **Purpose**: Encapsulate metro station information
-- **Actions**:
-  ```javascript
-  class MetroInfo {
-    constructor(title, distance) { /* ... */ }
-    isNearby(threshold) { /* ... */ }
-  }
-  ```
-
-#### 1.3 Refactor Domain Entity
-- **File**: `lib/domain/entities/Rental.js` (moved from `lib/Rental.js`)
-- **Purpose**: Pure domain entity with no infrastructure dependencies
-- **Actions**:
-  - Remove direct imports from `utils.js`
-  - Inject distance calculation as dependency
-  - Use value objects for distance and metro info
-
-#### 1.4 Create Domain Services
-- **File**: `lib/domain/services/RentalFilterService.js`
-- **Purpose**: Encapsulate complex business rules for filtering
-- **Actions**:
-  ```javascript
-  class RentalFilterService {
-    shouldNotifyRental(rental, policy) { /* ... */ }
-    determineNotificationType(rental, policy) { /* ... */ }
-  }
-  ```
-
-### Phase 2: Repository Abstraction (Week 2)
-
-#### 2.1 Create Repository Base Class
-- **File**: `lib/domain/repositories/BaseRentalRepository.js`
-- **Purpose**: Abstract base class defining repository contracts
-- **Actions**:
-  ```javascript
-  class BaseRentalRepository {
-    constructor() {
-      if (this.constructor === BaseRentalRepository) {
-        throw new Error('Cannot instantiate abstract repository');
-      }
+  class NotificationPolicyService {
+    constructor(distanceThreshold = 800) {
+      this.distanceThreshold = distanceThreshold;
     }
     
-    async findPreviousRentals(urlKey) {
-      throw new Error('findPreviousRentals must be implemented');
+    determineNotificationStrategy(rental, notifyMode, filteredMode) {
+      // Extract from crawlService.js filterRentalsForNotification
     }
     
-    async saveRentals(urlKey, rentals) {
-      throw new Error('saveRentals must be implemented');
+    shouldSendNotification(rental, policy) {
+      // Business logic for notification decisions
     }
     
-    // 共同方法可以在這裡實作
-    validateUrlKey(urlKey) {
-      if (!urlKey || typeof urlKey !== 'string') {
-        throw new Error('Invalid URL key');
-      }
+    isSilentNotification(rental, policy) {
+      // Silent notification logic
     }
   }
   ```
 
-#### 2.2 Create Repository Factory
-- **File**: `lib/domain/repositories/createRepository.js`
-- **Purpose**: Factory function to create and validate repositories
+#### 1.2 Extract Rental Comparison Domain Service  
+- **File**: `lib/domain/services/RentalComparisonService.js`
+- **Purpose**: Handle rental comparison and deduplication logic
+- **Current Issue**: Logic scattered between `crawlService.js` and `multiStationCrawler.js`
 - **Actions**:
   ```javascript
-  const createRepository = (implementation, options = {}) => {
-    const requiredMethods = ['findPreviousRentals', 'saveRentals'];
-    
-    // 驗證實作
-    for (const method of requiredMethods) {
-      if (typeof implementation[method] !== 'function') {
-        throw new Error(`Repository must implement ${method}`);
-      }
+  class RentalComparisonService {
+    findNewRentals(currentRentals, existingPropertyIds) {
+      // Extract from crawlService.js
     }
     
-    return {
-      ...implementation,
-      // 加入共同行為
-      async clearAll() {
-        if (implementation.clearAll) {
-          return implementation.clearAll();
+    mergeRentalsByProperty(rentalArrays) {
+      // Extract merging logic from multiStationCrawler.js
+    }
+    
+    detectDuplicatesByDistance(rentals, threshold = 50) {
+      // Detect near-duplicate properties
+    }
+  }
+  ```
+
+#### 1.3 Create Query Management Domain Service
+- **File**: `lib/domain/services/QueryManagementService.js`
+- **Purpose**: Encapsulate query lifecycle and similarity detection
+- **Current Issue**: Logic mixed in `DatabaseStorage` and API controllers
+- **Actions**:
+  ```javascript
+  class QueryManagementService {
+    generateQueryMetadata(searchUrl) {
+      // Extract from SearchUrl and QueryId classes
+    }
+    
+    findSimilarQueries(queryId, existingQueries) {
+      // Business logic for similarity detection
+    }
+    
+    validateQueryForCrawling(queryId) {
+      // Business rules for crawl eligibility
+    }
+  }
+  ```
+
+#### 1.4 Clean Up Domain Model Dependencies ⚡ PRIORITY
+- **File**: `lib/Rental.js` 
+- **Current Issue**: Still imports `utils.js` infrastructure utilities
+- **Actions**:
+  - Remove direct import of `utils.js`
+  - Inject `logWithTimestamp` as dependency
+  - Move distance calculation to `Distance` domain model
+  - Use `NotificationPolicyService` for notification decisions
+
+### Phase 2: Repository Pattern Formalization (Week 2-3) 🔄 REFACTOR EXISTING
+
+#### 2.1 Abstract Repository Interfaces
+- **File**: `lib/domain/repositories/IRentalRepository.js`
+- **Purpose**: Define repository contracts using Node.js patterns  
+- **Current Issue**: `DatabaseStorage` serves multiple purposes, lacks clear interface contracts
+- **Actions**:
+  ```javascript
+  // Repository interface using Node.js duck typing validation
+  const IRentalRepository = {
+    // Required methods for validation
+    requiredMethods: [
+      'getRentalsForQuery',
+      'saveCrawlResults', 
+      'getExistingPropertyIds',
+      'deleteQuery',
+      'listQueries',
+      'getStatistics'
+    ],
+    
+    // Method to validate repository implementation
+    validate(implementation) {
+      this.requiredMethods.forEach(method => {
+        if (typeof implementation[method] !== 'function') {
+          throw new Error(`Repository must implement ${method}`);
         }
-        throw new Error('clearAll not implemented');
-      }
-    };
+      });
+      return true;
+    }
   };
   ```
 
-#### 2.3 Implement File Repository
-- **File**: `lib/infrastructure/repositories/FileRentalRepository.js`
-- **Purpose**: File-based implementation extending base repository
+#### 2.2 Split DatabaseStorage into Focused Repositories
+- **Current Issue**: `DatabaseStorage` is too broad - handles queries, rentals, sessions, and statistics  
+- **Actions**:
+  - **File**: `lib/infrastructure/repositories/QueryRepository.js` - Query and crawl session management
+  - **File**: `lib/infrastructure/repositories/RentalRepository.js` - Rental and property management  
+  - **File**: `lib/infrastructure/repositories/StatisticsRepository.js` - Analytics and reporting
+  - **File**: `lib/infrastructure/repositories/DatabaseRepository.js` - Facade pattern coordinating the above
+
+#### 2.3 Implement Repository Factory Pattern
+- **File**: `lib/infrastructure/repositories/RepositoryFactory.js`
+- **Purpose**: Create and configure repositories with dependency injection
 - **Actions**:
   ```javascript
-  const BaseRentalRepository = require('../../domain/repositories/BaseRentalRepository');
-  
-  class FileRentalRepository extends BaseRentalRepository {
-    constructor(fs, dataFilePath) {
-      super();
-      this.fs = fs;
-      this.dataFilePath = dataFilePath;
+  class RepositoryFactory {
+    constructor(prismaClient, optimizer) {
+      this.prismaClient = prismaClient;
+      this.optimizer = optimizer;
     }
     
-    async findPreviousRentals(urlKey) {
-      this.validateUrlKey(urlKey);
-      // 從現有 storage.js 移植邏輯
-      const data = await this.loadData();
-      return data[urlKey] || [];
+    createQueryRepository() {
+      return new QueryRepository(this.prismaClient);
     }
     
-    async saveRentals(urlKey, rentals) {
-      this.validateUrlKey(urlKey);
-      const data = await this.loadData();
-      data[urlKey] = rentals;
-      await this.saveData(data);
+    createRentalRepository() {
+      return new RentalRepository(this.prismaClient, this.optimizer);
     }
     
-    async loadData() {
-      // 移植 loadPreviousData 邏輯
+    createDatabaseRepository() {
+      // Facade coordinating multiple repositories
+      return new DatabaseRepository({
+        queryRepo: this.createQueryRepository(),
+        rentalRepo: this.createRentalRepository(),
+        statsRepo: this.createStatisticsRepository()
+      });
     }
   }
   ```
 
-### Phase 3: Gateway Pattern Implementation (Week 3)
+### Phase 3: Use Case Layer Implementation (Week 3-4) 🆕 NEW LAYER
 
-#### 3.1 Create Crawler Gateway Base Class
-- **File**: `lib/domain/gateways/BaseCrawlerGateway.js`
-- **Purpose**: Abstract base class for crawling operations
-- **Actions**:
-  ```javascript
-  class BaseCrawlerGateway {
-    constructor(config = {}) {
-      if (this.constructor === BaseCrawlerGateway) {
-        throw new Error('Cannot instantiate abstract gateway');
-      }
-      this.config = config;
-    }
-    
-    async fetchRentals(url) {
-      throw new Error('fetchRentals must be implemented');
-    }
-    
-    // 共同的驗證邏輯
-    validateUrl(url) {
-      if (!url || typeof url !== 'string') {
-        throw new Error('Invalid URL provided');
-      }
-    }
-  }
-  ```
-
-#### 3.2 Create Gateway Factory Pattern
-- **File**: `lib/domain/gateways/createGateway.js`
-- **Purpose**: Factory function for creating gateways with validation
-- **Actions**:
-  ```javascript
-  const createCrawlerGateway = (implementation, config = {}) => {
-    if (typeof implementation.fetchRentals !== 'function') {
-      throw new Error('Gateway must implement fetchRentals method');
-    }
-    
-    return {
-      ...implementation,
-      config,
-      // 裝飾器模式：加入日誌
-      async fetchRentals(url) {
-        console.log(`Fetching rentals from: ${url}`);
-        return implementation.fetchRentals(url);
-      }
-    };
-  };
-  ```
-
-#### 3.3 Implement 591 Crawler Gateway
-- **File**: `lib/infrastructure/gateways/Crawler591Gateway.js`
-- **Purpose**: Specific implementation for 591.com.tw
-- **Actions**:
-  ```javascript
-  const BaseCrawlerGateway = require('../../domain/gateways/BaseCrawlerGateway');
-  
-  class Crawler591Gateway extends BaseCrawlerGateway {
-    constructor(dependencies = {}) {
-      super();
-      this.axios = dependencies.axios || require('axios');
-      this.cheerio = dependencies.cheerio || require('cheerio');
-      this.fetcher = dependencies.fetcher;
-      this.parser = dependencies.parser;
-    }
-    
-    async fetchRentals(url) {
-      this.validateUrl(url);
-      // 移植現有 crawler.js 的邏輯
-      const response = await this.fetcher.fetchWithRetry(url);
-      return this.parser.parseRentals(response.data, this.cheerio);
-    }
-  }
-  ```
-
-#### 3.4 Create Notification Gateway Base Class
-- **File**: `lib/domain/gateways/BaseNotificationGateway.js`
-- **Purpose**: Abstract base class for notification operations
-- **Actions**:
-  ```javascript
-  class BaseNotificationGateway {
-    constructor() {
-      if (this.constructor === BaseNotificationGateway) {
-        throw new Error('Cannot instantiate abstract notification gateway');
-      }
-    }
-    
-    async sendRentalNotification(rental, options) {
-      throw new Error('sendRentalNotification must be implemented');
-    }
-    
-    async sendErrorNotification(error, context) {
-      throw new Error('sendErrorNotification must be implemented');
-    }
-    
-    // 共同的驗證
-    validateRental(rental) {
-      if (!rental || !rental.title) {
-        throw new Error('Invalid rental object');
-      }
-    }
-  }
-  ```
-
-#### 3.5 Implement Discord Gateway with Composition
-- **File**: `lib/infrastructure/gateways/DiscordNotificationGateway.js`
-- **Purpose**: Discord-specific notification implementation
-- **Actions**:
-  ```javascript
-  const BaseNotificationGateway = require('../../domain/gateways/BaseNotificationGateway');
-  
-  class DiscordNotificationGateway extends BaseNotificationGateway {
-    constructor(dependencies = {}) {
-      super();
-      this.axios = dependencies.axios || require('axios');
-      this.webhookUrl = dependencies.webhookUrl;
-      this.embedCreator = dependencies.embedCreator;
-    }
-    
-    async sendRentalNotification(rental, options = {}) {
-      this.validateRental(rental);
-      // 移植現有 notification.js 的邏輯
-      const embed = this.embedCreator.createRentalEmbed(rental, options);
-      return this.sendToDiscord(embed, options.silent);
-    }
-    
-    async sendErrorNotification(error, context) {
-      const embed = this.embedCreator.createErrorEmbed(error, context);
-      return this.sendToDiscord(embed);
-    }
-  }
-  ```
-
-### Phase 4: Use Cases Layer (Week 4)
-
-#### 4.1 Create Base Use Case
-- **File**: `lib/application/use-cases/BaseUseCase.js`
-- **Purpose**: Common structure for all use cases
+#### 3.1 Create Application Service Base 
+- **File**: `lib/application/services/BaseUseCase.js`
+- **Purpose**: Common structure for all use cases with logging and error handling
 - **Actions**:
   ```javascript
   class BaseUseCase {
-    constructor(dependencies) { /* ... */ }
-    async execute(request) { /* template method */ }
+    constructor(dependencies = {}) {
+      this.dependencies = dependencies;
+      this.logger = dependencies.logger || console;
+    }
+    
+    async execute(request) {
+      try {
+        this.validateRequest(request);
+        const result = await this.executeCore(request);
+        this.logSuccess(request, result);
+        return result;
+      } catch (error) {
+        this.logError(request, error);
+        throw error;
+      }
+    }
+    
+    validateRequest(request) {
+      // Override in subclasses
+    }
+    
+    async executeCore(request) {
+      throw new Error('executeCore must be implemented');
+    }
   }
   ```
 
-#### 4.2 Implement Crawl Rentals Use Case
+#### 3.2 Implement Unified Crawl Rentals Use Case (包含多站邏輯)
 - **File**: `lib/application/use-cases/CrawlRentalsUseCase.js`
-- **Purpose**: Orchestrate rental crawling business flow
-- **Actions**:
-  - Extract logic from current `crawlService.js`
-  - Use dependency injection for gateways and repositories
-  - Implement proper error handling and logging
-
-#### 4.3 Implement Notify Rentals Use Case
-- **File**: `lib/application/use-cases/NotifyRentalsUseCase.js`
-- **Purpose**: Handle rental notification business logic
-- **Actions**:
-  - Separate notification concerns from crawling
-  - Apply filtering rules using domain services
-  - Coordinate with notification gateway
-
-#### 4.4 Implement Compare Rentals Use Case
-- **File**: `lib/application/use-cases/CompareRentalsUseCase.js`
-- **Purpose**: Compare current vs previous rentals
-- **Actions**:
-  - Extract comparison logic
-  - Use repository for data persistence
-  - Return comparison results
-
-### Phase 5: Dependency Injection Container (Week 5)
-
-#### 5.1 Create Simple DI Container
-- **File**: `lib/infrastructure/di/Container.js`
-- **Purpose**: Lightweight dependency injection for Node.js
+- **Purpose**: Extract and unify business logic from `crawlService.js` and `multiStationCrawler.js`
+- **Rationale**: Multi-station crawling is essentially batched single-station crawling with the same core business logic
+- **Current Issue**: Logic duplicated between single and multi-station implementations
 - **Actions**:
   ```javascript
-  class Container {
-    constructor() {
-      this.dependencies = new Map();
-      this.instances = new Map();
+  class CrawlRentalsUseCase extends BaseUseCase {
+    constructor({ 
+      crawlerGateway, 
+      rentalRepository, 
+      notificationPolicyService,
+      rentalComparisonService,
+      rateLimitService 
+    }) {
+      super();
+      this.crawlerGateway = crawlerGateway;
+      this.rentalRepository = rentalRepository;
+      this.notificationPolicyService = notificationPolicyService;
+      this.rentalComparisonService = rentalComparisonService;
+      this.rateLimitService = rateLimitService;
     }
     
-    register(name, factory, options = {}) {
-      this.dependencies.set(name, {
-        factory,
-        singleton: options.singleton || false
-      });
-    }
-    
-    resolve(name) {
-      const dependency = this.dependencies.get(name);
-      if (!dependency) {
-        throw new Error(`Dependency ${name} not registered`);
+    async executeCore({ url, maxLatest, options = {} }) {
+      const { 
+        notifyMode = 'filtered', 
+        filteredMode = 'silent', 
+        filter = {},
+        multiStationOptions = {} 
+      } = options;
+      
+      // 1. 檢查是否為多站URL並決定執行策略
+      const searchUrl = new SearchUrl(url);
+      if (searchUrl.hasMultipleStations()) {
+        return this.executeMultiStation(url, { notifyMode, filteredMode, filter, multiStationOptions });
       }
       
-      if (dependency.singleton) {
-        if (!this.instances.has(name)) {
-          this.instances.set(name, dependency.factory(this));
-        }
-        return this.instances.get(name);
-      }
+      // 2. 單站爬取邏輯
+      return this.executeSingleStation(url, maxLatest, { notifyMode, filteredMode, filter });
+    }
+    
+    async executeSingleStation(url, maxLatest, options) {
+      // Extract from original crawlService.js
+      const rentals = await this.crawlerGateway.fetchRentals(url);
       
-      return dependency.factory(this);
+      const rentalsToNotify = await this.getRentalsToNotify(rentals, maxLatest, url);
+      const filteredRentals = this.notificationPolicyService.filterForNotification(
+        rentalsToNotify, options.notifyMode, options.filteredMode, options.filter
+      );
+      
+      await this.rentalRepository.saveRentals(url, rentals);
+      
+      return { 
+        rentals: filteredRentals, 
+        newRentals: rentalsToNotify.length,
+        multiStation: false,
+        stationCount: 1
+      };
     }
     
-    // 設定環境
-    configureProd() {
-      return require('./configurations/production')(this);
+    async executeMultiStation(url, options) {
+      // Extract from multiStationCrawler.js logic
+      const searchUrl = new SearchUrl(url);
+      const stationUrls = searchUrl.splitByStations();
+      
+      // 並行爬取各站點 with rate limiting
+      const rentalArrays = await this.rateLimitService.executeConcurrently(
+        stationUrls,
+        (stationUrl) => this.crawlerGateway.fetchRentals(stationUrl),
+        options.multiStationOptions
+      );
+      
+      // 合併重複物件
+      const mergedRentals = this.rentalComparisonService.mergeRentalsByProperty(rentalArrays);
+      
+      // 應用通知過濾邏輯
+      const rentalsToNotify = await this.getRentalsToNotify(mergedRentals, null, url);
+      const filteredRentals = this.notificationPolicyService.filterForNotification(
+        rentalsToNotify, options.notifyMode, options.filteredMode, options.filter
+      );
+      
+      // 儲存結果
+      await this.rentalRepository.saveRentals(url, mergedRentals);
+      
+      return {
+        rentals: filteredRentals,
+        newRentals: rentalsToNotify.length,
+        multiStation: true,
+        stationCount: stationUrls.length,
+        stations: searchUrl.getStationIds()
+      };
     }
-    
-    configureTest() {
-      return require('./configurations/test')(this);
     }
   }
   ```
 
-#### 5.2 Create Configuration Files
-- **File**: `lib/infrastructure/di/configurations/production.js`
-- **Purpose**: Production environment dependency bindings
+#### 3.3 Remove Redundant Multi-Station Use Case ✨ SIMPLIFIED
+- **Rationale**: Multi-station logic is now integrated into `CrawlRentalsUseCase`
+- **Benefits**:
+  - Eliminates code duplication between single and multi-station workflows
+  - Unified entry point for all crawling operations
+  - Simplified dependency injection and factory patterns
+  - Consistent business logic application across both scenarios
+- **Migration**: Remove planned `MultiStationCrawlUseCase.js` file from implementation
+
+#### 3.4 Implement Query Management Use Case  
+- **File**: `lib/application/use-cases/QueryManagementUseCase.js`
+- **Purpose**: Extract query operations from API controllers
 - **Actions**:
   ```javascript
-  module.exports = (container) => {
-    // Repositories
-    container.register('rentalRepository', (c) => {
-      const FileRentalRepository = require('../../repositories/FileRentalRepository');
-      return new FileRentalRepository(
-        require('fs-extra'),
-        c.resolve('config').storage.dataFilePath
+  class QueryManagementUseCase extends BaseUseCase {
+    constructor({ queryRepository, queryManagementService }) {
+      super();
+      this.queryRepository = queryRepository;
+      this.queryManagementService = queryManagementService;
+    }
+    
+    async listQueries(filters) {
+      return this.queryRepository.listQueries(filters);
+    }
+    
+    async clearQueryData(queryId) {
+      // Extract business logic from API delete endpoint
+      await this.queryManagementService.validateQueryForClearance(queryId);
+      return this.queryRepository.deleteQuery(queryId);
+    }
+  }
+  ```
+
+### Phase 4: Gateway Pattern Enhancement (Week 4-5) 🔄 ENHANCE EXISTING
+
+#### 4.1 Formalize Crawler Gateway Pattern
+- **Current State**: Crawling logic embedded in `crawler.js` and `multiStationCrawler.js`
+- **File**: `lib/infrastructure/gateways/CrawlerGateway.js`
+- **Purpose**: Extract web scraping concerns from domain logic
+- **Actions**:
+  ```javascript
+  class CrawlerGateway {
+    constructor({ fetcher, parser, rateLimiter }) {
+      this.fetcher = fetcher;
+      this.parser = parser;
+      this.rateLimiter = rateLimiter;
+    }
+    
+    async fetchRentals(url) {
+      // Extract from crawler.js crawl591 function
+      const response = await this.fetcher.fetchWithRetry(url);
+      return this.parser.parseRentals(response.data);
+    }
+    
+    async fetchMultipleStations(urls, options) {
+      // Extract from multiStationCrawler.js
+      return this.rateLimiter.executeConcurrently(urls, this.fetchRentals.bind(this), options);
+    }
+  }
+  ```
+
+#### 4.2 Create Notification Gateway Interface  
+- **Current State**: Notification logic in `notification.js` is tightly coupled
+- **File**: `lib/infrastructure/gateways/NotificationGateway.js`  
+- **Actions**:
+  ```javascript
+  class NotificationGateway {
+    constructor({ discordService, embedBuilder }) {
+      this.discordService = discordService;
+      this.embedBuilder = embedBuilder;
+    }
+    
+    async sendRentalNotifications(rentals, context) {
+      // Extract from notification.js sendDiscordNotifications
+      const embeds = rentals.map(rental => 
+        this.embedBuilder.createRentalEmbed(rental, context)
       );
-    }, { singleton: true });
-    
-    // Gateways
-    container.register('crawlerGateway', (c) => {
-      const Crawler591Gateway = require('../../gateways/Crawler591Gateway');
-      return new Crawler591Gateway({
-        axios: require('axios'),
-        cheerio: require('cheerio'),
-        fetcher: require('../../../lib/fetcher'),
-        parser: require('../../../lib/parser')
-      });
-    });
-    
-    // Use Cases
-    container.register('crawlRentalsUseCase', (c) => {
-      const CrawlRentalsUseCase = require('../../application/use-cases/CrawlRentalsUseCase');
-      return new CrawlRentalsUseCase({
-        crawlerGateway: c.resolve('crawlerGateway'),
-        rentalRepository: c.resolve('rentalRepository'),
-        notificationGateway: c.resolve('notificationGateway')
-      });
-    });
-    
-    return container;
-  };
+      return this.discordService.sendBatch(embeds);
+    }
+  }
   ```
 
-#### 5.3 Create Factory Helper Functions
-- **File**: `lib/infrastructure/factories/createUseCases.js`
-- **Purpose**: Simplified factory functions for common scenarios
+#### 4.3 Abstract Rate Limiting Service
+- **File**: `lib/infrastructure/services/RateLimitService.js`
+- **Purpose**: Extract rate limiting logic from multiStationCrawler.js
 - **Actions**:
   ```javascript
-  const createUseCases = (dependencies = {}) => {
-    const {
-      axios = require('axios'),
-      cheerio = require('cheerio'),
-      fs = require('fs-extra'),
-      config = require('../../lib/config').getConfig()
-    } = dependencies;
+  class RateLimitService {
+    constructor(maxConcurrent = 3, delayBetweenRequests = 1000) {
+      this.maxConcurrent = maxConcurrent;
+      this.delayBetweenRequests = delayBetweenRequests;
+    }
     
-    // 建立基礎服務
-    const rentalRepository = new (require('../repositories/FileRentalRepository'))(
-      fs, config.storage.dataFilePath
-    );
-    
-    const crawlerGateway = new (require('../gateways/Crawler591Gateway'))({
-      axios, cheerio,
-      fetcher: require('../../lib/fetcher'),
-      parser: require('../../lib/parser')
-    });
-    
-    // 建立 Use Cases
-    return {
-      crawlRentals: new (require('../application/use-cases/CrawlRentalsUseCase'))({
-        crawlerGateway,
-        rentalRepository
-      }),
-      
-      notifyRentals: new (require('../application/use-cases/NotifyRentalsUseCase'))({
-        notificationGateway: new (require('../gateways/DiscordNotificationGateway'))({
-          axios,
-          webhookUrl: process.env.DISCORD_WEBHOOK_URL
-        })
-      })
-    };
-  };
-  
-  module.exports = { createUseCases };
+    async executeConcurrently(items, operation, options = {}) {
+      // Extract semaphore logic from multiStationCrawler.js
+    }
+  }
   ```
 
-### Phase 6: Presentation Layer Refactoring (Week 6)
+### Phase 5: Dependency Injection Refactoring (Week 5-6) 🔄 IMPROVE EXISTING
 
-#### 6.1 Refactor CLI Interface
-- **File**: `crawler.js`
-- **Purpose**: Thin presentation layer that uses use cases
+#### 5.1 Create Application Service Factory
+- **File**: `lib/application/ApplicationServiceFactory.js`
+- **Purpose**: Centralized factory for creating use cases with proper dependency injection
+- **Current Issue**: Dependencies are created ad-hoc throughout the application
 - **Actions**:
-  - Remove business logic
-  - Use dependency injection container
-  - Focus on argument parsing and output formatting
+  ```javascript
+  class ApplicationServiceFactory {
+    constructor(repositoryFactory, gatewayFactory, domainServices) {
+      this.repositoryFactory = repositoryFactory;
+      this.gatewayFactory = gatewayFactory;
+      this.domainServices = domainServices;
+    }
+    
+    createCrawlRentalsUseCase() {
+      return new CrawlRentalsUseCase({
+        crawlerGateway: this.gatewayFactory.createCrawlerGateway(),
+        rentalRepository: this.repositoryFactory.createRentalRepository(),
+        notificationPolicyService: this.domainServices.notificationPolicyService,
+        rentalComparisonService: this.domainServices.rentalComparisonService,
+        rateLimitService: this.domainServices.rateLimitService
+      });
+    }
+    
+    createQueryManagementUseCase() {
+      return new QueryManagementUseCase({
+        queryRepository: this.repositoryFactory.createQueryRepository(),
+        queryManagementService: this.domainServices.queryManagementService
+      });
+    }
+  }
+  ```
 
-#### 6.2 Refactor API Controller
-- **File**: `api.js`
-- **Purpose**: REST API that delegates to use cases
+#### 5.2 Update Presentation Layer Integration
+- **File**: `crawler.js` and `api.js` modifications
+- **Purpose**: Use the new use case layer instead of direct service calls
+- **Current Issue**: CLI and API directly call `crawlService.js` 
 - **Actions**:
-  - Create controller pattern
-  - Use dependency injection
-  - Proper error handling and response formatting
+  ```javascript
+  // In crawler.js
+  const { ApplicationServiceFactory } = require('./lib/application/ApplicationServiceFactory');
+  const factory = ApplicationServiceFactory.create();
+  const crawlUseCase = factory.createCrawlRentalsUseCase();
+  
+  // Replace crawlWithNotifications call
+  const result = await crawlUseCase.execute({
+    url, maxLatest, notifyMode, filteredMode, filter
+  });
+  ```
 
-### Phase 7: Testing Strategy Update (Week 7)
-
-#### 7.1 Domain Layer Tests
-- **Files**: `tests/unit/domain/`
-- **Purpose**: Test pure domain logic without dependencies
+#### 5.3 Create Configuration-Based DI
+- **File**: `lib/infrastructure/configuration/DependencyConfiguration.js`
+- **Purpose**: Environment-specific dependency configuration
 - **Actions**:
-  - Test entities with value objects
-  - Test domain services in isolation
-  - No mocking needed for pure functions
+  ```javascript
+  class DependencyConfiguration {
+    static createForProduction() {
+      const prismaClient = new PrismaClient();
+      const repositoryFactory = new RepositoryFactory(prismaClient);
+      const gatewayFactory = new GatewayFactory();
+      const domainServices = this.createDomainServices();
+      
+      return new ApplicationServiceFactory(
+        repositoryFactory, 
+        gatewayFactory, 
+        domainServices
+      );
+    }
+    
+    static createForTesting(mocks = {}) {
+      // Create test configurations with mocked dependencies
+    }
+  }
+  ```
 
-#### 7.2 Use Case Tests
-- **Files**: `tests/unit/application/`
-- **Purpose**: Test business flows with mocked dependencies
+### Phase 6: Testing Strategy Enhancement (Week 6-7) ✅ BUILD ON EXISTING
+
+#### 6.1 Domain Service Tests
+- **Files**: `tests/unit/domain/services/` (new directory)
+- **Purpose**: Test extracted domain services in isolation
+- **Current Gap**: New domain services need comprehensive testing
 - **Actions**:
-  - Mock gateways and repositories
-  - Test error handling scenarios
-  - Verify interaction patterns
+  - `NotificationPolicyService.test.js` - Test notification decision logic
+  - `RentalComparisonService.test.js` - Test rental merging and deduplication
+  - `QueryManagementService.test.js` - Test query similarity and metadata generation
 
-#### 7.3 Integration Tests
-- **Files**: `tests/integration/`
-- **Purpose**: Test complete flows with real implementations
+#### 6.2 Use Case Layer Tests
+- **Files**: `tests/unit/application/` (new directory)
+- **Purpose**: Test use case orchestration with mocked dependencies
 - **Actions**:
-  - Test CLI with file system
-  - Test API with HTTP requests
-  - Test complete crawl-to-notification flow
+  - `CrawlRentalsUseCase.test.js` - Mock repository and gateway interactions, test both single and multi-station scenarios
+  - `QueryManagementUseCase.test.js` - Test query operations
+  - Use Bun's mocking capabilities for dependency injection
 
-### Phase 8: Migration and Cleanup (Week 8)
-
-#### 8.1 Gradual Migration
+#### 6.3 Repository Layer Tests  
+- **Files**: `tests/unit/infrastructure/repositories/`
+- **Purpose**: Test repository implementations with TestContainers
 - **Actions**:
-  - Create adapter pattern for backward compatibility
-  - Migrate one use case at a time
-  - Update imports gradually
+  - Split existing `database.test.js` into focused repository tests
+  - `QueryRepository.test.js`, `RentalRepository.test.js`, `StatisticsRepository.test.js`
+  - Maintain existing PostgreSQL TestContainer setup
 
-#### 8.2 Remove Legacy Code
-- **Actions**:
-  - Delete old `lib/crawlService.js`
-  - Clean up unused utility functions
-  - Update documentation
+### Phase 7: Migration and Gradual Rollout (Week 7-8) 🚀 IMPLEMENTATION
 
-#### 8.3 Performance Validation
+#### 7.1 Implement Domain Services First (Low Risk)
+- **Week 7.1**: Create `NotificationPolicyService` and extract logic from `crawlService.js`
+- **Week 7.2**: Create `RentalComparisonService` and extract from `multiStationCrawler.js`
+- **Validation**: Ensure existing tests pass with new domain services
+
+#### 7.2 Implement Repository Splitting (Medium Risk)
+- **Week 7.3**: Split `DatabaseStorage` into focused repositories
+- **Week 7.4**: Update all callers to use repository factory
+- **Validation**: Run integration tests to ensure database operations still work
+
+#### 7.3 Implement Use Case Layer (High Impact) 
+- **Week 8.1**: Create use cases and update `crawler.js` to use them
+- **Week 8.2**: Update `api.js` controllers to use use cases
+- **Validation**: Run full API test suite and integration tests
+
+### Phase 8: Cleanup and Performance Validation (Week 8-9) 🧹 FINALIZE
+
+#### 8.1 Remove Legacy Code
 - **Actions**:
-  - Benchmark before/after performance
-  - Ensure no regression in functionality
-  - Validate memory usage patterns
+  - Deprecate `crawlService.js` after use case migration is complete
+  - Clean up unused functions in `utils.js`
+  - Remove direct service calls from presentation layer
+
+#### 8.2 Performance and Regression Testing
+- **Actions**:
+  - Run performance benchmarks against existing crawl operations
+  - Validate database query performance with new repository structure
+  - Ensure notification latency remains acceptable
+  - Monitor memory usage patterns
+
+#### 8.3 Documentation and Architecture Decision Records
+- **Actions**:
+  - Update README.md with new architecture overview
+  - Create ADRs documenting major architectural decisions
+  - Update API documentation for any endpoint changes
+  - Document dependency injection patterns for future developers
 
 ## 🔧 Implementation Guidelines
 
@@ -614,72 +648,102 @@ class BadService {
 - **Infrastructure**: Technical failures with proper logging
 - **Abstract Classes**: Runtime contract violations
 
-## 📊 Success Metrics
+## 📊 Success Metrics (Updated for 2025)
 
-### Code Quality
-- [ ] 100% domain layer free of infrastructure dependencies
-- [ ] All business logic encapsulated in use cases
-- [ ] 80%+ test coverage maintained
-- [ ] Zero circular dependencies
+### Architecture Quality ✨ FOCUSED IMPROVEMENTS  
+- [ ] **Domain Services Extracted**: Business logic moved from infrastructure to domain layer
+- [ ] **Repository Pattern Formalized**: Clear contracts and focused responsibilities  
+- [ ] **Use Case Layer Implemented**: Application logic separated from presentation concerns
+- [ ] **Dependency Injection Improved**: Factory patterns and proper DI throughout
+- [ ] **85%+ Test Coverage Maintained**: Current 54+ tests expanded for new layers
 
-### Architecture Compliance
-- [ ] Dependency rule violations: 0
-- [ ] Proper interface segregation
-- [ ] Single responsibility principle adherence
-- [ ] Open/closed principle compliance
+### Technical Debt Reduction 🔧 MEASURABLE OUTCOMES
+- [ ] **Zero Infrastructure Imports in Domain**: Remove `utils.js` imports from `Rental.js`
+- [ ] **Business Logic Centralized**: Extract scattered logic from `crawlService.js` and controllers
+- [ ] **Reduced Cyclomatic Complexity**: Break down large functions in service files
+- [ ] **Clear Layer Boundaries**: Each layer only imports from inner layers
 
-### Maintainability
-- [ ] New features require minimal changes across layers
-- [ ] Easy to swap external services (Discord → Slack)
-- [ ] Easy to add new crawling sources
-- [ ] Clear separation of concerns
+### Maintainability Improvements 🚀 PRACTICAL BENEFITS
+- [ ] **Easy Feature Addition**: New notification types require only domain service changes
+- [ ] **Simplified Testing**: Mock dependencies at use case boundaries instead of service layer
+- [ ] **Better Error Handling**: Centralized error handling in use case layer
+- [ ] **Enhanced Observability**: Consistent logging and monitoring across layers
 
-## 🚀 Deployment Strategy
+### Performance Validation ⚡ NON-REGRESSION
+- [ ] **No Performance Regression**: Crawl operations maintain current speed
+- [ ] **Database Query Efficiency**: Repository splitting doesn't impact database performance  
+- [ ] **Memory Usage Stable**: Architecture changes don't increase memory consumption
+- [ ] **API Response Times**: REST endpoints maintain current response times
 
-### Rollout Plan
-1. **Phase 1-2**: Infrastructure changes (backward compatible)
-2. **Phase 3-4**: Core business logic migration
-3. **Phase 5-6**: Presentation layer updates
-4. **Phase 7-8**: Testing and cleanup
+## 🚀 Deployment Strategy (Updated for 2025)
 
-### Risk Mitigation
-- Maintain backward compatibility during migration
-- Feature flags for new architecture components
-- Comprehensive regression testing
-- Gradual rollout with monitoring
+### Gradual Rollout Approach 🔄 LOW-RISK MIGRATION
+1. **Week 1-2**: Domain service extraction (backward compatible)
+2. **Week 2-3**: Repository pattern formalization (database layer)
+3. **Week 3-4**: Use case layer implementation (application logic)
+4. **Week 4-5**: Gateway pattern enhancement (infrastructure)
+5. **Week 5-6**: Dependency injection improvements (cross-cutting)
+6. **Week 6-7**: Testing strategy enhancement (validation)
+7. **Week 7-8**: Migration implementation (integration)
+8. **Week 8-9**: Cleanup and validation (finalization)
 
-## 📚 Documentation Updates
+### Risk Mitigation Strategy 🛡️ PRODUCTION-SAFE
+- **Existing Tests as Safety Net**: Leverage 54+ existing tests to catch regressions
+- **Incremental Migration**: Each phase maintains full backward compatibility
+- **Feature Toggle Pattern**: New use cases can be toggled on/off via environment variables
+- **Database Schema Stability**: No database changes required - only application layer refactoring
+- **API Contract Preservation**: All existing API endpoints maintain identical contracts
 
-### Architecture Decision Records (ADRs)
-- ADR-001: Clean Architecture Adoption in Node.js
-- ADR-002: Abstract Base Classes vs Interfaces
-- ADR-003: Factory Pattern for Dependency Validation
-- ADR-004: Gateway Pattern for External Services
-- ADR-005: Composition over Inheritance Strategy
+### Production Deployment Integration 🔧 SEAMLESS UPDATES
+- **GitHub Actions Compatibility**: Architecture changes integrate with existing CI/CD
+- **Docker Container Compatibility**: No changes required to production Docker setup
+- **Environment Configuration**: New dependency injection works with existing environment variables
+- **Performance Monitoring**: Use existing logging to monitor performance during rollout
 
-### Code Documentation
-- Update README with new architecture overview
-- Create developer guide for adding new features
-- Document dependency injection patterns
-- Update API documentation
+## 📚 Documentation Strategy (Updated)
+
+### Updated Architecture Decision Records (ADRs)
+- **ADR-006**: Domain Service Extraction from Infrastructure Layer
+- **ADR-007**: Repository Pattern Implementation with Prisma ORM
+- **ADR-008**: Use Case Layer Design for Application Logic  
+- **ADR-009**: Factory Pattern Evolution for Dependency Management
+- **ADR-010**: Testing Strategy Enhancement for Clean Architecture
+
+### Developer Experience Improvements
+- **Architecture Guide**: How to add new features using clean architecture patterns
+- **Dependency Injection Guide**: How to use the new factory patterns
+- **Testing Guide**: How to test different architectural layers
+- **Migration Guide**: How existing features were migrated (for reference)
 
 ---
 
-## 🎯 Node.js Implementation Summary
+## 🎯 Implementation Summary (2025 Focus)
 
-This plan adapts Clean Architecture principles for JavaScript/Node.js development by:
+This **updated plan** builds on the solid foundation already established:
 
-1. **Using Abstract Base Classes** instead of formal interfaces
-2. **Factory Functions** for dependency validation and creation
-3. **Composition Patterns** for flexible object construction
-4. **Runtime Contract Enforcement** through constructor validation
-5. **Lightweight DI Container** suitable for Node.js applications
+### ✅ What's Already Working Well
+- **Rich Domain Models**: `SearchUrl`, `QueryId`, `PropertyId`, `Distance` are excellent examples
+- **Database Integration**: Prisma-based system with optimization is production-ready
+- **API Architecture**: RESTful endpoints with Swagger documentation  
+- **Testing Infrastructure**: Bun test framework with integration testing
+- **Production Deployment**: GitHub Actions with Docker containerization
 
-The approach maintains architectural purity while working with JavaScript's dynamic nature and Node.js conventions.
+### 🎯 Focused Improvements Needed
+1. **Extract Domain Services** to centralize business logic
+2. **Formalize Repository Pattern** to improve data layer organization
+3. **Implement Use Case Layer** to separate application logic from infrastructure
+4. **Enhance Dependency Injection** with factory patterns
+5. **Maintain Testing Excellence** while expanding coverage for new layers
+
+### 🏆 Expected Outcomes
+- **Reduced Complexity**: Business logic concentrated in domain services
+- **Improved Testability**: Clear dependency boundaries enable better unit testing
+- **Enhanced Maintainability**: New features follow established architectural patterns
+- **Better Separation of Concerns**: Each layer has a single, clear responsibility
 
 ---
 
-**Estimated Timeline**: 8 weeks
+**Updated Timeline**: 8-9 weeks (vs. original 8 weeks)
 **Team Size**: 1-2 developers  
-**Risk Level**: Medium (significant refactoring with maintained functionality)
-**Benefits**: Improved testability, maintainability, and extensibility with Node.js best practices
+**Risk Level**: Low (incremental refactoring of working system)
+**Benefits**: Enhanced maintainability and testability while preserving all existing functionality
