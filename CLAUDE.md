@@ -251,3 +251,9 @@ git push origin main
 - **Configuration Changes**: Only modify `docker-compose.production.yml`, `Dockerfile` and other config files
 - **Git Flow**: Develop on `develop` branch → commit → merge to `main` → push to trigger GitHub Actions auto-deployment
 - **Production Environment**: Managed entirely by CI/CD, all production container operations handled through automated deployment
+
+### 🔧 Pre-commit Hook Policy
+- **NEVER use `--no-verify`**: Pre-commit hooks run tests for code quality assurance
+- **Fix test failures first**: If pre-commit tests fail, debug and fix the underlying issues
+- **Test failure = code issue**: A failing test usually indicates a real problem that needs addressing
+- **Proper workflow**: Fix test → commit → push (不要繞過檢查)

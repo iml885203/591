@@ -15,7 +15,6 @@
     "test:coverage": "bun test --coverage",
     "test:unit": "bun test tests/unit",
     "test:integration": "bun test tests/integration",
-    "test:integration:database": "bun test tests/integration/database.test.js",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
@@ -61,12 +60,10 @@
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
-    "@testcontainers/postgresql": "^11.4.0",
     "husky": "^9.1.7",
     "jsdom": "^26.1.0",
     "nock": "^14.0.6",
     "prisma": "^6.12.0",
-    "supertest": "^7.1.3",
-    "testcontainers": "^11.4.0"
+    "supertest": "^7.1.4"
   }
 }
