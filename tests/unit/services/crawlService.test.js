@@ -20,7 +20,7 @@ import {
 // Also import required dependencies for mocking
 import { sendDiscordNotifications, sendErrorNotification } from '../../../lib/services/NotificationService.js';
 import { crawlMultipleStations } from '../../../lib/services/MultiStationCrawler.js';
-import { crawl591 } from '../../../lib/crawler.js';
+import { crawl591 } from '../../../lib/core/crawler.js';
 
 describe('crawlService', () => {
   let mockDependencies;
@@ -208,7 +208,7 @@ describe('crawlService', () => {
       const filter = { mrtDistanceThreshold: 600 }; // 600 meters
       
       // Debug: Check what distances we actually get
-      const Rental = require('../../../lib/Rental');
+      const Rental = require('../../../lib/domain/Rental');
       const rental1 = new Rental(mockRentals[0]);
       const distance1 = rental1.getDistanceToMRT();
       const minDistance = rental1.getMinDistanceToMRT();
@@ -304,14 +304,14 @@ describe('crawlService', () => {
   describe('crawlWithNotifications', () => {
     it('should detect single station URLs correctly', () => {
       const singleStationUrl = 'https://rent.591.com.tw/list?region=1&kind=0&station=100';
-      const hasMultipleStations = require('../../../lib/multiStationCrawler').hasMultipleStations;
+      const hasMultipleStations = require('../../../lib/services/MultiStationCrawler').hasMultipleStations;
       
       expect(hasMultipleStations(singleStationUrl)).toBe(false);
     });
 
     it('should detect multi-station URLs correctly', () => {
       const multiStationUrl = 'https://rent.591.com.tw/list?region=1&kind=0&station=100,101,102';
-      const hasMultipleStations = require('../../../lib/multiStationCrawler').hasMultipleStations;
+      const hasMultipleStations = require('../../../lib/services/MultiStationCrawler').hasMultipleStations;
       
       expect(hasMultipleStations(multiStationUrl)).toBe(true);
     });
@@ -321,7 +321,7 @@ describe('crawlService', () => {
       const singleUrl = 'https://rent.591.com.tw/list?region=1&kind=0&station=100';
       const multiUrl = 'https://rent.591.com.tw/list?region=1&kind=0&station=100,101';
       
-      const { hasMultipleStations } = require('../../../lib/multiStationCrawler');
+      const { hasMultipleStations } = require('../../../lib/services/MultiStationCrawler');
       
       expect(hasMultipleStations(singleUrl)).toBe(false);
       expect(hasMultipleStations(multiUrl)).toBe(true);

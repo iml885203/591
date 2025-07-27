@@ -6,12 +6,12 @@
 describe('config', () => {
   beforeEach(() => {
     // Clear config module cache for clean tests
-    delete require.cache[require.resolve('../../lib/config')];
+    delete require.cache[require.resolve('../../lib/config/config')];
   });
 
   describe('basic configuration', () => {
     it('should load default configuration values', () => {
-      const { config } = require('../../lib/config');
+      const { config } = require('../../lib/config/config');
       
       // Test that all major config sections exist
       expect(config).toHaveProperty('server');
@@ -36,7 +36,7 @@ describe('config', () => {
 
   describe('getConfig', () => {
     it('should return configuration for valid module', () => {
-      const { getConfig } = require('../../lib/config');
+      const { getConfig } = require('../../lib/config/config');
       
       const discordConfig = getConfig('discord');
       expect(discordConfig).toHaveProperty('webhookUrl');
@@ -48,7 +48,7 @@ describe('config', () => {
     });
 
     it('should throw error for unknown module', () => {
-      const { getConfig } = require('../../lib/config');
+      const { getConfig } = require('../../lib/config/config');
       
       expect(() => {
         getConfig('unknown');
@@ -58,7 +58,7 @@ describe('config', () => {
 
   describe('getAllConfig', () => {
     it('should return copy of complete configuration', () => {
-      const { getAllConfig } = require('../../lib/config');
+      const { getAllConfig } = require('../../lib/config/config');
       
       const fullConfig = getAllConfig();
       expect(fullConfig).toHaveProperty('server');

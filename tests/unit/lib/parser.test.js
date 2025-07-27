@@ -2,7 +2,7 @@
  * Parser unit tests
  */
 
-const { parseRental, parseRentals } = require('../../../lib/parser');
+const { parseRental, parseRentals } = require('../../../lib/core/parser');
 const cheerio = require('cheerio');
 const fs = require('fs');
 const path = require('path');
