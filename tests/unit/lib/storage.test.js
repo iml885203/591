@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'bun:test';
-import { createMockFunction } from '../helpers/mockUtils.js';
+import { createMockFunction } from '../../helpers/mockUtils.js';
 
 // Create our own implementation of storage functions for testing
 const createStorageFunctions = (logWithTimestamp, getConfig) => {

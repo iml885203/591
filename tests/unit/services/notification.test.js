@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'bun:test';
-import { createMockFunction, createMockObject } from '../helpers/mockUtils.js';
+import { createMockFunction, createMockObject } from '../../helpers/mockUtils.js';
 
 // Import functions to test
 import {
@@ -11,7 +11,7 @@ import {
   createRentalEmbed, 
   sendDiscordNotifications,
   sendErrorNotification
-} from '../../lib/notification.js';
+} from '../../../lib/notification.js';
 
 describe('notification', () => {
   let mockAxios;

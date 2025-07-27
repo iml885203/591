@@ -3,12 +3,12 @@
  */
 
 import { describe, it, expect, beforeEach } from 'bun:test';
-import { createMockFunction, createMockObject } from '../helpers/mockUtils.js';
+import { createMockFunction, createMockObject } from '../../helpers/mockUtils.js';
 
 // Import functions to test
 import {
   fetchWithRetry
-} from '../../lib/fetcher.js';
+} from '../../../lib/fetcher.js';
 
 describe('fetcher', () => {
   let mockAxios;

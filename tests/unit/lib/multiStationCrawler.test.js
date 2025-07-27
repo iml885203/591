@@ -3,14 +3,14 @@
  */
 
 import { describe, it, expect, beforeEach } from 'bun:test';
-import { createMockFunction, createMockObject } from '../helpers/mockUtils.js';
+import { createMockFunction, createMockObject } from '../../helpers/mockUtils.js';
 
 // Import functions to test
 import {
   crawlMultipleStations,
   hasMultipleStations,
   getUrlStationInfo
-} from '../../lib/multiStationCrawler.js';
+} from '../../../lib/multiStationCrawler.js';
 
 describe('multiStationCrawler', () => {
   let mockCrawl591;

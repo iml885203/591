@@ -6,7 +6,7 @@ const {
   sleep,
   extractArrayFromElements,
   logWithTimestamp
-} = require('../../lib/utils');
+} = require('../../../lib/utils');
 
 describe('utils', () => {
   describe('sleep', () => {
