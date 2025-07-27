@@ -19,7 +19,6 @@ describe('config', () => {
       expect(config).toHaveProperty('crawler');
       expect(config).toHaveProperty('mrt');
       expect(config).toHaveProperty('rateLimit');
-      expect(config).toHaveProperty('storage');
       expect(config).toHaveProperty('validation');
       expect(config).toHaveProperty('development');
       

@@ -1,13 +1,13 @@
 /**
- * Unit tests for CLI entry point (crawler.js)
+ * Unit tests for CLI entry point (cli.js)
  */
 
 const { spawn } = require('child_process');
 const path = require('path');
 
-const crawlerPath = path.join(__dirname, '../../crawler.js');
+const crawlerPath = path.join(__dirname, '../../cli.js');
 
-describe('crawler.js CLI', () => {
+describe('cli.js CLI', () => {
   let originalArgv;
 
   beforeEach(() => {
@@ -31,7 +31,7 @@ describe('crawler.js CLI', () => {
 
       child.on('close', (code) => {
         expect(code).toBe(1);
-        expect(stderr).toContain('Usage: bun crawler.js');
+        expect(stderr).toContain('Usage: bun cli.js');
         expect(stderr).toContain('--notify-mode');
         expect(stderr).toContain('--filtered-mode');
         done();
@@ -102,10 +102,10 @@ describe('crawler.js CLI', () => {
       // This complex mocking scenario is tested in integration tests
 
       // Test parsing logic directly
-      const args = ['bun', 'crawler.js', 'https://test.com', '--notify-mode=all'];
+      const args = ['bun', 'cli.js', 'https://test.com', '--notify-mode=all'];
       process.argv = args;
       
-      delete require.cache[require.resolve('../../crawler.js')];
+      delete require.cache[require.resolve('../../cli.js')];
       
       // The actual test would require more complex setup to avoid executing the crawler
       // This demonstrates the testing approach
@@ -119,7 +119,7 @@ describe('crawler.js CLI', () => {
       // For now, we'll test that the module can be required without errors
       
       expect(() => {
-        require('../../crawler.js');
+        require('../../cli.js');
       }).not.toThrow();
       
       done();

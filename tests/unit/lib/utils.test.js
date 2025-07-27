@@ -4,8 +4,7 @@
 
 const {
   sleep,
-  extractArrayFromElements,
-  logWithTimestamp
+  extractArrayFromElements
 } = require('../../../lib/utils');
 
 describe('utils', () => {
@@ -49,31 +48,4 @@ describe('utils', () => {
     });
   });
 
-  describe('logWithTimestamp', () => {
-    let consoleSpy;
-
-    beforeEach(() => {
-      consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-    });
-
-    afterEach(() => {
-      consoleSpy.mockRestore();
-    });
-
-    it('should log message with timestamp and default INFO level', () => {
-      logWithTimestamp('test message');
-      
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringMatching(/\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] \[INFO\] test message/)
-      );
-    });
-
-    it('should log message with custom level', () => {
-      logWithTimestamp('error message', 'ERROR');
-      
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringMatching(/\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] \[ERROR\] error message/)
-      );
-    });
-  });
 });

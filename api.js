@@ -11,7 +11,7 @@ const swaggerUi = require('swagger-ui-express');
 const { specs } = require('./lib/swagger');
 const { crawlWithNotifications } = require('./lib/crawlService');
 const { hasMultipleStations, getUrlStationInfo } = require('./lib/multiStationCrawler');
-const { logWithTimestamp } = require('./lib/utils');
+const logger = require('./lib/logger');
 const DatabaseStorage = require('./lib/storage/DatabaseStorage');
 const QueryId = require('./lib/domain/QueryId');
 const SearchUrl = require('./lib/domain/SearchUrl');
@@ -42,7 +42,7 @@ app.use((req, res, next) => {
     const hasApiKey = !!(req.headers['x-api-key'] || req.query.apiKey);
     const apiKeyInfo = hasApiKey ? ' [authenticated]' : ' [no-auth]';
     
-    logWithTimestamp(`📡 ${logMessage}${apiKeyInfo}`);
+    logger.info(`📡 ${logMessage}${apiKeyInfo}`);
     
     // Call original end method
     originalEnd.call(this, chunk, encoding);
@@ -58,7 +58,7 @@ const authenticateApiKey = (req, res, next) => {
   
   // Skip authentication if no API_KEY is configured (for backward compatibility)
   if (!expectedApiKey) {
-    logWithTimestamp('Warning: API_KEY not configured, skipping authentication', 'WARN');
+    logger.warn('Warning: API_KEY not configured, skipping authentication');
     return next();
   }
   
@@ -71,7 +71,7 @@ const authenticateApiKey = (req, res, next) => {
   }
   
   if (apiKey !== expectedApiKey) {
-    logWithTimestamp(`Authentication failed: invalid API key from ${req.ip}`, 'WARN');
+    logger.warn(`Authentication failed: invalid API key from ${req.ip}`);
     return res.status(401).json({
       success: false,
       error: 'Unauthorized', 
@@ -274,7 +274,7 @@ app.post('/crawl', authenticateApiKey, async (req, res) => {
     const multiStationInfo = urlStationInfo.hasMultiple ? 
       ` stations=${urlStationInfo.stations.join(',')}, multiStationOptions=${JSON.stringify(multiStationOptions)}` : '';
     
-    logWithTimestamp(`API crawl request: url=${url}, maxLatest=${maxLatest}, notifyMode=${notifyMode}, filteredMode=${filteredMode}, filter=${filterInfo}${multiStationInfo}`);
+    logger.info(`API crawl request: url=${url}, maxLatest=${maxLatest}, notifyMode=${notifyMode}, filteredMode=${filteredMode}, filter=${filterInfo}${multiStationInfo}`);
 
     // Execute crawler with notifications service
     const result = await crawlWithNotifications(url, maxLatest, { 
@@ -308,7 +308,7 @@ app.post('/crawl', authenticateApiKey, async (req, res) => {
     });
 
   } catch (error) {
-    logWithTimestamp(`API crawl error: ${error.message}`, 'ERROR');
+    logger.error(`API crawl error: ${error.message}`);
     
     res.status(500).json({
       success: false,
@@ -318,7 +318,7 @@ app.post('/crawl', authenticateApiKey, async (req, res) => {
     });
   } finally {
     activeCrawls--;
-    logWithTimestamp(`Active crawls: ${activeCrawls}/${MAX_CONCURRENT_CRAWLS}`);
+    logger.info(`Active crawls: ${activeCrawls}/${MAX_CONCURRENT_CRAWLS}`);
   }
 });
 
@@ -422,7 +422,7 @@ app.post('/query/parse', authenticateApiKey, async (req, res) => {
     });
 
   } catch (error) {
-    logWithTimestamp(`Query parse error: ${error.message}`, 'ERROR');
+    logger.error(`Query parse error: ${error.message}`);
     
     res.status(500).json({
       success: false,
@@ -528,7 +528,7 @@ app.delete('/query/:queryId/clear', authenticateApiKey, async (req, res) => {
       });
     }
     
-    logWithTimestamp(`🗑️  Clearing data for query: ${queryId}`);
+    logger.info(`🗑️  Clearing data for query: ${queryId}`);
     
     // Initialize database storage
     const databaseStorage = new DatabaseStorage();
@@ -555,7 +555,7 @@ app.delete('/query/:queryId/clear', authenticateApiKey, async (req, res) => {
       });
     }
     
-    logWithTimestamp(`📊 Query found: ${query.description} (${query._count.crawlSessions} sessions, ${query._count.rentals} rentals)`);
+    logger.info(`📊 Query found: ${query.description} (${query._count.crawlSessions} sessions, ${query._count.rentals} rentals)`);
     
     // Clear data in transaction
     const cleared = await databaseStorage.prisma.$transaction(async (tx) => {
@@ -628,10 +628,10 @@ app.delete('/query/:queryId/clear', authenticateApiKey, async (req, res) => {
       };
     });
     
-    logWithTimestamp(`✅ Cleared data for query ${queryId}:`);
-    logWithTimestamp(`   - Crawl sessions: ${cleared.crawlSessions}`);
-    logWithTimestamp(`   - Query-rental links: ${cleared.queryRentals}`);
-    logWithTimestamp(`   - Metro distances: ${cleared.metroDistances}`);
+    logger.info(`✅ Cleared data for query ${queryId}:`);
+    logger.info(`   - Crawl sessions: ${cleared.crawlSessions}`);
+    logger.info(`   - Query-rental links: ${cleared.queryRentals}`);
+    logger.info(`   - Metro distances: ${cleared.metroDistances}`);
     
     res.json({
       success: true,
@@ -645,7 +645,7 @@ app.delete('/query/:queryId/clear', authenticateApiKey, async (req, res) => {
     });
     
   } catch (error) {
-    logWithTimestamp(`❌ Error clearing query data: ${error.message}`, 'ERROR');
+    logger.error(`❌ Error clearing query data: ${error.message}`);
     res.status(500).json({
       success: false,
       error: 'Internal Server Error',
@@ -749,7 +749,7 @@ app.get('/query/:queryId/rentals', authenticateApiKey, async (req, res) => {
     });
 
   } catch (error) {
-    logWithTimestamp(`Query rentals error: ${error.message}`, 'ERROR');
+    logger.error(`Query rentals error: ${error.message}`);
     
     res.status(500).json({
       success: false,
@@ -868,7 +868,7 @@ app.get('/queries', authenticateApiKey, async (req, res) => {
     });
 
   } catch (error) {
-    logWithTimestamp(`Queries list error: ${error.message}`, 'ERROR');
+    logger.error(`Queries list error: ${error.message}`);
     
     res.status(500).json({
       success: false,
@@ -949,7 +949,7 @@ app.get('/query/:queryId/similar', authenticateApiKey, async (req, res) => {
     });
 
   } catch (error) {
-    logWithTimestamp(`Similar queries error: ${error.message}`, 'ERROR');
+    logger.error(`Similar queries error: ${error.message}`);
     
     res.status(500).json({
       success: false,
@@ -1020,7 +1020,7 @@ app.get('/query/statistics', authenticateApiKey, async (req, res) => {
     });
 
   } catch (error) {
-    logWithTimestamp(`Query statistics error: ${error.message}`, 'ERROR');
+    logger.error(`Query statistics error: ${error.message}`);
     
     res.status(500).json({
       success: false,
@@ -1114,7 +1114,7 @@ app.get('/debug/html', authenticateApiKey, async (req, res) => {
     });
     
   } catch (error) {
-    logWithTimestamp(`Debug HTML list error: ${error.message}`, 'ERROR');
+    logger.error(`Debug HTML list error: ${error.message}`);
     
     res.status(500).json({
       success: false,
@@ -1201,10 +1201,10 @@ app.get('/debug/html/:filename', authenticateApiKey, async (req, res) => {
     const fileStream = fs.createReadStream(filePath);
     fileStream.pipe(res);
     
-    logWithTimestamp(`📥 Debug HTML downloaded: ${filename}`);
+    logger.info(`📥 Debug HTML downloaded: ${filename}`);
     
   } catch (error) {
-    logWithTimestamp(`Debug HTML download error: ${error.message}`, 'ERROR');
+    logger.error(`Debug HTML download error: ${error.message}`);
     
     res.status(500).json({
       success: false,
@@ -1270,7 +1270,7 @@ app.use('*', (req, res) => {
 
 // Global error handler
 app.use((error, req, res, next) => {
-  logWithTimestamp(`Unhandled API error: ${error.message}`, 'ERROR');
+  logger.error(`Unhandled API error: ${error.message}`);
   res.status(500).json({
     success: false,
     error: 'Internal server error',
@@ -1286,47 +1286,47 @@ if (require.main === module) {
     const prisma = new PrismaClient();
     
     try {
-      logWithTimestamp('Checking database configuration...');
-      logWithTimestamp(`DATABASE_PROVIDER: ${process.env.DATABASE_PROVIDER || 'not set'}`);
-      logWithTimestamp(`DATABASE_URL: ${process.env.DATABASE_URL ? 'configured' : 'not set'}`);
-      logWithTimestamp(`NODE_ENV: ${process.env.NODE_ENV || 'not set'}`);
+      logger.info('Checking database configuration...');
+      logger.info(`DATABASE_PROVIDER: ${process.env.DATABASE_PROVIDER || 'not set'}`);
+      logger.info(`DATABASE_URL: ${process.env.DATABASE_URL ? 'configured' : 'not set'}`);
+      logger.info(`NODE_ENV: ${process.env.NODE_ENV || 'not set'}`);
       
       // Test database connection
       await prisma.$connect();
-      logWithTimestamp('✅ Database connection successful');
+      logger.info('✅ Database connection successful');
       
       // Check if tables exist
       const queryCount = await prisma.query.count();
       const rentalCount = await prisma.rental.count();
-      logWithTimestamp(`📊 Database stats: ${queryCount} queries, ${rentalCount} rentals`);
+      logger.info(`📊 Database stats: ${queryCount} queries, ${rentalCount} rentals`);
       
       await prisma.$disconnect();
     } catch (error) {
-      logWithTimestamp(`❌ Database connection failed: ${error.message}`, 'ERROR');
-      logWithTimestamp('Please check your DATABASE_URL and ensure the database is accessible', 'ERROR');
+      logger.error(`❌ Database connection failed: ${error.message}`);
+      logger.error('Please check your DATABASE_URL and ensure the database is accessible');
       // Don't exit - let the API start anyway
     }
   };
   
   checkDatabaseOnStartup().then(() => {
     const server = app.listen(PORT, () => {
-      logWithTimestamp(`591 Crawler API server started on port ${PORT}`);
-      logWithTimestamp(`Available endpoints:`);
-      logWithTimestamp(`  GET    http://localhost:${PORT}/health - Health check`);
-      logWithTimestamp(`  POST   http://localhost:${PORT}/crawl - Execute crawler`);
-      logWithTimestamp(`  POST   http://localhost:${PORT}/query/parse - Parse query URL`);
-      logWithTimestamp(`  DELETE http://localhost:${PORT}/query/{id}/clear?confirm=true - Clear query data`);
-      logWithTimestamp(`  GET    http://localhost:${PORT}/query/{id}/rentals - Get query rentals`);
-      logWithTimestamp(`  GET    http://localhost:${PORT}/debug/html - List debug HTML files`);
-      logWithTimestamp(`  GET    http://localhost:${PORT}/debug/html/{filename} - Download debug HTML`);
-      logWithTimestamp(`  GET    http://localhost:${PORT}/swagger - Swagger API Documentation`);
+      logger.info(`591 Crawler API server started on port ${PORT}`);
+      logger.info(`Available endpoints:`);
+      logger.info(`  GET    http://localhost:${PORT}/health - Health check`);
+      logger.info(`  POST   http://localhost:${PORT}/crawl - Execute crawler`);
+      logger.info(`  POST   http://localhost:${PORT}/query/parse - Parse query URL`);
+      logger.info(`  DELETE http://localhost:${PORT}/query/{id}/clear?confirm=true - Clear query data`);
+      logger.info(`  GET    http://localhost:${PORT}/query/{id}/rentals - Get query rentals`);
+      logger.info(`  GET    http://localhost:${PORT}/debug/html - List debug HTML files`);
+      logger.info(`  GET    http://localhost:${PORT}/debug/html/{filename} - Download debug HTML`);
+      logger.info(`  GET    http://localhost:${PORT}/swagger - Swagger API Documentation`);
     });
 
     server.on('error', (err) => {
       if (err.code === 'EADDRINUSE') {
-        logWithTimestamp(`Port ${PORT} is already in use. Please try a different port or stop the existing service.`);
+        logger.info(`Port ${PORT} is already in use. Please try a different port or stop the existing service.`);
       } else {
-        logWithTimestamp(`Failed to start server: ${err.message}`);
+        logger.info(`Failed to start server: ${err.message}`);
       }
       process.exit(1);
     });
@@ -1335,12 +1335,12 @@ if (require.main === module) {
 
 // Graceful shutdown
 process.on('SIGINT', () => {
-  logWithTimestamp('Shutting down API server...');
+  logger.info('Shutting down API server...');
   process.exit(0);
 });
 
 process.on('SIGTERM', () => {
-  logWithTimestamp('Shutting down API server...');
+  logger.info('Shutting down API server...');
   process.exit(0);
 });
 

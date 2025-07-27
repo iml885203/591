@@ -25,7 +25,7 @@ cp .env.example .env
 bun run db:migrate
 
 # Run crawler
-bun crawler.js "https://rent.591.com.tw/list?region=1&kind=0"
+bun cli.js "https://rent.591.com.tw/list?region=1&kind=0"
 
 # Or start API server
 bun run api
@@ -53,9 +53,12 @@ API_KEY=your-secret-api-key-here
 
 **CLI:**
 ```bash
-bun crawler.js "URL"              # New rentals only
-bun crawler.js "URL" 5            # Latest 5 rentals
-bun crawler.js "URL" --notify-mode=none  # No notifications
+bun cli.js "URL"              # New rentals only
+bun cli.js "URL" 5            # Latest 5 rentals
+bun cli.js "URL" --notify-mode=none  # No notifications
+
+# Or use the npm script:
+bun run crawl "URL"           # Equivalent to bun cli.js
 ```
 
 **API:**

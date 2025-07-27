@@ -2,14 +2,14 @@
   "name": "591-crawler",
   "version": "2025.07.23",
   "description": "A Node.js web scraper for 591.com.tw rental properties with Discord notifications",
-  "main": "crawler.js",
+  "main": "cli.js",
   "bin": {
-    "591-crawler": "./crawler.js"
+    "591-crawler": "./cli.js"
   },
   "scripts": {
     "start": "bun run scripts/start-server.js",
     "api": "bun run scripts/start-server.js",
-    "crawl": "bun run crawler.js",
+    "crawl": "bun run cli.js",
     "test": "bun test",
     "test:watch": "bun test --watch",
     "test:coverage": "bun test --coverage",

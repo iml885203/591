@@ -89,7 +89,7 @@ bun test
 bun run api
 
 # 5. Test crawler
-bun run crawler.js "https://rent.591.com.tw/list?region=1&kind=0"
+bun run cli.js "https://rent.591.com.tw/list?region=1&kind=0"
 ```
 
 ### Testing

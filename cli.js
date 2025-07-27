@@ -39,7 +39,7 @@ if (require.main === module) {
   }
   
   if (!url) {
-    console.error('Usage: bun crawler.js <591_url> [max_latest] [--notify-mode=MODE] [--filtered-mode=FILTERED_MODE]');
+    console.error('Usage: bun cli.js <591_url> [max_latest] [--notify-mode=MODE] [--filtered-mode=FILTERED_MODE]');
     console.error('');
     console.error('Notification modes:');
     console.error('  --notify-mode=all       # Notify all rentals');
@@ -52,10 +52,10 @@ if (require.main === module) {
     console.error('  --filtered-mode=none    # Skip far rentals');
     console.error('');
     console.error('Examples:');
-    console.error('  bun crawler.js "URL" 5                              # Latest 5, filtered+silent');
-    console.error('  bun crawler.js "URL" --notify-mode=all              # All rentals, normal notifications');
-    console.error('  bun crawler.js "URL" --filtered-mode=none           # Skip far rentals');
-    console.error('  bun crawler.js "URL" --notify-mode=filtered --filtered-mode=normal  # All rentals, normal notifications');
+    console.error('  bun cli.js "URL" 5                              # Latest 5, filtered+silent');
+    console.error('  bun cli.js "URL" --notify-mode=all              # All rentals, normal notifications');
+    console.error('  bun cli.js "URL" --filtered-mode=none           # Skip far rentals');
+    console.error('  bun cli.js "URL" --notify-mode=filtered --filtered-mode=normal  # All rentals, normal notifications');
     process.exit(1);
   }
 
@@ -94,19 +94,19 @@ if (require.main === module) {
   })
     .then((result) => {
       const summary = result.summary;
-      logWithTimestamp(`Total properties: ${summary.totalRentals}, New: ${summary.newRentals}, Notifications sent: ${summary.notificationsSent}`);
+      logger.info(`Total properties: ${summary.totalRentals}, New: ${summary.newRentals}, Notifications sent: ${summary.notificationsSent}`);
       
       if (summary.multiStation) {
-        logWithTimestamp(`Multi-station crawl: ${summary.stationCount} stations (${summary.stations.join(', ')})`);
+        logger.info(`Multi-station crawl: ${summary.stationCount} stations (${summary.stations.join(', ')})`);
         if (summary.crawlErrors && summary.crawlErrors.length > 0) {
-          logWithTimestamp(`Station errors: ${summary.crawlErrors.length}`, 'WARN');
+          logger.warn(`Station errors: ${summary.crawlErrors.length}`);
         }
       }
       
-      logWithTimestamp('Crawler completed successfully');
+      logger.info('Crawler completed successfully');
     })
     .catch((error) => {
-      logWithTimestamp(`Crawl failed: ${error.message}`, 'ERROR');
+      logger.error(`Crawl failed: ${error.message}`);
       process.exit(1);
     });
 }

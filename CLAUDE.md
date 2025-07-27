@@ -8,27 +8,25 @@ Node.js web scraper for 591.com.tw rental monitoring with Discord notifications 
 # Development
 bun install  # Automatically sets up Git hooks via Husky
 
-# Start development databases
-bun run dev:db:start  # PostgreSQL dev & test databases
-bun run dev:pgadmin   # Optional: pgAdmin web interface
+# Start development databases (manual setup required)
+# PostgreSQL setup via Docker or local installation
 
 # Run tests and API
 bun test
 bun run api
 
 # Usage
-bun run crawler.js "https://rent.591.com.tw/list?region=1&kind=0"
-bun run crawler.js "URL" 5  # Latest 5 rentals
-bun run crawler.js "URL" --notify-mode=none  # No notifications
+bun run cli.js "https://rent.591.com.tw/list?region=1&kind=0"
+bun run cli.js "URL" 5  # Latest 5 rentals
+bun run cli.js "URL" --notify-mode=none  # No notifications
 
 # Multi-station crawling
-bun run crawler.js "URL_WITH_MULTIPLE_STATIONS" --max-concurrent=3 --delay=1500
-bun run crawler.js "URL" --no-merge  # Skip merging duplicate properties
-bun run crawler.js "URL" --no-station-info  # Hide station processing info
+bun run cli.js "URL_WITH_MULTIPLE_STATIONS" --max-concurrent=3 --delay=1500
+bun run cli.js "URL" --no-merge  # Skip merging duplicate properties
+bun run cli.js "URL" --no-station-info  # Hide station processing info
 
-# Docker
-bun run deploy:docker
-bun run docker:logs
+# Docker (manual deployment)
+docker-compose -f docker-compose.production.yml up -d
 
 # API
 curl -X POST http://localhost:3000/crawl \
@@ -64,7 +62,7 @@ curl -X GET http://localhost:3000/debug/html/crawl-2025-07-26T10-30-00-000Z.html
 ## 🏗️ Architecture
 
 **Core modules:**
-- `crawler.js` - CLI entry point
+- `cli.js` - CLI entry point
 - `api.js` - REST API server
 - `lib/crawlService.js` - Main orchestration
 - `lib/crawler.js` - Web scraping logic
@@ -127,21 +125,13 @@ DEBUG_LOGS=false       # Enable/disable debug logging (true/false)
 
 **Database Integration Testing:**
 ```bash
-# Development databases (recommended)
-bun run dev:db:start             # Start dev & test PostgreSQL containers
-bun run dev:db:stop              # Stop development databases
-bun run dev:db:reset             # Reset databases (delete all data)
-bun run dev:db:logs              # View database logs
-bun run dev:pgadmin              # Start pgAdmin (http://localhost:8080)
-
-# Legacy test setup (alternative)
-bun run test:postgres:start      # Start PostgreSQL container
-bun run test:postgres:setup      # Setup schema
-bun run test:postgres:stop       # Cleanup
+# Database management
+bun run db:generate              # Generate Prisma client
+bun run db:migrate               # Run database migrations
+bun run db:studio                # Open Prisma Studio (web interface)
 
 # All tests
-bun test                         # Unit tests only
-bun run test:integration         # All integration tests
+bun test                         # All tests (unit + integration)
 ```
 
 ## 🔄 Git Flow 工作流程
@@ -170,7 +160,7 @@ git pull origin main
 git merge develop
 
 # 5. 更新版號並推送（觸發部署）
-bun run version:update
+# Manually update version in package.json
 git add package.json
 git commit -m "chore: bump version to $(cat package.json | grep version | cut -d'"' -f4)"
 git push origin main
@@ -222,7 +212,7 @@ git push origin main
 ## 📁 Project Structure
 
 ```
-├── crawler.js          # CLI entry
+├── cli.js              # CLI entry
 ├── api.js              # REST API
 ├── lib/                # Core modules
 │   ├── domain/         # Domain models

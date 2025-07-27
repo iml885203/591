@@ -7,10 +7,10 @@
  */
 
 const { spawn } = require('child_process');
-const { logWithTimestamp } = require('../lib/utils');
+const logger = require('../lib/logger');
 
 async function runMigrations() {
-  logWithTimestamp('🔄 Running database migrations...');
+  logger.info('🔄 Running database migrations...');
   
   return new Promise((resolve) => {
     const migration = spawn('bun', 
@@ -22,23 +22,23 @@ async function runMigrations() {
     
     migration.on('close', (code) => {
       if (code === 0) {
-        logWithTimestamp('✅ Database migrations completed successfully');
+        logger.info('✅ Database migrations completed successfully');
         resolve(true);
       } else {
-        logWithTimestamp(`⚠️  Database migrations failed with code ${code} - continuing anyway`, 'WARN');
+        logger.warn(`⚠️  Database migrations failed with code ${code} - continuing anyway`);
         resolve(false);
       }
     });
     
     migration.on('error', (error) => {
-      logWithTimestamp(`❌ Migration error: ${error.message} - continuing anyway`, 'ERROR');
+      logger.error(`❌ Migration error: ${error.message} - continuing anyway`);
       resolve(false);
     });
   });
 }
 
 async function startApiServer() {
-  logWithTimestamp('🌐 Starting API server...');
+  logger.info('🌐 Starting API server...');
   
   const apiServer = spawn('bun', ['api.js'], {
     stdio: 'inherit',
@@ -47,29 +47,29 @@ async function startApiServer() {
   
   // Setup signal handlers for graceful shutdown
   process.on('SIGTERM', () => {
-    logWithTimestamp('Received SIGTERM, shutting down API server...');
+    logger.info('Received SIGTERM, shutting down API server...');
     apiServer.kill('SIGTERM');
   });
   
   process.on('SIGINT', () => {
-    logWithTimestamp('Received SIGINT, shutting down API server...');
+    logger.info('Received SIGINT, shutting down API server...');
     apiServer.kill('SIGTERM');
   });
   
   apiServer.on('close', (code) => {
-    logWithTimestamp(`API server exited with code ${code}`);
+    logger.info(`API server exited with code ${code}`);
     process.exit(code);
   });
   
   apiServer.on('error', (error) => {
-    logWithTimestamp(`❌ API server error: ${error.message}`, 'ERROR');
+    logger.error(`❌ API server error: ${error.message}`);
     process.exit(1);
   });
 }
 
 async function main() {
   try {
-    logWithTimestamp('🚀 Server startup initiated');
+    logger.info('🚀 Server startup initiated');
     
     // Step 1: Run migrations (includes performance indexes)
     await runMigrations();
@@ -78,7 +78,7 @@ async function main() {
     await startApiServer();
     
   } catch (error) {
-    logWithTimestamp(`❌ Startup failed: ${error.message}`, 'ERROR');
+    logger.error(`❌ Startup failed: ${error.message}`);
     process.exit(1);
   }
 }
