@@ -459,21 +459,13 @@ describe('Rental', () => {
 
 ## Deployment Considerations
 
-### Railway Configuration
-```typescript
-// railway.toml (if needed)
-[build]
-  builder = "nixpacks"
-  buildCommand = "bun install && bun run build"
-
-[deploy]
-  startCommand = "bun run dist/api.js"
-  restartPolicyType = "on_failure"
-```
+### GitHub Actions Configuration
+- TypeScript build process handled by existing CI/CD pipeline
+- Production deployment via GitHub Actions with self-hosted runner
 
 ### Environment Variables
 - No changes required for existing environment variables
-- TypeScript build process will be handled by Railway's Nixpacks
+- TypeScript build process integrated with current deployment workflow
 
 ### Docker Updates (if using)
 ```dockerfile

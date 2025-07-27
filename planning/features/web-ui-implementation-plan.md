@@ -374,12 +374,12 @@
 1. **Static Hosting (Recommended)**
    - Netlify or Vercel for automatic deployments
    - GitHub Pages for simple hosting
-   - Railway static hosting integration
+   - CDN-based static hosting
 
 2. **Self-hosted Options**
    - Nginx reverse proxy configuration
    - Docker container deployment
-   - Railway full-stack deployment
+   - GitHub Actions with self-hosted runners
 
 ### Performance Optimization
 - **Code Splitting**: Route-based lazy loading

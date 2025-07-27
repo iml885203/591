@@ -81,16 +81,16 @@ git push origin main
 
 This will:
 - Commit the version update to main branch
-- Trigger Railway automatic deployment via CI/CD
+- Trigger GitHub Actions deployment via self-hosted runner
 - No manual Docker deployment needed
 
 ### 5. Verify Deployment
 
 ```bash
 # Check API version (once deployed)
-curl -s https://your-railway-url/info | jq '.version'
+curl -s https://your-domain.com/info | jq '.version'
 
-# Monitor Railway deployment in dashboard
+# Monitor GitHub Actions deployment in repository
 ```
 
 ## Hotfix Process
@@ -106,15 +106,15 @@ For urgent fixes within the same month:
 
 ## Rollback Process
 
-If a Railway deployment needs to be rolled back:
+If a deployment needs to be rolled back:
 
-1. **Via Railway Dashboard**: Use Railway's rollback feature to previous deployment
-2. **Via Git**: Revert commit and push
+1. **Via Git**: Revert commit and push
    ```bash
    git checkout main
    git revert HEAD  # Revert last commit
    git push origin main  # This triggers new deployment
    ```
+2. **Manual**: SSH to production server and restart previous container version
 
 ## Version History
 
@@ -148,14 +148,14 @@ The API automatically reports the current version:
 
 ```bash
 # Get version via API
-curl -s https://your-railway-app.railway.app/info | jq '{name, version}'
+curl -s https://your-domain.com/info | jq '{name, version}'
 ```
 
 ## Notes
 
 - **Git Flow**: Use `develop` for development, `main` for production
-- **Railway deployment**: Automatic deployment on main branch push
-- **No manual Docker**: Railway handles container deployment
+- **GitHub Actions deployment**: Automatic deployment on main branch push
+- **Self-hosted runner**: Production deployment via GitHub Actions
 - **Automated versioning**: Version calculation based on calendar date
 - **Branch protection**: Only push to main when ready to deploy
 
@@ -167,10 +167,10 @@ If `bun run version:update` has issues:
 - Ensure you're on main branch: `git branch --show-current`
 - Make sure working directory is clean: `git status`
 
-### Railway Deployment Issues
-If Railway deployment fails:
-- Check Railway dashboard for deployment logs
-- Verify GitHub Actions logs for CI failures
+### Deployment Issues
+If deployment fails:
+- Check GitHub Actions logs for deployment failures
+- Verify self-hosted runner status
 - Test locally first: `bun test && bun run api`
 
 ### Branch Sync Issues
