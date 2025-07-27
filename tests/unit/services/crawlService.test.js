@@ -15,11 +15,11 @@ import {
   crawlWithNotifications,
   crawlWithNotificationsSingle,
   crawlWithNotificationsMultiStation
-} from '../../../lib/services/CrawlService.js';
+} from '../../../lib/application/CrawlService.js';
 
 // Also import required dependencies for mocking
-import { sendDiscordNotifications, sendErrorNotification } from '../../../lib/services/NotificationService.js';
-import { crawlMultipleStations } from '../../../lib/services/MultiStationCrawler.js';
+import { sendDiscordNotifications, sendErrorNotification } from '../../../lib/infrastructure/notifications/DiscordNotificationService.js';
+import { crawlMultipleStations } from '../../../lib/application/MultiStationCrawler.js';
 import { crawl591 } from '../../../lib/core/crawler.js';
 
 describe('crawlService', () => {
@@ -304,14 +304,14 @@ describe('crawlService', () => {
   describe('crawlWithNotifications', () => {
     it('should detect single station URLs correctly', () => {
       const singleStationUrl = 'https://rent.591.com.tw/list?region=1&kind=0&station=100';
-      const hasMultipleStations = require('../../../lib/services/MultiStationCrawler').hasMultipleStations;
+      const hasMultipleStations = require('../../../lib/application/MultiStationCrawler').hasMultipleStations;
       
       expect(hasMultipleStations(singleStationUrl)).toBe(false);
     });
 
     it('should detect multi-station URLs correctly', () => {
       const multiStationUrl = 'https://rent.591.com.tw/list?region=1&kind=0&station=100,101,102';
-      const hasMultipleStations = require('../../../lib/services/MultiStationCrawler').hasMultipleStations;
+      const hasMultipleStations = require('../../../lib/application/MultiStationCrawler').hasMultipleStations;
       
       expect(hasMultipleStations(multiStationUrl)).toBe(true);
     });
@@ -321,7 +321,7 @@ describe('crawlService', () => {
       const singleUrl = 'https://rent.591.com.tw/list?region=1&kind=0&station=100';
       const multiUrl = 'https://rent.591.com.tw/list?region=1&kind=0&station=100,101';
       
-      const { hasMultipleStations } = require('../../../lib/services/MultiStationCrawler');
+      const { hasMultipleStations } = require('../../../lib/application/MultiStationCrawler');
       
       expect(hasMultipleStations(singleUrl)).toBe(false);
       expect(hasMultipleStations(multiUrl)).toBe(true);

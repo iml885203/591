@@ -2,7 +2,7 @@
  * Unit tests for Distance domain model
  */
 
-const Distance = require('../../../lib/domain/Distance');
+const Distance = require('../../../lib/domain/valueObjects/Distance');
 
 describe('Distance Domain Model', () => {
   describe('creating Distance instances', () => {

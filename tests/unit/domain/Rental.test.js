@@ -2,7 +2,7 @@
  * Unit tests for Rental.js - Domain model for rental properties
  */
 
-const Rental = require('../../../lib/domain/Rental');
+const Rental = require('../../../lib/domain/entities/Rental');
 
 describe('Rental', () => {
   const mockRentalData = {

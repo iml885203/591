@@ -2,7 +2,7 @@
  * Unit tests for SearchUrl domain model
  */
 
-const SearchUrl = require('../../../lib/domain/SearchUrl');
+const SearchUrl = require('../../../lib/domain/valueObjects/SearchUrl');
 
 describe('SearchUrl Domain Model', () => {
   describe('constructor and basic properties', () => {

@@ -2,7 +2,7 @@
  * Unit tests for PropertyId domain model
  */
 
-const PropertyId = require('../../../lib/domain/PropertyId');
+const PropertyId = require('../../../lib/domain/valueObjects/PropertyId');
 
 describe('PropertyId Domain Model', () => {
   describe('ID generation', () => {

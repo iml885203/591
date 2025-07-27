@@ -6,9 +6,9 @@
  */
 
 require('dotenv').config();
-const { crawlWithNotifications } = require('./lib/services/CrawlService');
+const { crawlWithNotifications } = require('./lib/application/CrawlService');
 const logger = require('./lib/utils/logger');
-const { getUrlStationInfo } = require('./lib/services/MultiStationCrawler');
+const { getUrlStationInfo } = require('./lib/application/MultiStationCrawler');
 
 // Main execution
 if (require.main === module) {
