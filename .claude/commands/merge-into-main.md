@@ -1,1 +1,1 @@
-merge current branch into main branch and checkout back original branch
+merge current branch into main branch and push and checkout back original branch
