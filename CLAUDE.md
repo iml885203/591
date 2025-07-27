@@ -65,7 +65,7 @@ curl -X GET http://localhost:3000/debug/html/crawl-2025-07-26T10-30-00-000Z.html
 
 **Core modules:**
 - `crawler.js` - CLI entry point
-- `api.js` - REST API server  
+- `api.js` - REST API server
 - `lib/crawlService.js` - Main orchestration
 - `lib/crawler.js` - Web scraping logic
 - `lib/multiStationCrawler.js` - Multi-station handling
@@ -81,7 +81,7 @@ curl -X GET http://localhost:3000/debug/html/crawl-2025-07-26T10-30-00-000Z.html
 - Multi-station crawler with domain-driven architecture
 - Concurrent crawling with semaphore-based rate limiting
 - Intelligent property merging and duplicate detection
-- Distance-based notification filtering  
+- Distance-based notification filtering
 - Dependency injection for testing
 - CalVer versioning (YYYY.MM.PATCH)
 
@@ -100,7 +100,7 @@ DEBUG_LOGS=false       # Enable/disable debug logging (true/false)
 ```json
 {
   "notifyMode": "filtered",
-  "filteredMode": "silent", 
+  "filteredMode": "silent",
   "filter": {"mrtDistanceThreshold": 800}
 }
 ```
@@ -239,6 +239,15 @@ git push origin main
 └── scripts/            # Build scripts
 ```
 
-## 🧠 工作記憶
+## 🧠 Working Memory
 
-- 更新記憶，避免直接操作本地的docker prod環境，且要遵循git flow
+### 🚫 Prohibited Operations
+- **NEVER directly operate local Docker production containers**:
+  - Do NOT execute `docker-compose up/down`, `docker stop/start crawler-api-prod` commands
+  - Do NOT create temporary `.env.production` files
+  - Do NOT attempt to restart or rebuild production containers locally
+
+### ✅ Correct Deployment Workflow
+- **Configuration Changes**: Only modify `docker-compose.production.yml`, `Dockerfile` and other config files
+- **Git Flow**: Develop on `develop` branch → commit → merge to `main` → push to trigger GitHub Actions auto-deployment
+- **Production Environment**: Managed entirely by CI/CD, all production container operations handled through automated deployment
