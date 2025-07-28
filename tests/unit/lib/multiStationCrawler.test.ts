@@ -2,8 +2,7 @@
  * Tests for multiStationCrawler module
  */
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
-import { createMockFunction, type BunMockFunction } from '../../helpers/mockUtils';
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 
 // Import functions to test
 import {
@@ -29,13 +28,13 @@ interface CrawlOptions {
 }
 
 interface Dependencies {
-  crawl591: BunMockFunction<(...args: any[]) => Promise<MockRental[]>>;
+  crawl591: any;
 }
 
 interface StationInfo {
   isValid: boolean;
   hasMultiple: boolean;
-  stationCount: number;
+  stationCount?: number;
   stations: string[];
 }
 
@@ -46,7 +45,7 @@ interface CrawlResult {
 }
 
 describe('multiStationCrawler', () => {
-  let mockCrawl591: BunMockFunction<(...args: any[]) => Promise<MockRental[]>>;
+  let mockCrawl591: any;
   let mockRentals1: MockRental[];
   let mockRentals2: MockRental[];
   
@@ -92,7 +91,7 @@ describe('multiStationCrawler', () => {
     ];
 
     // Mock crawl591 function
-    mockCrawl591 = createMockFunction<(...args: any[]) => Promise<MockRental[]>>()
+    mockCrawl591 = jest.fn()
       .mockImplementationOnce(() => Promise.resolve(mockRentals1))
       .mockImplementationOnce(() => Promise.resolve(mockRentals2));
   });
@@ -122,7 +121,7 @@ describe('multiStationCrawler', () => {
   describe('getUrlStationInfo', () => {
     it('should extract station information from multi-station URL', () => {
       const url = 'https://rent.591.com.tw/list?region=1&station=4232,4233,4234&kind=0';
-      const result: StationInfo = getUrlStationInfo(url);
+      const result = getUrlStationInfo(url);
 
       expect(result).toMatchObject({
         isValid: true,
@@ -136,7 +135,7 @@ describe('multiStationCrawler', () => {
 
     it('should handle URLs without station info', () => {
       const url = 'https://rent.591.com.tw/list?region=1&kind=0';
-      const result: StationInfo = getUrlStationInfo(url);
+      const result = getUrlStationInfo(url);
 
       expect(result).toMatchObject({
         isValid: true,
@@ -160,28 +159,28 @@ describe('multiStationCrawler', () => {
         crawl591: mockCrawl591
       };
 
-      const result: CrawlResult = await crawlMultipleStations(url, options, dependencies);
+      const result = await crawlMultipleStations(url, options, dependencies);
 
       expect(result.rentals).toBeDefined();
-      expect(result.rentals.length).toBeGreaterThan(0);
+      expect(result.rentals?.length).toBeGreaterThan(0);
       expect(result.stationCount).toBe(2);
       expect(result.stations).toHaveLength(2);
       expect(mockCrawl591).toHaveBeenCalledTimes(2);
     });
 
     it('should handle crawling errors gracefully', async () => {
-      const errorCrawl591 = createMockFunction<(...args: any[]) => Promise<MockRental[]>>()
+      const errorCrawl591 = jest.fn()
         .mockImplementationOnce(() => Promise.resolve(mockRentals1))
         .mockImplementationOnce(() => Promise.reject(new Error('Station 2 failed')));
 
       const url = 'https://rent.591.com.tw/list?region=1&station=4232,4233&kind=0';
       const dependencies: Dependencies = { crawl591: errorCrawl591 };
 
-      const result: CrawlResult = await crawlMultipleStations(url, {}, dependencies);
+      const result = await crawlMultipleStations(url, {}, dependencies);
 
       // Should still succeed with partial results (merging enabled by default)
       expect(result.rentals).toBeDefined();
-      expect(result.rentals.length).toBeGreaterThan(0); // Should have rentals from successful station
+      expect(result.rentals?.length).toBeGreaterThan(0); // Should have rentals from successful station
       expect(result.stationCount).toBe(2); // Attempted to crawl 2 stations
     });
 
@@ -192,7 +191,7 @@ describe('multiStationCrawler', () => {
       
       let activeRequests = 0;
       let maxActive = 0;
-      const trackingCrawl591 = createMockFunction<(...args: any[]) => Promise<MockRental[]>>()
+      const trackingCrawl591 = jest.fn()
         .mockImplementation(async () => {
           activeRequests++;
           maxActive = Math.max(maxActive, activeRequests);

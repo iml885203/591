@@ -3,8 +3,7 @@
  * Testing all major functions and edge cases to achieve high coverage
  */
 
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
-import { createMockFunction, createMockObject, clearAllMocks, type BunMockFunction } from '../../helpers/mockUtils';
+import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 
 // Import the module to test
 import {
@@ -18,21 +17,21 @@ import {
 } from '../../../lib/crawlService';
 
 interface MockAxios {
-  get: BunMockFunction<(...args: any[]) => Promise<any>>;
-  post: BunMockFunction<(...args: any[]) => Promise<any>>;
+  get: any;
+  post: any;
 }
 
 interface MockCheerio {
-  load: BunMockFunction<(...args: any[]) => any>;
+  load: any;
 }
 
 interface MockFs {
-  readJson: BunMockFunction<(...args: any[]) => Promise<any>>;
-  writeJson: BunMockFunction<(...args: any[]) => Promise<void>>;
-  pathExists: BunMockFunction<(...args: any[]) => Promise<boolean>>;
-  ensureDir: BunMockFunction<(...args: any[]) => Promise<void>>;
-  readFile: BunMockFunction<(...args: any[]) => Promise<string>>;
-  writeFile: BunMockFunction<(...args: any[]) => Promise<void>>;
+  readJson: any;
+  writeJson: any;
+  pathExists: any;
+  ensureDir: any;
+  readFile: any;
+  writeFile: any;
 }
 
 interface MockConfig {
@@ -46,6 +45,7 @@ interface MockDependencies {
   axios: MockAxios;
   cheerio: MockCheerio;
   fs: MockFs;
+  databaseStorage: any;
   config: MockConfig;
 }
 
@@ -68,25 +68,48 @@ describe('crawlService', () => {
     delete process.env.DISCORD_WEBHOOK_URL;
     
     // Mock dependencies
+    const mockAxios: any = {
+      get: jest.fn(),
+      post: jest.fn()
+    };
+    mockAxios.get.mockResolvedValue({ data: '<html></html>' });
+    mockAxios.post.mockResolvedValue({ status: 200 });
+    
+    const mockCheerio: any = {
+      load: jest.fn()
+    };
+    mockCheerio.load.mockReturnValue({
+      find: () => ({ length: 0 }),
+      eq: () => ({ text: () => '', attr: () => '' })
+    });
+    
+    const mockFs: any = {
+      readJson: jest.fn(),
+      writeJson: jest.fn(),
+      pathExists: jest.fn(),
+      ensureDir: jest.fn(),
+      readFile: jest.fn(),
+      writeFile: jest.fn()
+    };
+    mockFs.readJson.mockResolvedValue({});
+    mockFs.writeJson.mockResolvedValue(undefined);
+    mockFs.pathExists.mockResolvedValue(false);
+    mockFs.ensureDir.mockResolvedValue(undefined);
+    mockFs.readFile.mockResolvedValue('{}');
+    mockFs.writeFile.mockResolvedValue(undefined);
+
+    const mockDbStorage: any = {
+      readJson: jest.fn(),
+      writeJson: jest.fn()
+    };
+    mockDbStorage.readJson.mockResolvedValue({});
+    mockDbStorage.writeJson.mockResolvedValue(undefined);
+
     mockDependencies = {
-      axios: createMockObject<MockAxios>({
-        get: () => Promise.resolve({ data: '<html></html>' }),
-        post: () => Promise.resolve({ status: 200 })
-      }),
-      cheerio: createMockObject<MockCheerio>({
-        load: () => ({
-          find: () => ({ length: 0 }),
-          eq: () => ({ text: () => '', attr: () => '' })
-        })
-      }),
-      fs: createMockObject<MockFs>({
-        readJson: () => Promise.resolve({}),
-        writeJson: () => Promise.resolve(),
-        pathExists: () => Promise.resolve(false),
-        ensureDir: () => Promise.resolve(),
-        readFile: () => Promise.resolve('{}'),
-        writeFile: () => Promise.resolve()
-      }),
+      axios: mockAxios,
+      cheerio: mockCheerio,
+      fs: mockFs,
+      databaseStorage: mockDbStorage,
       config: {
         maxRetries: 3,
         retryDelay: 2000,
@@ -136,7 +159,7 @@ describe('crawlService', () => {
   });
 
   afterEach(() => {
-    clearAllMocks(mockDependencies);
+    jest.clearAllMocks();
   });
 
   describe('findNewRentals', () => {
@@ -190,7 +213,7 @@ describe('crawlService', () => {
 
       const rentalsWithMeta = addNotificationMetadata(mockRentals, mockRentals, options);
 
-      expect(rentalsWithMeta[0].notification.isSilent).toBe(false);
+      expect(rentalsWithMeta[0].notification?.isSilent).toBe(false);
     });
   });
 

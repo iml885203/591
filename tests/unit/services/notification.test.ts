@@ -2,8 +2,7 @@
  * Tests for notification module
  */
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
-import { createMockFunction, createMockObject, type BunMockFunction } from '../../helpers/mockUtils';
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 
 // Import functions to test
 import {
@@ -12,10 +11,6 @@ import {
   sendDiscordNotifications,
   sendErrorNotification
 } from '../../../lib/notification';
-
-interface MockAxios {
-  post: BunMockFunction<(...args: any[]) => Promise<any>>;
-}
 
 interface MockRental {
   title: string;
@@ -40,18 +35,22 @@ interface DiscordEmbed {
   title: string;
   description?: string;
   color: number;
+  fields: any[];
+  footer: any;
+  timestamp: any;
   [key: string]: any;
 }
 
 describe('notification', () => {
-  let mockAxios: MockAxios;
+  let mockAxios: any;
   let mockRental: MockRental;
   
   beforeEach(() => {
     // Mock axios
-    mockAxios = createMockObject<MockAxios>({
-      post: () => Promise.resolve({ status: 200, data: { id: '123' } })
-    });
+    mockAxios = {
+      post: jest.fn()
+    };
+    mockAxios.post.mockResolvedValue({ status: 200, data: { id: '123' } });
 
     // Mock rental data
     mockRental = {
@@ -79,7 +78,10 @@ describe('notification', () => {
       const embed: DiscordEmbed = {
         title: 'Test Embed',
         description: 'Test description',
-        color: 0x00ff00
+        color: 0x00ff00,
+        fields: [],
+        footer: null,
+        timestamp: null
       };
       const webhookUrl = 'https://discord.com/api/webhooks/123/test';
 
@@ -96,7 +98,7 @@ describe('notification', () => {
     });
 
     it('should handle silent notifications', async () => {
-      const embed: DiscordEmbed = { title: 'Silent Test', color: 0x00ff00 };
+      const embed: DiscordEmbed = { title: 'Silent Test', color: 0x00ff00, fields: [], footer: null, timestamp: null };
       const webhookUrl = 'https://discord.com/api/webhooks/123/test';
 
       const result = await sendToDiscord(embed, webhookUrl, mockAxios, true);
@@ -111,11 +113,12 @@ describe('notification', () => {
     });
 
     it('should handle API errors gracefully', async () => {
-      const errorAxios = createMockObject<MockAxios>({
-        post: () => Promise.reject(new Error('Discord API error'))
-      });
+      const errorAxios: any = {
+        post: jest.fn()
+      };
+      errorAxios.post.mockRejectedValue(new Error('Discord API error'));
 
-      const embed: DiscordEmbed = { title: 'Test', color: 0x00ff00 };
+      const embed: DiscordEmbed = { title: 'Test', color: 0x00ff00, fields: [], footer: null, timestamp: null };
       const webhookUrl = 'https://discord.com/api/webhooks/123/test';
 
       const result = await sendToDiscord(embed, webhookUrl, errorAxios);
@@ -126,7 +129,7 @@ describe('notification', () => {
 
   describe('createRentalEmbed', () => {
     it('should create proper Discord embed for rental', async () => {
-      const embed = await createRentalEmbed(mockRental);
+      const embed = await createRentalEmbed(mockRental, 1, 1);
 
       expect(embed).toHaveProperty('title');
       expect(embed).toHaveProperty('url', mockRental.link);
@@ -145,7 +148,7 @@ describe('notification', () => {
     it('should handle rentals without images', async () => {
       const rentalWithoutImage = { ...mockRental, imgUrls: [] };
       
-      const embed = await createRentalEmbed(rentalWithoutImage);
+      const embed = await createRentalEmbed(rentalWithoutImage, 1, 1);
 
       expect(embed).toHaveProperty('title');
       expect(embed.image).toBeUndefined();

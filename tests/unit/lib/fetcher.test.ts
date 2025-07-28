@@ -2,15 +2,8 @@
  * Tests for fetcher module
  */
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
-import { createMockFunction, createMockObject, type BunMockFunction } from '../../helpers/mockUtils';
-
-// Import functions to test
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { fetchWithRetry } from '../../../lib/fetcher';
-
-interface MockAxios {
-  get: BunMockFunction<(...args: any[]) => Promise<any>>;
-}
 
 interface FetcherConfig {
   maxRetries: number;
@@ -21,6 +14,9 @@ interface FetcherConfig {
 interface MockResponse {
   status: number;
   data: string;
+  statusText: string;
+  headers: any;
+  config: any;
 }
 
 interface HttpError extends Error {
@@ -31,13 +27,13 @@ interface HttpError extends Error {
 }
 
 describe('fetcher', () => {
-  let mockAxios: MockAxios;
+  let mockAxios: any;
   let mockConfig: FetcherConfig;
 
   beforeEach(() => {
-    mockAxios = createMockObject<MockAxios>({
-      get: createMockFunction()
-    });
+    mockAxios = {
+      get: jest.fn()
+    };
 
     mockConfig = {
       maxRetries: 3,
@@ -48,7 +44,13 @@ describe('fetcher', () => {
 
   describe('fetchWithRetry', () => {
     it('should fetch URL successfully on first attempt', async () => {
-      const mockResponse: MockResponse = { status: 200, data: '<html>Success</html>' };
+      const mockResponse: MockResponse = { 
+        status: 200, 
+        data: '<html>Success</html>',
+        statusText: 'OK',
+        headers: {},
+        config: {}
+      };
       mockAxios.get.mockResolvedValueOnce(mockResponse);
 
       const result = await fetchWithRetry('https://example.com', {}, mockAxios, mockConfig);
@@ -63,7 +65,13 @@ describe('fetcher', () => {
     });
 
     it('should retry on failure and eventually succeed', async () => {
-      const mockResponse: MockResponse = { status: 200, data: '<html>Success</html>' };
+      const mockResponse: MockResponse = { 
+        status: 200, 
+        data: '<html>Success</html>',
+        statusText: 'OK',
+        headers: {},
+        config: {}
+      };
       
       mockAxios.get
         .mockImplementationOnce(() => Promise.reject(new Error('Network error')))
@@ -82,13 +90,19 @@ describe('fetcher', () => {
       mockAxios.get.mockImplementation(() => Promise.reject(networkError));
 
       await expect(fetchWithRetry('https://example.com', {}, mockAxios, mockConfig))
-        .rejects.toThrow('Persistent network error');
+        .rejects.toThrow('Failed after 4 attempts: Persistent network error');
 
       expect(mockAxios.get).toHaveBeenCalledTimes(4); // Initial + 3 retries
     });
 
     it('should pass through request options', async () => {
-      const mockResponse: MockResponse = { status: 200, data: '<html>Success</html>' };
+      const mockResponse: MockResponse = { 
+        status: 200, 
+        data: '<html>Success</html>',
+        statusText: 'OK',
+        headers: {},
+        config: {}
+      };
       const requestOptions = {
         headers: { 'User-Agent': 'Test-Agent' },
         params: { page: 1 }
@@ -107,7 +121,13 @@ describe('fetcher', () => {
     });
 
     it('should use default config when not provided', async () => {
-      const mockResponse: MockResponse = { status: 200, data: '<html>Success</html>' };
+      const mockResponse: MockResponse = { 
+        status: 200, 
+        data: '<html>Success</html>',
+        statusText: 'OK',
+        headers: {},
+        config: {}
+      };
       mockAxios.get.mockResolvedValueOnce(mockResponse);
 
       // Call without config parameter
@@ -126,7 +146,13 @@ describe('fetcher', () => {
         retryDelay: 500,
         timeout: 10000
       };
-      const mockResponse: MockResponse = { status: 200, data: '<html>Success</html>' };
+      const mockResponse: MockResponse = { 
+        status: 200, 
+        data: '<html>Success</html>',
+        statusText: 'OK',
+        headers: {},
+        config: {}
+      };
       
       mockAxios.get.mockResolvedValueOnce(mockResponse);
 
@@ -142,7 +168,13 @@ describe('fetcher', () => {
     it('should handle different types of errors', async () => {
       const timeoutError = new Error('timeout of 30000ms exceeded');
       const networkError = new Error('ECONNREFUSED');
-      const mockResponse: MockResponse = { status: 200, data: '<html>Success</html>' };
+      const mockResponse: MockResponse = { 
+        status: 200, 
+        data: '<html>Success</html>',
+        statusText: 'OK',
+        headers: {},
+        config: {}
+      };
       
       mockAxios.get
         .mockImplementationOnce(() => Promise.reject(timeoutError))
@@ -162,7 +194,7 @@ describe('fetcher', () => {
       mockAxios.get.mockImplementation(() => Promise.reject(httpError));
 
       await expect(fetchWithRetry('https://example.com', {}, mockAxios, mockConfig))
-        .rejects.toThrow('Request failed with status code 404');
+        .rejects.toThrow('Failed after 4 attempts: Request failed with status code 404');
 
       expect(mockAxios.get).toHaveBeenCalledTimes(4); // Should still retry
     });

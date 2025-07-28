@@ -5,13 +5,6 @@
 import { describe, test, expect } from '@jest/globals';
 import { hasMultipleStations, getUrlStationInfo } from '../../../lib/multiStationCrawler';
 
-interface StationInfo {
-  isValid: boolean;
-  hasMultiple: boolean;
-  stationCount: number;
-  stations: string[];
-}
-
 describe('Multi-Station Utilities', () => {
   describe('hasMultipleStations', () => {
     test('should return true for multi-station URLs', () => {
@@ -33,7 +26,7 @@ describe('Multi-Station Utilities', () => {
   describe('getUrlStationInfo', () => {
     test('should extract correct information from multi-station URL', () => {
       const url = 'https://rent.591.com.tw/list?region=3&station=4232,4233,4234';
-      const info: StationInfo = getUrlStationInfo(url);
+      const info = getUrlStationInfo(url);
       
       expect(info).toEqual({
         isValid: true,
@@ -45,7 +38,7 @@ describe('Multi-Station Utilities', () => {
 
     test('should extract correct information from single-station URL', () => {
       const url = 'https://rent.591.com.tw/list?region=3&station=4232';
-      const info: StationInfo = getUrlStationInfo(url);
+      const info = getUrlStationInfo(url);
       
       expect(info).toEqual({
         isValid: true,
@@ -57,7 +50,7 @@ describe('Multi-Station Utilities', () => {
 
     test('should handle URLs without station parameter', () => {
       const url = 'https://rent.591.com.tw/list?region=3';
-      const info: StationInfo = getUrlStationInfo(url);
+      const info = getUrlStationInfo(url);
       
       expect(info).toEqual({
         isValid: true,
