@@ -2,8 +2,8 @@
  * Unit tests for Distance domain model
  */
 
-import { describe, test, expect } from 'bun:test';
-import Distance from '../../../lib/domain/Distance.js';
+import { describe, test, expect } from '@jest/globals';
+import Distance from '../../../lib/domain/Distance';
 
 interface WalkingTimeTest {
   input: string;
@@ -22,15 +22,17 @@ describe('Distance Domain Model', () => {
     test('should create distance from metro value in meters', () => {
       const distance = Distance.fromMetroValue('500公尺');
       
-      expect(distance.toMeters()).toBe(500);
-      expect(distance.toString()).toBe('500m');
+      expect(distance).not.toBeNull();
+      expect(distance!.toMeters()).toBe(500);
+      expect(distance!.toString()).toBe('500m');
     });
 
     test('should create distance from metro value in minutes', () => {
       const distance = Distance.fromMetroValue('8分鐘');
       
-      expect(distance.toMeters()).toBe(640); // 8 * 80
-      expect(distance.toString()).toBe('640m');
+      expect(distance).not.toBeNull();
+      expect(distance!.toMeters()).toBe(640); // 8 * 80
+      expect(distance!.toString()).toBe('640m');
     });
 
     test('should handle walking time conversion correctly', () => {
@@ -43,7 +45,8 @@ describe('Distance Domain Model', () => {
 
       walkingTimes.forEach(({ input, expected }) => {
         const distance = Distance.fromMetroValue(input);
-        expect(distance.toMeters()).toBe(expected);
+        expect(distance).not.toBeNull();
+        expect(distance!.toMeters()).toBe(expected);
       });
     });
   });

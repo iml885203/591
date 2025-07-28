@@ -4,9 +4,9 @@
 
 import { spawn, type ChildProcess } from 'child_process';
 import path from 'path';
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 
-const crawlerPath = path.join(__dirname, '../../cli.js');
+const crawlerPath = path.join(__dirname, '../../cli.ts');
 
 interface CliTestResult {
   code: number;
@@ -58,7 +58,7 @@ describe('cli.js CLI', () => {
       const result = await runCliCommand([]);
       
       expect(result.code).toBe(1);
-      expect(result.stderr).toContain('Usage: bun cli.js');
+      expect(result.stderr).toContain('Usage: bun cli.ts');
       expect(result.stderr).toContain('--notify-mode');
       expect(result.stderr).toContain('--filtered-mode');
     });
@@ -88,10 +88,10 @@ describe('cli.js CLI', () => {
   describe('parameter parsing', () => {
     it('should parse notify-mode parameter correctly', () => {
       // Test parsing logic directly
-      const args: string[] = ['bun', 'cli.js', 'https://test.com', '--notify-mode=all'];
+      const args: string[] = ['bun', 'cli.ts', 'https://test.com', '--notify-mode=all'];
       process.argv = args;
       
-      const configPath = require.resolve('../../cli.js');
+      const configPath = require.resolve('../../cli.ts');
       delete require.cache[configPath];
       
       // The actual test would require more complex setup to avoid executing the crawler
@@ -106,7 +106,7 @@ describe('cli.js CLI', () => {
       // For now, we'll test that the module can be required without errors
       
       expect(() => {
-        require('../../cli.js');
+        require('../../cli.ts');
       }).not.toThrow();
     });
   });

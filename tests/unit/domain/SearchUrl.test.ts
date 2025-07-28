@@ -2,8 +2,8 @@
  * Unit tests for SearchUrl domain model
  */
 
-import { describe, test, expect } from 'bun:test';
-import SearchUrl from '../../../lib/domain/SearchUrl.js';
+import { describe, test, expect } from '@jest/globals';
+import SearchUrl from '../../../lib/domain/SearchUrl';
 
 interface StationInfo {
   hasMultiple: boolean;

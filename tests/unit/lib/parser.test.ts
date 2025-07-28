@@ -2,8 +2,8 @@
  * Parser unit tests
  */
 
-import { describe, test, expect, beforeAll } from 'bun:test';
-import { parseRental, parseRentals } from '../../../lib/parser.js';
+import { describe, test, expect, beforeAll } from '@jest/globals';
+import { parseRental, parseRentals } from '../../../lib/parser';
 import * as cheerio from 'cheerio';
 import fs from 'fs';
 import path from 'path';

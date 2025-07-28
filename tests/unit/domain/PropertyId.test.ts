@@ -2,8 +2,8 @@
  * Unit tests for PropertyId domain model
  */
 
-import { describe, test, expect } from 'bun:test';
-import PropertyId from '../../../lib/domain/PropertyId.js';
+import { describe, test, expect } from '@jest/globals';
+import PropertyId from '../../../lib/domain/PropertyId';
 
 interface TestProperty {
   title?: string;

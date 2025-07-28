@@ -49,7 +49,7 @@ if (require.main === module) {
   }
   
   if (!url) {
-    console.error('Usage: bun cli.js <591_url> [max_latest] [--notify-mode=MODE] [--filtered-mode=FILTERED_MODE]');
+    console.error('Usage: bun cli.ts <591_url> [max_latest] [--notify-mode=MODE] [--filtered-mode=FILTERED_MODE]');
     console.error('');
     console.error('Notification modes:');
     console.error('  --notify-mode=all       # Notify all rentals');
@@ -62,10 +62,10 @@ if (require.main === module) {
     console.error('  --filtered-mode=none    # Skip far rentals');
     console.error('');
     console.error('Examples:');
-    console.error('  bun cli.js "URL" 5                              # Latest 5, filtered+silent');
-    console.error('  bun cli.js "URL" --notify-mode=all              # All rentals, normal notifications');
-    console.error('  bun cli.js "URL" --filtered-mode=none           # Skip far rentals');
-    console.error('  bun cli.js "URL" --notify-mode=filtered --filtered-mode=normal  # All rentals, normal notifications');
+    console.error('  bun cli.ts "URL" 5                              # Latest 5, filtered+silent');
+    console.error('  bun cli.ts "URL" --notify-mode=all              # All rentals, normal notifications');
+    console.error('  bun cli.ts "URL" --filtered-mode=none           # Skip far rentals');
+    console.error('  bun cli.ts "URL" --notify-mode=filtered --filtered-mode=normal  # All rentals, normal notifications');
     process.exit(1);
   }
 

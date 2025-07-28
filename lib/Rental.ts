@@ -3,8 +3,8 @@
  * Represents a rental property from 591.com.tw with business logic
  */
 
-import Distance from './domain/Distance.js';
-import PropertyId from './domain/PropertyId.js';
+import Distance from './domain/Distance';
+import PropertyId from './domain/PropertyId';
 
 interface MetroDistance {
   stationId: string | null;

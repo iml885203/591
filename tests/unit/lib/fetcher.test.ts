@@ -2,11 +2,11 @@
  * Tests for fetcher module
  */
 
-import { describe, it, expect, beforeEach } from 'bun:test';
-import { createMockFunction, createMockObject, type BunMockFunction } from '../../helpers/mockUtils.js';
+import { describe, it, expect, beforeEach } from '@jest/globals';
+import { createMockFunction, createMockObject, type BunMockFunction } from '../../helpers/mockUtils';
 
 // Import functions to test
-import { fetchWithRetry } from '../../../lib/fetcher.js';
+import { fetchWithRetry } from '../../../lib/fetcher';
 
 interface MockAxios {
   get: BunMockFunction<(...args: any[]) => Promise<any>>;

@@ -2,15 +2,15 @@
  * Tests for multiStationCrawler module
  */
 
-import { describe, it, expect, beforeEach } from 'bun:test';
-import { createMockFunction, type BunMockFunction } from '../../helpers/mockUtils.js';
+import { describe, it, expect, beforeEach } from '@jest/globals';
+import { createMockFunction, type BunMockFunction } from '../../helpers/mockUtils';
 
 // Import functions to test
 import {
   crawlMultipleStations,
   hasMultipleStations,
   getUrlStationInfo
-} from '../../../lib/multiStationCrawler.js';
+} from '../../../lib/multiStationCrawler';
 
 interface MockRental {
   title: string;

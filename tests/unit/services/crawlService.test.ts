@@ -3,8 +3,8 @@
  * Testing all major functions and edge cases to achieve high coverage
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
-import { createMockFunction, createMockObject, clearAllMocks, type BunMockFunction } from '../../helpers/mockUtils.js';
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { createMockFunction, createMockObject, clearAllMocks, type BunMockFunction } from '../../helpers/mockUtils';
 
 // Import the module to test
 import {
@@ -15,7 +15,7 @@ import {
   crawlWithNotifications,
   crawlWithNotificationsSingle,
   crawlWithNotificationsMultiStation
-} from '../../../lib/crawlService.js';
+} from '../../../lib/crawlService';
 
 interface MockAxios {
   get: BunMockFunction<(...args: any[]) => Promise<any>>;

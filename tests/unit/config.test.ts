@@ -3,7 +3,7 @@
  * Focus on basic functionality rather than edge case validation
  */
 
-import { describe, it, expect, beforeEach } from 'bun:test';
+import { describe, it, expect, beforeEach } from '@jest/globals';
 
 interface ConfigSection {
   [key: string]: any;

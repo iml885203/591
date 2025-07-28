@@ -2,8 +2,8 @@
  * Unit tests for Multi-Station workflow utilities
  */
 
-import { describe, test, expect } from 'bun:test';
-import { hasMultipleStations, getUrlStationInfo } from '../../../lib/multiStationCrawler.js';
+import { describe, test, expect } from '@jest/globals';
+import { hasMultipleStations, getUrlStationInfo } from '../../../lib/multiStationCrawler';
 
 interface StationInfo {
   isValid: boolean;

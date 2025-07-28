@@ -2,8 +2,8 @@
  * Unit tests for utility functions
  */
 
-import { describe, it, expect } from 'bun:test';
-import { sleep, extractArrayFromElements } from '../../../lib/utils.js';
+import { describe, it, expect } from '@jest/globals';
+import { sleep, extractArrayFromElements } from '../../../lib/utils';
 
 describe('utils', () => {
   describe('sleep', () => {

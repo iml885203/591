@@ -3,7 +3,7 @@
  * Replaces Jest module mocking with dynamic import manipulation
  */
 
-import { createMockFunction, createMockObject } from './mockUtils.js';
+import { createMockFunction, createMockObject } from './mockUtils';
 
 // Store original modules and their mocks
 const moduleRegistry = new Map<string, any>();

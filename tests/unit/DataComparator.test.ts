@@ -2,8 +2,8 @@
  * Tests for DataComparator utility
  */
 
-import { test, expect, describe } from 'bun:test';
-import DataComparator from '../../lib/utils/DataComparator.js';
+import { test, expect, describe } from '@jest/globals';
+import DataComparator from '../../lib/utils/DataComparator';
 
 interface TestRentalData {
   title: string;
@@ -27,7 +27,7 @@ interface TestExistingData {
 
 interface MetroDistance {
   stationName: string;
-  distance: number | null;
+  distance?: number;
 }
 
 describe('DataComparator', () => {
@@ -173,7 +173,7 @@ describe('DataComparator', () => {
   describe('metroDistancesChanged', () => {
     test('should detect no changes in empty arrays', () => {
       expect(DataComparator.metroDistancesChanged([], [])).toBe(false);
-      expect(DataComparator.metroDistancesChanged(null, null)).toBe(false);
+      expect(DataComparator.metroDistancesChanged(undefined, undefined)).toBe(false);
     });
 
     test('should detect new distances added', () => {

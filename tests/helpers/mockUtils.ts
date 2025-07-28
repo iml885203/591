@@ -1,11 +1,11 @@
 /**
- * Bun-compatible mock utilities
- * Uses Bun's native mock functions for full compatibility with expect() matchers
+ * Jest-compatible mock utilities
+ * Uses Jest's native mock functions for full compatibility with expect() matchers
  */
 
-import { mock, type Mock } from 'bun:test';
+import { jest, type MockedFunction } from '@jest/globals';
 
-interface BunMockFunction<T extends (...args: any[]) => any = (...args: any[]) => any> extends Mock<T> {
+export interface BunMockFunction<T extends (...args: any[]) => any = (...args: any[]) => any> extends MockedFunction<T> {
   calls: Array<Parameters<T>>;
   callCount: number;
 }
@@ -16,13 +16,13 @@ interface SpyFunction<T extends (...args: any[]) => any = (...args: any[]) => an
 }
 
 /**
- * Creates a mock function using Bun's native mock() function
+ * Creates a mock function using Jest's native jest.fn() function
  */
 export const createMockFunction = <T extends (...args: any[]) => any>(
   returnValue?: ReturnType<T>
 ): BunMockFunction<T> => {
-  // Create a Bun native mock function with the default return value
-  const fn = mock(() => returnValue) as BunMockFunction<T>;
+  // Create a Jest native mock function with the default return value
+  const fn = jest.fn(() => returnValue) as BunMockFunction<T>;
   
   // If a return value was provided, set it up
   if (returnValue !== undefined) {
@@ -62,8 +62,8 @@ export const createSpy = <T extends Record<string, any>, K extends keyof T>(
     throw new Error(`Cannot spy on ${String(methodName)} because it is not a function`);
   }
   
-  // Create a Bun native mock that calls the original method
-  const spy = mock((...args: any[]) => {
+  // Create a Jest native mock that calls the original method
+  const spy = jest.fn((...args: any[]) => {
     return originalMethod.apply(object, args);
   }) as SpyFunction<T[K] extends (...args: any[]) => any ? T[K] : never>;
   

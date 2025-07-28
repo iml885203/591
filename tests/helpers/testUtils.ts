@@ -2,7 +2,7 @@
  * General test utilities for Bun test environment
  */
 
-import { createMockFunction } from './mockUtils.js';
+import { createMockFunction } from './mockUtils';
 
 interface MockRental {
   id: string;

@@ -2,8 +2,8 @@
  * Tests for notification module
  */
 
-import { describe, it, expect, beforeEach } from 'bun:test';
-import { createMockFunction, createMockObject, type BunMockFunction } from '../../helpers/mockUtils.js';
+import { describe, it, expect, beforeEach } from '@jest/globals';
+import { createMockFunction, createMockObject, type BunMockFunction } from '../../helpers/mockUtils';
 
 // Import functions to test
 import {
@@ -11,7 +11,7 @@ import {
   createRentalEmbed, 
   sendDiscordNotifications,
   sendErrorNotification
-} from '../../../lib/notification.js';
+} from '../../../lib/notification';
 
 interface MockAxios {
   post: BunMockFunction<(...args: any[]) => Promise<any>>;
