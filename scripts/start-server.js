@@ -40,7 +40,7 @@ async function runMigrations() {
 async function startApiServer() {
   logger.info('🌐 Starting API server...');
   
-  const apiServer = spawn('bun', ['api.js'], {
+  const apiServer = spawn('bun', ['api.ts'], {
     stdio: 'inherit',
     env: process.env
   });

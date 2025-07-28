@@ -2,18 +2,21 @@
   "name": "591-crawler",
   "version": "2025.07.23",
   "description": "A Node.js web scraper for 591.com.tw rental properties with Discord notifications",
-  "main": "cli.js",
+  "main": "cli.ts",
   "bin": {
-    "591-crawler": "./cli.js"
+    "591-crawler": "./cli.ts"
   },
   "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
     "start": "bun run scripts/start-server.js",
     "api": "bun run scripts/start-server.js",
-    "crawl": "bun run cli.js",
+    "crawl": "bun run cli.ts",
     "test": "bun test",
     "test:watch": "bun test --watch",
     "test:coverage": "bun test --coverage",
     "test:unit": "bun test tests/unit",
+    "type-check": "tsc --noEmit",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
@@ -59,10 +62,20 @@
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
+    "@types/cheerio": "^1.0.0",
+    "@types/express": "^5.0.3",
+    "@types/fs-extra": "^11.0.4",
+    "@types/jsdom": "^21.1.7",
+    "@types/node": "^24.1.0",
+    "@types/supertest": "^6.0.3",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
     "husky": "^9.1.7",
     "jsdom": "^26.1.0",
     "nock": "^14.0.6",
     "prisma": "^6.12.0",
-    "supertest": "^7.1.4"
+    "supertest": "^7.1.4",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
   }
 }
