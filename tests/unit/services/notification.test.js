@@ -11,7 +11,7 @@ import {
   createRentalEmbed, 
   sendDiscordNotifications,
   sendErrorNotification
-} from '../../../lib/services/NotificationService.js';
+} from '../../../lib/infrastructure/notifications/DiscordNotificationService.js';
 
 describe('notification', () => {
   let mockAxios;

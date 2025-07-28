@@ -208,7 +208,7 @@ describe('crawlService', () => {
       const filter = { mrtDistanceThreshold: 600 }; // 600 meters
       
       // Debug: Check what distances we actually get
-      const Rental = require('../../../lib/domain/Rental');
+      const Rental = require('../../../lib/domain/entities/Rental');
       const rental1 = new Rental(mockRentals[0]);
       const distance1 = rental1.getDistanceToMRT();
       const minDistance = rental1.getMinDistanceToMRT();
