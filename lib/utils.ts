@@ -2,7 +2,9 @@
  * Utility functions for the 591 crawler
  */
 
-import { CheerioAPI, Cheerio, Element } from 'cheerio';
+import * as cheerio from 'cheerio';
+type CheerioAPI = cheerio.CheerioAPI;
+type Element = any;
 
 /**
  * Sleep for a specified number of milliseconds
@@ -13,7 +15,7 @@ const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(r
  * Extract an array of values from DOM elements using CSS selector
  */
 const extractArrayFromElements = (
-  $el: Cheerio<Element>, 
+  $el: cheerio.Cheerio<Element>, 
   selector: string, 
   attr: string | null = null, 
   $: CheerioAPI

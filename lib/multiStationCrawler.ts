@@ -6,7 +6,7 @@
 import { crawl591 } from './crawler';
 import { SearchUrl } from './domain/SearchUrl';
 import { PropertyId } from './domain/PropertyId';
-import { Rental } from './Rental';
+import Rental from './Rental';
 import { logger } from './logger';
 
 // Type imports

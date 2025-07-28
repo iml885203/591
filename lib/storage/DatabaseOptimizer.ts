@@ -3,10 +3,60 @@
  * Provides query optimization, monitoring, and caching strategies
  */
 
-const logger = require('../logger');
+import { PrismaClient } from '@prisma/client';
+import * as logger from '../logger';
+import PropertyId from '../domain/PropertyId';
+
+interface CacheEntry<T = any> {
+  data: T;
+  timestamp: number;
+}
+
+interface CacheConfig {
+  maxSize: number;
+  ttlMs: number;
+}
+
+interface TransactionOptions {
+  batchSize?: number;
+}
+
+interface MetroDistance {
+  stationId?: string;
+  stationName: string;
+  distance: number;
+  metroValue: string;
+}
+
+interface RentalData {
+  title: string;
+  link?: string;
+  houseType?: string;
+  rooms?: string;
+  metroTitle?: string;
+  metroValue?: string;
+  tags?: string[];
+  imgUrls?: string[];
+  metroDistances?: MetroDistance[];
+}
+
+interface PerformanceMetrics {
+  indexUsage: any[];
+  tableStats: any[];
+  cacheStats: {
+    size: number;
+    maxSize: number;
+    ttlMs: number;
+  };
+  timestamp: string;
+}
 
 class DatabaseOptimizer {
-  constructor(prisma) {
+  private prisma: PrismaClient;
+  private queryCache: Map<string, CacheEntry>;
+  private cacheConfig: CacheConfig;
+
+  constructor(prisma: PrismaClient) {
     this.prisma = prisma;
     this.queryCache = new Map();
     this.cacheConfig = {
@@ -17,12 +67,12 @@ class DatabaseOptimizer {
 
   /**
    * Execute optimized query with caching
-   * @param {string} cacheKey - Unique cache key
-   * @param {Function} queryFn - Function that returns a Prisma query
-   * @param {number} ttlMs - Custom TTL in milliseconds
-   * @returns {Promise<any>} Query result
+   * @param cacheKey - Unique cache key
+   * @param queryFn - Function that returns a Prisma query
+   * @param ttlMs - Custom TTL in milliseconds
+   * @returns Query result
    */
-  async cachedQuery(cacheKey, queryFn, ttlMs = this.cacheConfig.ttlMs) {
+  async cachedQuery<T>(cacheKey: string, queryFn: () => Promise<T>, ttlMs: number = this.cacheConfig.ttlMs): Promise<T> {
     // Check cache first
     const cached = this.queryCache.get(cacheKey);
     if (cached && (Date.now() - cached.timestamp) < ttlMs) {
@@ -55,10 +105,10 @@ class DatabaseOptimizer {
 
   /**
    * Optimized getExistingPropertyIds with cursor-based pagination for large result sets
-   * @param {string} queryId - Query ID
-   * @returns {Promise<Set<string>>} Set of property IDs
+   * @param queryId - Query ID
+   * @returns Set of property IDs
    */
-  async getExistingPropertyIdsOptimized(queryId) {
+  async getExistingPropertyIdsOptimized(queryId: string): Promise<Set<string>> {
     const cacheKey = `existing_ids_${queryId}`;
     
     return this.cachedQuery(cacheKey, async () => {
@@ -66,23 +116,23 @@ class DatabaseOptimizer {
       
       // Use cursor-based pagination for large result sets
       const batchSize = 1000;
-      const propertyIds = new Set();
-      let cursor = null;
+      const propertyIds = new Set<string>();
+      let cursor: { queryId_rentalId: { queryId: string; rentalId: string } } | undefined = undefined;
       let totalFetched = 0;
 
       while (true) {
         const batch = await this.prisma.queryRental.findMany({
           where: { queryId },
           select: {
+            queryId: true,
+            rentalId: true,
             rental: {
               select: { propertyId: true }
             }
           },
           take: batchSize,
           ...(cursor && { 
-            cursor: { 
-              queryId_rentalId: cursor 
-            },
+            cursor,
             skip: 1 
           }),
           orderBy: {
@@ -98,9 +148,12 @@ class DatabaseOptimizer {
         });
 
         totalFetched += batch.length;
+        const lastItem = batch[batch.length - 1] as any;
         cursor = {
-          queryId: batch[batch.length - 1].queryId,
-          rentalId: batch[batch.length - 1].rentalId
+          queryId_rentalId: {
+            queryId: lastItem.queryId,
+            rentalId: lastItem.rentalId
+          }
         };
 
         // Break if we got less than requested (end of data)
@@ -116,14 +169,14 @@ class DatabaseOptimizer {
 
   /**
    * Batch upsert rentals with optimized transaction handling
-   * @param {Array} rentals - Array of rental data
-   * @param {string} queryId - Query ID
-   * @param {Object} options - Transaction options
-   * @returns {Promise<Array>} Upserted rentals
+   * @param rentals - Array of rental data
+   * @param queryId - Query ID
+   * @param options - Transaction options
+   * @returns Upserted rentals
    */
-  async batchUpsertRentalsOptimized(rentals, queryId, options = {}) {
+  async batchUpsertRentalsOptimized(rentals: RentalData[], queryId: string, options: TransactionOptions = {}): Promise<any[]> {
     const batchSize = options.batchSize || 3; // Smaller batches for complex upserts
-    const results = [];
+    const results: any[] = [];
 
     logger.info(`🔄 Starting optimized batch upsert: ${rentals.length} rentals`);
 
@@ -150,7 +203,7 @@ class DatabaseOptimizer {
         const batchDuration = Date.now() - batchStartTime;
         logger.info(`✅ Batch ${Math.floor(i/batchSize) + 1} completed: ${batch.length} rentals in ${batchDuration}ms`);
 
-      } catch (error) {
+      } catch (error: any) {
         logger.error(`❌ Batch ${Math.floor(i/batchSize) + 1} failed: ${error.message}`);
         
         // Try individual upserts for failed batch
@@ -161,7 +214,7 @@ class DatabaseOptimizer {
               async (tx) => this._optimizedUpsertRental(tx, rentalData, queryId)
             );
             results.push(individualResult);
-          } catch (individualError) {
+          } catch (individualError: any) {
             logger.error(`❌ Individual upsert failed for ${rentalData.title}: ${individualError.message}`);
           }
         }
@@ -175,8 +228,7 @@ class DatabaseOptimizer {
    * Optimized rental upsert with reduced database round trips
    * @private
    */
-  async _optimizedUpsertRental(tx, rentalData, queryId) {
-    const PropertyId = require('../domain/PropertyId');
+  private async _optimizedUpsertRental(tx: any, rentalData: RentalData, queryId: string): Promise<any> {
     const propertyId = PropertyId.fromProperty(rentalData).toString();
 
     // Single upsert with all rental data
@@ -208,7 +260,7 @@ class DatabaseOptimizer {
     });
 
     // Prepare all metro distance operations
-    const metroOperations = [];
+    const metroOperations: Promise<any>[] = [];
     
     if (rentalData.metroDistances && rentalData.metroDistances.length > 0) {
       rentalData.metroDistances.forEach(metroDistance => {
@@ -297,9 +349,9 @@ class DatabaseOptimizer {
    * Clean up expired cache entries
    * @private
    */
-  _cleanupCache() {
+  private _cleanupCache(): void {
     const now = Date.now();
-    const toDelete = [];
+    const toDelete: string[] = [];
 
     for (const [key, value] of this.queryCache.entries()) {
       if (now - value.timestamp > this.cacheConfig.ttlMs) {
@@ -316,9 +368,9 @@ class DatabaseOptimizer {
 
   /**
    * Get cache statistics
-   * @returns {Object} Cache statistics
+   * @returns Cache statistics
    */
-  getCacheStats() {
+  getCacheStats(): { size: number; maxSize: number; ttlMs: number } {
     return {
       size: this.queryCache.size,
       maxSize: this.cacheConfig.maxSize,
@@ -329,7 +381,7 @@ class DatabaseOptimizer {
   /**
    * Clear all cache
    */
-  clearCache() {
+  clearCache(): void {
     const oldSize = this.queryCache.size;
     this.queryCache.clear();
     logger.info(`🧹 Cleared query cache: ${oldSize} entries removed`);
@@ -337,9 +389,9 @@ class DatabaseOptimizer {
 
   /**
    * Get database performance metrics
-   * @returns {Promise<Object>} Performance metrics
+   * @returns Performance metrics
    */
-  async getPerformanceMetrics() {
+  async getPerformanceMetrics(): Promise<PerformanceMetrics | null> {
     try {
       // This would require the performance monitoring views created in the SQL script
       const indexUsage = await this.prisma.$queryRaw`
@@ -354,7 +406,7 @@ class DatabaseOptimizer {
         WHERE schemaname = 'public'
         ORDER BY idx_scan DESC
         LIMIT 20
-      `;
+      ` as any[];
 
       const tableStats = await this.prisma.$queryRaw`
         SELECT 
@@ -369,7 +421,7 @@ class DatabaseOptimizer {
           idx_tup_fetch
         FROM pg_stat_user_tables 
         WHERE schemaname = 'public'
-      `;
+      ` as any[];
 
       return {
         indexUsage,
@@ -377,30 +429,30 @@ class DatabaseOptimizer {
         cacheStats: this.getCacheStats(),
         timestamp: new Date().toISOString(),
       };
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`Error getting performance metrics: ${error.message}`);
       return null;
     }
   }
 
   // Helper methods (same as DatabaseStorage)
-  _extractPrice(title) {
+  private _extractPrice(title: string): number | null {
     const priceMatch = title.match(/(\d+)元/);
     return priceMatch ? parseInt(priceMatch[1]) : null;
   }
 
-  _extractAddress(title) {
+  private _extractAddress(title: string): string | null {
     return null;
   }
 
-  _extractDistance(metroValue) {
+  private _extractDistance(metroValue: string): number | null {
     const match = metroValue.match(/(\d+)公尺/);
     return match ? parseInt(match[1]) : null;
   }
 
-  _extractStationName(metroTitle) {
+  private _extractStationName(metroTitle: string): string {
     return metroTitle.replace(/^距/, '').replace(/捷運站$/, '');
   }
 }
 
-module.exports = DatabaseOptimizer;
+export default DatabaseOptimizer;

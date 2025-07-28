@@ -42,4 +42,4 @@ coverage/
 
 # Docker deployment tracking
 .docker-current-tag
-.docker-previous-tag
+.docker-previous-tagdist/

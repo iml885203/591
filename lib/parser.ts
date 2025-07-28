@@ -2,7 +2,9 @@
  * HTML parsing functions for 591.com.tw
  */
 
-import { CheerioAPI, Cheerio, Element } from 'cheerio';
+import * as cheerio from 'cheerio';
+type CheerioAPI = cheerio.CheerioAPI;
+type Element = any;
 import { extractArrayFromElements } from './utils';
 import { debugLog, isDebugEnabled } from './logger';
 
@@ -21,7 +23,7 @@ interface RentalData {
 /**
  * Parse a single rental element from 591.com.tw HTML
  */
-const parseRental = ($el: Cheerio<Element>, $: CheerioAPI): RentalData | null => {
+const parseRental = ($el: cheerio.Cheerio<Element>, $: CheerioAPI): RentalData | null => {
   const titleElement = $el.find('.item-info-title a');
   const title = titleElement.text().trim();
   
@@ -102,7 +104,7 @@ const parseRentals = (html: string, cheerio: any): RentalData[] => {
   const $ = cheerio.load(html);
   const rentals: RentalData[] = [];
   
-  $('.item').each((index, element) => {
+  $('.item').each((index: number, element: Element) => {
     const $el = $(element);
     const rental = parseRental($el, $);
     

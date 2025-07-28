@@ -143,18 +143,6 @@ interface TransactionClient {
   crawlSessionRental: any;
 }
 
-interface QueryOptions {
-  limit?: number;
-  sinceDate?: string;
-}
-
-interface QueryListOptions {
-  region?: string;
-  sinceDate?: string;
-  hasRentals?: boolean;
-  limit?: number;
-  offset?: number;
-}
 
 export class DatabaseStorage {
   public prisma: PrismaClient;
@@ -912,60 +900,4 @@ export class DatabaseStorage {
     return score;
   }
 
-  /**
-   * Get rentals for a specific query
-   */
-  async getRentalsForQuery(queryId: string, options: QueryOptions = {}): Promise<any> {
-    // Stub implementation - return empty data for now
-    return {
-      queryId,
-      description: '',
-      totalCrawls: 0,
-      totalRentals: 0,
-      uniqueRentals: 0,
-      firstCrawl: null,
-      lastCrawl: null,
-      rentals: []
-    };
-  }
-
-  /**
-   * List all queries with filtering options
-   */
-  async listQueries(options: QueryListOptions = {}): Promise<any> {
-    // Stub implementation - return empty data for now
-    return {
-      queries: [],
-      total: 0,
-      offset: options.offset || 0,
-      limit: options.limit || 50
-    };
-  }
-
-  /**
-   * Find similar queries to the given query
-   */
-  async findSimilarQueries(queryId: string, options: { limit?: number } = {}): Promise<any[]> {
-    // Stub implementation - return empty array for now
-    return [];
-  }
-
-  /**
-   * Get storage statistics
-   */
-  async getStorageStatistics(): Promise<any> {
-    // Stub implementation - return basic stats
-    return {
-      totalQueries: 0,
-      totalCrawls: 0,
-      totalRentals: 0,
-      lastUpdate: new Date().toISOString(),
-      regionBreakdown: {},
-      crawlFrequency: {
-        today: 0,
-        thisWeek: 0,
-        thisMonth: 0
-      }
-    };
-  }
 }

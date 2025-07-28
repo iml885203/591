@@ -453,7 +453,7 @@ const options: SwaggerOptions = {
 };
 
 // Initialize swagger-jsdoc
-const specs = swaggerJsdoc(options);
+const specs = swaggerJsdoc.default ? swaggerJsdoc.default(options) : swaggerJsdoc(options);
 
 export {
   specs,
