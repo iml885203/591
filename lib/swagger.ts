@@ -3,7 +3,7 @@
  * OpenAPI 3.0 specification for API documentation
  */
 
-import * as swaggerJsdoc from 'swagger-jsdoc';
+import swaggerJsdoc from 'swagger-jsdoc';
 import { getVersion } from './getVersion';
 
 // Read package.json for info
@@ -453,7 +453,7 @@ const options: SwaggerOptions = {
 };
 
 // Initialize swagger-jsdoc
-const specs = swaggerJsdoc.default ? swaggerJsdoc.default(options) : swaggerJsdoc(options);
+const specs = swaggerJsdoc(options);
 
 export {
   specs,

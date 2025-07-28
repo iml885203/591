@@ -58,8 +58,8 @@ interface QueryData {
 interface QuerySummary {
   queryId: string;
   description: string;
-  region: string;
-  stations: string;
+  region: string | null;
+  stations: string | null;
   firstCrawl: Date;
   lastCrawl: Date;
   totalCrawls: number;
@@ -76,8 +76,8 @@ interface QueriesListResult {
 interface SimilarQuery {
   queryId: string;
   description: string;
-  region: string;
-  stations: string;
+  region: string | null;
+  stations: string | null;
   lastCrawl: Date;
   totalCrawls: number;
   totalRentals: number;

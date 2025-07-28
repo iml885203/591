@@ -47,7 +47,7 @@ interface FilterOptions {
 interface RentalWithNotification extends RentalConstructorData {
   notification?: {
     isSilent?: boolean;
-    distanceFromMRT?: number;
+    distanceFromMRT?: number | null;
     [key: string]: any;
   };
 }

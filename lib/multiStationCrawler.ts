@@ -190,9 +190,15 @@ const crawlStationsWithConcurrency = async (
           url,
           rentals: rentals.map(rental => {
             // Add station information to each rental
-            const rentalObj = new Rental(rental);
+            const rentalObj = new Rental({
+              ...rental,
+              houseType: rental.houseType || '',
+              rooms: rental.rooms || '',
+              metroTitle: rental.metroTitle || '',
+              metroValue: rental.metroValue || ''
+            });
             if (stationId) {
-              rentalObj.addMetroDistance(stationId, rental.metroTitle, rental.metroValue);
+              rentalObj.addMetroDistance(stationId, rental.metroTitle || '', rental.metroValue || '');
             }
             return rentalObj;
           }),
@@ -237,7 +243,12 @@ const mergeStationResults = (stationResults: StationResult[], includeStationInfo
     totalFound += result.rentals.length;
 
     result.rentals.forEach(rental => {
-      const propertyId = PropertyId.fromProperty(rental);
+      const propertyId = PropertyId.fromProperty({
+        id: undefined,
+        link: rental.link || undefined,
+        title: rental.title,
+        metroValue: rental.metroValue
+      });
       const key = propertyId.toString();
 
       if (rentalMap.has(key)) {

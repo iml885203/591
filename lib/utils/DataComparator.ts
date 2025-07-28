@@ -70,10 +70,10 @@ export class DataComparator {
       if (field === 'title') {
         // For title, use similarity check to avoid minor formatting changes
         if (!this.titlesAreSimilar(newValue, existingValue)) {
-          changedFields.push(field);
+          changedFields.push(field as string);
         }
       } else if (newValue !== existingValue) {
-        changedFields.push(field);
+        changedFields.push(field as string);
       }
     }
 

@@ -63,12 +63,13 @@ interface CrawlOptions {
 interface QueryOptions {
   sessionLimit?: number;
   limit?: number;
+  sinceDate?: string;
 }
 
 interface QueryListOptions extends QueryOptions {
   offset?: number;
   region?: string;
-  sinceDate?: string;
+  hasRentals?: boolean;
 }
 
 interface SavedCrawlInfo {
@@ -101,8 +102,8 @@ interface QueriesListResult {
 interface QuerySummary {
   queryId: string;
   description: string;
-  region: string;
-  stations: string;
+  region: string | null;
+  stations: string | null;
   firstCrawl: Date;
   lastCrawl: Date;
   totalCrawls: number;
@@ -126,8 +127,8 @@ interface StorageStatistics {
 interface SimilarQuery {
   queryId: string;
   description: string;
-  region: string;
-  stations: string;
+  region: string | null;
+  stations: string | null;
   lastCrawl: Date;
   totalCrawls: number;
   totalRentals: number;
@@ -529,6 +530,11 @@ export class DatabaseStorage {
                 },
               },
             },
+            where: options.sinceDate ? {
+              lastAppeared: {
+                gte: new Date(options.sinceDate)
+              }
+            } : undefined,
             orderBy: { lastAppeared: 'desc' },
             take: options.limit || 100,
           },
@@ -602,6 +608,18 @@ export class DatabaseStorage {
         where.updatedAt = {
           gte: new Date(options.sinceDate),
         };
+      }
+
+      if (options.hasRentals !== undefined) {
+        if (options.hasRentals) {
+          where.rentals = {
+            some: {}
+          };
+        } else {
+          where.rentals = {
+            none: {}
+          };
+        }
       }
 
       const queries = await this.prisma.query.findMany({

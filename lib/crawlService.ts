@@ -177,12 +177,12 @@ const filterRentalsForNotification = (
   
   return rentals.map(rentalData => {
     const rental = new Rental({
-      title: rentalData.title,
+      title: rentalData.title || '',
       link: rentalData.link,
-      houseType: rentalData.houseType,
-      rooms: rentalData.rooms,
-      metroTitle: rentalData.metroTitle,
-      metroValue: rentalData.metroValue,
+      houseType: rentalData.houseType || '',
+      rooms: rentalData.rooms || '',
+      metroTitle: rentalData.metroTitle || '',
+      metroValue: rentalData.metroValue || '',
       tags: rentalData.tags,
       imgUrls: rentalData.imgUrls
     });
@@ -247,12 +247,12 @@ const addNotificationMetadata = (
     const propertyId = PropertyId.fromProperty(rentalData);
     const willNotify = notifyIds.has(propertyId.toString());
     const rental = new Rental({
-      title: rentalData.title,
+      title: rentalData.title || '',
       link: rentalData.link,
-      houseType: rentalData.houseType,
-      rooms: rentalData.rooms,
-      metroTitle: rentalData.metroTitle,
-      metroValue: rentalData.metroValue,
+      houseType: rentalData.houseType || '',
+      rooms: rentalData.rooms || '',
+      metroTitle: rentalData.metroTitle || '',
+      metroValue: rentalData.metroValue || '',
       tags: rentalData.tags,
       imgUrls: rentalData.imgUrls
     });
@@ -260,7 +260,7 @@ const addNotificationMetadata = (
     
     // For metadata purposes, determine what would have happened
     let isSilent = false;
-    if (willNotify && rental.shouldBeSilentNotification(notifyMode, filteredMode, distanceThreshold)) {
+    if (willNotify && rental.shouldBeSilentNotification(notifyMode, filteredMode, distanceThreshold ?? null)) {
       isSilent = true;
     }
     
@@ -344,7 +344,7 @@ export const crawlWithNotificationsMultiStation = async (
       includeStationInfo
     }, { axios, cheerio, config });
 
-    const { rentals: allRentals, stationCount, stations, errors } = crawlResult;
+    const { rentals: allRentals = [], stationCount, stations, errors } = crawlResult;
     
     logger.info(`Multi-station crawl completed: ${allRentals.length} rentals from ${stationCount} stations`);
     
@@ -368,7 +368,9 @@ export const crawlWithNotificationsMultiStation = async (
     // Send notifications if needed
     if (rentalsToNotify.length > 0) {
       const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
-      await sendDiscordNotifications(rentalsToNotify, url, webhookUrl, axios, config, filter);
+      if (webhookUrl) {
+        await sendDiscordNotifications(rentalsToNotify, url, webhookUrl, axios, config, filter);
+      }
     }
     
 
@@ -414,7 +416,9 @@ export const crawlWithNotificationsMultiStation = async (
     // Send error notification to Discord
     if (notifyMode !== 'none') {
       const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
-      await sendErrorNotification(url, errorMessage, webhookUrl, axios || require('axios'));
+      if (webhookUrl) {
+        await sendErrorNotification(url, errorMessage, webhookUrl, axios || require('axios'));
+      }
     }
     
     throw error;
@@ -473,7 +477,9 @@ export const crawlWithNotificationsSingle = async (
     // Send notifications if needed
     if (rentalsToNotify.length > 0) {
       const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
-      await sendDiscordNotifications(rentalsToNotify, url, webhookUrl, axios, config, filter);
+      if (webhookUrl) {
+        await sendDiscordNotifications(rentalsToNotify, url, webhookUrl, axios, config, filter);
+      }
     }
     
     // DEBUG LOG: Check crawled rentals before saving
@@ -522,7 +528,9 @@ export const crawlWithNotificationsSingle = async (
     // Send error notification to Discord
     if (notifyMode !== 'none') {
       const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
-      await sendErrorNotification(url, errorMessage, webhookUrl, axios || require('axios'));
+      if (webhookUrl) {
+        await sendErrorNotification(url, errorMessage, webhookUrl, axios || require('axios'));
+      }
     }
     
     throw error;
@@ -574,12 +582,4 @@ const logNotificationInfo = (
   }
 };
 
-// Export additional functions for testing
-export {
-  crawlWithNotificationsMultiStation,
-  crawlWithNotificationsSingle,
-  findNewRentals,
-  getRentalsToNotify,
-  addNotificationMetadata,
-  filterRentalsForNotification
-};
+// Functions are already exported individually above

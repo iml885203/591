@@ -281,6 +281,9 @@ class QueryId {
   static fromSearchUrl(searchUrl: SearchUrl | string): QueryId {
     const url = searchUrl instanceof SearchUrl ? searchUrl : new SearchUrl(searchUrl);
     const queryId = url.getQueryId();
+    if (queryId === null) {
+      throw new Error('Cannot create QueryId: URL does not have a valid query ID');
+    }
     return new QueryId(queryId);
   }
 

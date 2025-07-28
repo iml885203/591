@@ -15,17 +15,17 @@ interface MetroDistance {
 
 interface NotificationData {
   isSilent?: boolean;
-  distanceFromMRT?: number;
+  distanceFromMRT?: number | null;
   [key: string]: any;
 }
 
 interface RentalConstructorData {
   title: string;
   link: string | null;
-  houseType: string;
-  rooms: string;
-  metroTitle: string;
-  metroValue: string;
+  houseType?: string;
+  rooms?: string;
+  metroTitle?: string;
+  metroValue?: string;
   tags?: string[];
   imgUrls?: string[];
   notification?: NotificationData;
@@ -47,10 +47,10 @@ class Rental {
   constructor(data: RentalConstructorData) {
     this.title = data.title;
     this.link = data.link;
-    this.houseType = data.houseType;
-    this.rooms = data.rooms;
-    this.metroTitle = data.metroTitle;
-    this.metroValue = data.metroValue;
+    this.houseType = data.houseType || '';
+    this.rooms = data.rooms || '';
+    this.metroTitle = data.metroTitle || '';
+    this.metroValue = data.metroValue || '';
     this.tags = data.tags || [];
     this.imgUrls = data.imgUrls || [];
     this.notification = data.notification || {};
@@ -150,8 +150,7 @@ class Rental {
     const propertyId = PropertyId.fromProperty({
       title: this.title,
       link: this.link || undefined,
-      metroTitle: this.metroTitle || undefined,
-      houseType: this.houseType
+      metroValue: this.metroValue || undefined
     });
     return propertyId.toString();
   }
