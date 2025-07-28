@@ -16,7 +16,8 @@ interface CliTestResult {
 
 const runCliCommand = (args: string[]): Promise<CliTestResult> => {
   return new Promise((resolve) => {
-    const child: ChildProcess = spawn('bun', [crawlerPath, ...args], {
+    const bunPath = process.env.BUN_PATH || '/home/logan/.bun/bin/bun';
+    const child: ChildProcess = spawn(bunPath, [crawlerPath, ...args], {
       stdio: ['pipe', 'pipe', 'pipe']
     });
 

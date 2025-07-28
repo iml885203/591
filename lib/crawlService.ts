@@ -582,4 +582,5 @@ const logNotificationInfo = (
   }
 };
 
-// Functions are already exported individually above
+// Export utility functions for testing
+export { findNewRentals, getRentalsToNotify, addNotificationMetadata, filterRentalsForNotification };

@@ -164,6 +164,7 @@ describe('Rental', () => {
         title: mockRentalData.title,
         link: mockRentalData.link,
         rooms: mockRentalData.rooms,
+        houseType: mockRentalData.houseType || "",
         metroTitle: mockRentalData.metroTitle,
         metroValue: mockRentalData.metroValue,
         metroDistances: [],

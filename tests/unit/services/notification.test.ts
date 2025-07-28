@@ -135,9 +135,9 @@ describe('notification', () => {
       expect(embed).toHaveProperty('image');
       expect(embed.fields).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ name: '房型', value: mockRental.houseType }),
-          expect.objectContaining({ name: '格局', value: mockRental.rooms }),
-          expect.objectContaining({ name: '捷運', value: expect.stringContaining(mockRental.metroTitle) })
+          expect.objectContaining({ name: '🏠 房型', value: expect.stringContaining(mockRental.houseType) }),
+          expect.objectContaining({ name: '🚇 捷運距離', value: expect.stringContaining(mockRental.metroTitle) }),
+          expect.objectContaining({ name: '🏷️ 標籤', value: expect.stringContaining('有陽台') })
         ])
       );
     });
@@ -155,23 +155,33 @@ describe('notification', () => {
   describe('sendDiscordNotifications', () => {
     it('should send notifications for multiple rentals', async () => {
       const rentals = [mockRental, { ...mockRental, title: 'Test Rental 2' }];
+      const originalUrl = 'https://test.com';
       const webhookUrl = 'https://discord.com/api/webhooks/123/test';
-      const options = { notifyMode: 'all', filteredMode: 'normal', notificationDelay: 100 };
+      const config = { notificationDelay: 100 };
 
-      const result = await sendDiscordNotifications(rentals, webhookUrl, options, mockAxios);
+      await sendDiscordNotifications(rentals, originalUrl, webhookUrl, mockAxios, config);
 
-      expect(result.successful).toBe(2);
-      expect(result.failed).toBe(0);
       expect(mockAxios.post).toHaveBeenCalledTimes(2);
+      expect(mockAxios.post).toHaveBeenCalledWith(
+        webhookUrl,
+        expect.objectContaining({
+          embeds: expect.arrayContaining([
+            expect.objectContaining({
+              title: expect.stringContaining('Test Rental')
+            })
+          ])
+        })
+      );
     });
 
     it('should respect notification delay', async () => {
       const rentals = [mockRental, { ...mockRental, title: 'Test Rental 2' }];
+      const originalUrl = 'https://test.com';
       const webhookUrl = 'https://discord.com/api/webhooks/123/test';
-      const options = { notifyMode: 'all', filteredMode: 'normal', notificationDelay: 50 };
+      const config = { notificationDelay: 50 };
 
       const start = Date.now();
-      await sendDiscordNotifications(rentals, webhookUrl, options, mockAxios);
+      await sendDiscordNotifications(rentals, originalUrl, webhookUrl, mockAxios, config);
       const duration = Date.now() - start;
 
       // Should take at least the delay time between notifications
@@ -181,18 +191,18 @@ describe('notification', () => {
 
   describe('sendErrorNotification', () => {
     it('should send error notification to Discord', async () => {
-      const error = new Error('Test error');
+      const originalUrl = 'https://test.com';
+      const errorMsg = 'Test error';
       const webhookUrl = 'https://discord.com/api/webhooks/123/test';
 
-      const result = await sendErrorNotification(error, webhookUrl, mockAxios);
+      await sendErrorNotification(originalUrl, errorMsg, webhookUrl, mockAxios);
 
-      expect(result).toBe(true);
       expect(mockAxios.post).toHaveBeenCalledWith(
         webhookUrl,
         expect.objectContaining({
           embeds: expect.arrayContaining([
             expect.objectContaining({
-              title: '🚨 Crawler Error',
+              title: '591 爬蟲執行錯誤',
               color: 0xff0000
             })
           ])

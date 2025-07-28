@@ -141,7 +141,8 @@ describe('crawlService', () => {
 
   describe('findNewRentals', () => {
     it('should identify new rentals correctly', () => {
-      const newRentals = findNewRentals(mockRentals, mockPreviousRentals);
+      const existingIds = new Set<string>();
+      const newRentals = findNewRentals(mockRentals, existingIds);
       
       expect(newRentals).toHaveLength(3);
       expect(newRentals).toEqual(mockRentals);
@@ -149,14 +150,18 @@ describe('crawlService', () => {
 
     it('should filter out existing rentals', () => {
       const allRentals = [...mockRentals, mockPreviousRentals[0]];
-      const newRentals = findNewRentals(allRentals, mockPreviousRentals);
+      // Create property ID based on title-metroValue format since URL doesn't have numeric ID
+      const propertyIdToExclude = `${mockPreviousRentals[0].title}-${mockPreviousRentals[0].metroValue}`.replace(/\s+/g, '-');
+      const existingIds = new Set([propertyIdToExclude]);
+      const newRentals = findNewRentals(allRentals, existingIds);
       
       expect(newRentals).toHaveLength(3);
       expect(newRentals.every(r => r.link !== mockPreviousRentals[0].link)).toBe(true);
     });
 
     it('should handle empty previous rentals', () => {
-      const newRentals = findNewRentals(mockRentals, []);
+      const existingIds = new Set<string>();
+      const newRentals = findNewRentals(mockRentals, existingIds);
       
       expect(newRentals).toEqual(mockRentals);
     });
@@ -170,7 +175,7 @@ describe('crawlService', () => {
         filter: { mrtDistanceThreshold: 600 }
       };
 
-      const rentalsWithMeta = addNotificationMetadata(mockRentals, options);
+      const rentalsWithMeta = addNotificationMetadata(mockRentals, mockRentals, options);
 
       expect(rentalsWithMeta[0]).toHaveProperty('notification');
       expect(rentalsWithMeta[0].notification).toHaveProperty('isSilent');
@@ -183,7 +188,7 @@ describe('crawlService', () => {
         filteredMode: 'normal' as const
       };
 
-      const rentalsWithMeta = addNotificationMetadata(mockRentals, options);
+      const rentalsWithMeta = addNotificationMetadata(mockRentals, mockRentals, options);
 
       expect(rentalsWithMeta[0].notification.isSilent).toBe(false);
     });
@@ -191,57 +196,40 @@ describe('crawlService', () => {
 
   describe('filterRentalsForNotification', () => {
     it('should filter rentals based on distance threshold', () => {
-      const rentalsWithMeta = addNotificationMetadata(mockRentals, {
+      const rentalsWithMeta = addNotificationMetadata(mockRentals, mockRentals, {
         notifyMode: 'filtered' as const,
         filteredMode: 'normal' as const,
         filter: { mrtDistanceThreshold: 500 }
       });
 
-      const filtered = filterRentalsForNotification(rentalsWithMeta, {
-        notifyMode: 'filtered' as const,
-        filteredMode: 'normal' as const,
-        filter: { mrtDistanceThreshold: 500 }
-      });
+      const filtered = filterRentalsForNotification(rentalsWithMeta, 'filtered', 'normal', { mrtDistanceThreshold: 500 });
 
       // Should only include rentals within 500m (5分鐘 = 400m, 3分鐘 = 240m)
       expect(filtered.length).toBeLessThan(mockRentals.length);
     });
 
     it('should return all rentals for "all" notify mode', () => {
-      const rentalsWithMeta = addNotificationMetadata(mockRentals, {
+      const rentalsWithMeta = addNotificationMetadata(mockRentals, mockRentals, {
         notifyMode: 'all' as const,
         filteredMode: 'normal' as const
       });
 
-      const filtered = filterRentalsForNotification(rentalsWithMeta, {
-        notifyMode: 'all' as const,
-        filteredMode: 'normal' as const
-      });
+      const filtered = filterRentalsForNotification(rentalsWithMeta, 'all', 'normal');
 
       expect(filtered).toHaveLength(mockRentals.length);
     });
   });
 
   describe('getRentalsToNotify', () => {
-    it('should return rentals that should be notified', () => {
-      const options = {
-        notifyMode: 'all' as const,
-        filteredMode: 'normal' as const
-      };
+    it('should return rentals that should be notified (maxLatest mode)', async () => {
+      const toNotify = await getRentalsToNotify(mockRentals, 2, 'test-url', mockDependencies.databaseStorage);
 
-      const toNotify = getRentalsToNotify(mockRentals, [], options);
-
-      expect(toNotify).toHaveLength(mockRentals.length);
-      expect(toNotify.every(r => r.notification)).toBe(true);
+      expect(toNotify).toHaveLength(2);
+      expect(toNotify).toEqual(mockRentals.slice(0, 2));
     });
 
-    it('should handle empty new rentals', () => {
-      const options = {
-        notifyMode: 'all' as const,
-        filteredMode: 'normal' as const
-      };
-
-      const toNotify = getRentalsToNotify([], mockPreviousRentals, options);
+    it('should handle empty rentals', async () => {
+      const toNotify = await getRentalsToNotify([], null, 'test-url', mockDependencies.databaseStorage);
 
       expect(toNotify).toHaveLength(0);
     });

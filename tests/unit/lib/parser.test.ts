@@ -4,7 +4,7 @@
 
 import { describe, test, expect, beforeAll } from 'bun:test';
 import { parseRental, parseRentals } from '../../../lib/parser.js';
-import cheerio from 'cheerio';
+import * as cheerio from 'cheerio';
 import fs from 'fs';
 import path from 'path';
 
