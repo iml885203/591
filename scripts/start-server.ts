@@ -6,21 +6,21 @@
  * Used for both development and production environments
  */
 
-const { spawn } = require('child_process');
-const logger = require('../lib/logger');
+import { spawn, ChildProcess } from 'child_process';
+import logger from '../lib/logger.js';
 
-async function runMigrations() {
+async function runMigrations(): Promise<boolean> {
   logger.info('🔄 Running database migrations...');
   
-  return new Promise((resolve) => {
-    const migration = spawn('bun', 
+  return new Promise<boolean>((resolve) => {
+    const migration: ChildProcess = spawn('bun', 
       process.env.NODE_ENV === 'production' 
         ? ['run', 'db:migrate:deploy'] 
         : ['run', 'db:migrate'], 
       { stdio: 'inherit', env: process.env }
     );
     
-    migration.on('close', (code) => {
+    migration.on('close', (code: number | null) => {
       if (code === 0) {
         logger.info('✅ Database migrations completed successfully');
         resolve(true);
@@ -30,17 +30,17 @@ async function runMigrations() {
       }
     });
     
-    migration.on('error', (error) => {
+    migration.on('error', (error: Error) => {
       logger.error(`❌ Migration error: ${error.message} - continuing anyway`);
       resolve(false);
     });
   });
 }
 
-async function startApiServer() {
+async function startApiServer(): Promise<void> {
   logger.info('🌐 Starting API server...');
   
-  const apiServer = spawn('bun', ['api.ts'], {
+  const apiServer: ChildProcess = spawn('bun', ['api.ts'], {
     stdio: 'inherit',
     env: process.env
   });
@@ -56,18 +56,18 @@ async function startApiServer() {
     apiServer.kill('SIGTERM');
   });
   
-  apiServer.on('close', (code) => {
+  apiServer.on('close', (code: number | null) => {
     logger.info(`API server exited with code ${code}`);
     process.exit(code);
   });
   
-  apiServer.on('error', (error) => {
+  apiServer.on('error', (error: Error) => {
     logger.error(`❌ API server error: ${error.message}`);
     process.exit(1);
   });
 }
 
-async function main() {
+async function main(): Promise<void> {
   try {
     logger.info('🚀 Server startup initiated');
     
@@ -78,7 +78,8 @@ async function main() {
     await startApiServer();
     
   } catch (error) {
-    logger.error(`❌ Startup failed: ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error(`❌ Startup failed: ${errorMessage}`);
     process.exit(1);
   }
 }
@@ -88,4 +89,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { main };
+export { main };
