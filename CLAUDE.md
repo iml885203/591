@@ -15,15 +15,8 @@ bun install  # Automatically sets up Git hooks via Husky
 bun test
 bun run api
 
-# Usage
-bun run cli.js "https://rent.591.com.tw/list?region=1&kind=0"
-bun run cli.js "URL" 5  # Latest 5 rentals
-bun run cli.js "URL" --notify-mode=none  # No notifications
-
-# Multi-station crawling
-bun run cli.js "URL_WITH_MULTIPLE_STATIONS" --max-concurrent=3 --delay=1500
-bun run cli.js "URL" --no-merge  # Skip merging duplicate properties
-bun run cli.js "URL" --no-station-info  # Hide station processing info
+# Usage (API only)
+# Use the REST API for all crawling operations
 
 # Docker (manual deployment)
 docker-compose -f docker-compose.production.yml up -d
@@ -62,7 +55,6 @@ curl -X GET http://localhost:3000/debug/html/crawl-2025-07-26T10-30-00-000Z.html
 ## 🏗️ Architecture
 
 **Core modules:**
-- `cli.js` - CLI entry point
 - `api.js` - REST API server
 - `lib/crawlService.js` - Main orchestration
 - `lib/crawler.js` - Web scraping logic
@@ -212,7 +204,6 @@ git push origin main
 ## 📁 Project Structure
 
 ```
-├── cli.js              # CLI entry
 ├── api.js              # REST API
 ├── lib/                # Core modules
 │   ├── domain/         # Domain models

@@ -2,16 +2,12 @@
   "name": "591-crawler",
   "version": "2025.07.23",
   "description": "A Node.js web scraper for 591.com.tw rental properties with Discord notifications",
-  "main": "cli.ts",
-  "bin": {
-    "591-crawler": "./cli.ts"
-  },
+  "main": "api.js",
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
     "start": "bun run scripts/start-server.js",
     "api": "bun run scripts/start-server.js",
-    "crawl": "bun run cli.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
