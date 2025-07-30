@@ -15,7 +15,6 @@ module.exports = {
   verbose: true,
   // 忽略 dist 目錄避免衝突
   modulePathIgnorePatterns: ['<rootDir>/dist/'],
-  // 集成測試配置
   testTimeout: 60000,
   maxWorkers: 1,
   // 分別運行單元測試和集成測試
