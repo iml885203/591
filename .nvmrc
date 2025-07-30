@@ -1,0 +1,3 @@
+# This project uses Bun instead of Node.js
+# Please install Bun instead: curl -fsSL https://bun.sh/install | bash
+# For more info: https://bun.sh

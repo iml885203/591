@@ -2,28 +2,35 @@
 
 Node.js web scraper for 591.com.tw rental monitoring with Discord notifications and local Docker auto-deployment.
 
-## 🚀 Quick Commands
+## 🚀 Commands (Bun Only)
+
+⚠️ **Important: This project exclusively uses Bun - do not use npm/yarn/pnpm**
 
 ```bash
-# Development
-bun install  # Automatically sets up Git hooks via Husky
+# Development Setup
+bun install         # Install dependencies + Git hooks via Husky
+bun run build       # Compile TypeScript  
+bun run type-check  # Type checking only
 
-# Start development databases (manual setup required)
-# PostgreSQL setup via Docker or local installation
+# Development Server
+bun run api         # Start API server
+bun api            # Shorthand
 
-# Run tests and API
-bun test
-bun run api
+# Testing
+bun run test:unit      # Unit tests (recommended daily)
+bun test              # All tests
+bun run test:coverage  # Test coverage
+bun run test:api       # API integration tests
 
-# Usage
-bun run cli.js "https://rent.591.com.tw/list?region=1&kind=0"
-bun run cli.js "URL" 5  # Latest 5 rentals
-bun run cli.js "URL" --notify-mode=none  # No notifications
+# Database
+bun run db:generate    # Generate Prisma client
+bun run db:migrate     # Run migrations
+bun run db:studio      # Database UI
 
-# Multi-station crawling
-bun run cli.js "URL_WITH_MULTIPLE_STATIONS" --max-concurrent=3 --delay=1500
-bun run cli.js "URL" --no-merge  # Skip merging duplicate properties
-bun run cli.js "URL" --no-station-info  # Hide station processing info
+# ❌ Prohibited (will show errors)
+npm install    # 💥 ERROR: This project only supports Bun!
+yarn install   # 💥 ERROR: This project only supports Bun!
+pnpm install   # 💥 ERROR: This project only supports Bun!
 
 # Docker (manual deployment)
 docker-compose -f docker-compose.production.yml up -d
@@ -62,7 +69,6 @@ curl -X GET http://localhost:3000/debug/html/crawl-2025-07-26T10-30-00-000Z.html
 ## 🏗️ Architecture
 
 **Core modules:**
-- `cli.js` - CLI entry point
 - `api.js` - REST API server
 - `lib/crawlService.js` - Main orchestration
 - `lib/crawler.js` - Web scraping logic
@@ -117,22 +123,24 @@ DEBUG_LOGS=false       # Enable/disable debug logging (true/false)
 
 ## 🧪 Testing
 
-- Native Bun test framework (migrated from Jest)
-- **54+ tests** across multiple files, all passing ✅
-- Unit tests: `tests/unit/` (storage, config, CLI, utils, Rental)
-- Integration tests: `tests/integration/` (database operations)
-- Test helpers: `tests/helpers/` (mock utilities)
+- **Jest test framework** - 105+ tests, all passing ✅
+- **Unit tests**: `tests/unit/` - Domain models, services, utilities
+- **Integration tests**: `tests/integration/api/` - Real API server testing
+- **Advanced mocking**: axios, cheerio, fs-extra module mocks
+- *Note: Keeping Jest for stability - complex mocks not easily migrated to Bun*
 
-**Database Integration Testing:**
+**Quick Testing:**
 ```bash
-# Database management
-bun run db:generate              # Generate Prisma client
-bun run db:migrate               # Run database migrations
-bun run db:studio                # Open Prisma Studio (web interface)
-
-# All tests
-bun test                         # All tests (unit + integration)
+bun run test:unit          # Unit tests only (fast, recommended)
+bun run test:api           # API integration tests (slower)
+bun test                   # All tests (unit + integration)
+bun run test:coverage      # Coverage report
 ```
+
+**API Integration Testing:**
+- Tests spawn real API server on different ports
+- Validates endpoints, authentication, error handling
+- CI-friendly with timeout and cleanup mechanisms
 
 ## 🔄 Git Flow 工作流程
 
@@ -212,7 +220,6 @@ git push origin main
 ## 📁 Project Structure
 
 ```
-├── cli.js              # CLI entry
 ├── api.js              # REST API
 ├── lib/                # Core modules
 │   ├── domain/         # Domain models

@@ -2,25 +2,29 @@
   "name": "591-crawler",
   "version": "2025.07.23",
   "description": "A Node.js web scraper for 591.com.tw rental properties with Discord notifications",
-  "main": "cli.js",
-  "bin": {
-    "591-crawler": "./cli.js"
-  },
+  "main": "dist/api.js",
   "scripts": {
-    "start": "bun run scripts/start-server.js",
-    "api": "bun run scripts/start-server.js",
-    "crawl": "bun run cli.js",
-    "test": "bun test",
-    "test:watch": "bun test --watch",
-    "test:coverage": "bun test --coverage",
-    "test:unit": "bun test tests/unit",
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "start": "bun run scripts/start-server.ts",
+    "api": "bun run scripts/start-server.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --selectProjects unit --coverage",
+    "test:unit": "jest --selectProjects unit",
+    "test:integration": "jest --config jest.integration.config.js",
+    "test:integration:ci": "jest --config jest.integration.config.js --testPathPatterns=ci-safe --runInBand",
+    "test:api": "jest --config jest.integration.config.js --testPathPatterns=api",
+    "test:api:ci": "SKIP_INTEGRATION_TESTS=false jest tests/integration/api/ci-safe.test.ts --runInBand",
+    "type-check": "tsc --noEmit",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "db:status": "prisma migrate status",
-    "prepare": "is-ci || (command -v husky >/dev/null 2>&1 && husky) || true"
+    "prepare": "is-ci || (command -v husky >/dev/null 2>&1 && husky) || true",
+    "preinstall": "node scripts/check-package-manager.js"
   },
   "keywords": [
     "591",
@@ -45,8 +49,12 @@
     "url": "https://github.com/iml885203/591/issues"
   },
   "engines": {
-    "bun": ">=1.0.0"
+    "bun": ">=1.0.0",
+    "npm": "Please use Bun instead of npm",
+    "yarn": "Please use Bun instead of yarn",
+    "pnpm": "Please use Bun instead of pnpm"
   },
+  "packageManager": "bun@1.0.0",
   "dependencies": {
     "@prisma/client": "^6.12.0",
     "axios": "^1.10.0",
@@ -59,10 +67,20 @@
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
+    "@types/cheerio": "^1.0.0",
+    "@types/express": "^5.0.3",
+    "@types/fs-extra": "^11.0.4",
+    "@types/jest": "^30.0.0",
+    "@types/jsdom": "^21.1.7",
+    "@types/node": "^24.1.0",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
     "husky": "^9.1.7",
+    "jest": "^30.0.5",
     "jsdom": "^26.1.0",
-    "nock": "^14.0.6",
     "prisma": "^6.12.0",
-    "supertest": "^7.1.4"
+    "ts-jest": "^29.4.0",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
   }
 }

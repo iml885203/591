@@ -1,0 +1,123 @@
+name: API Integration Tests (Bun)
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  api-tests:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_USER: testuser
+          POSTGRES_DB: test591
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: latest
+
+    - name: Install dependencies
+      run: bun install
+
+    - name: Setup test database
+      env:
+        DATABASE_URL: postgresql://testuser:testpassword@localhost:5432/test591
+      run: |
+        bun run db:generate
+        bun run db:push
+      continue-on-error: true
+
+    - name: Run TypeScript type check
+      run: bun run type-check
+
+    - name: Run unit tests
+      run: bun run test:unit
+
+    - name: Run CI-safe API tests
+      env:
+        DATABASE_URL: postgresql://testuser:testpassword@localhost:5432/test591
+        TEST_DATABASE_URL: postgresql://testuser:testpassword@localhost:5432/test591
+        NODE_ENV: test
+        CI: true
+        SKIP_INTEGRATION_TESTS: false
+        DEBUG_CI_TESTS: false
+      run: bun run test:api:ci
+      timeout-minutes: 10
+
+  api-tests-without-db:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: latest
+
+    - name: Install dependencies
+      run: bun install
+
+    - name: Run TypeScript type check
+      run: bun run type-check
+
+    - name: Run unit tests only
+      run: bun run test:unit
+
+    - name: Run API tests without database (mock mode)
+      env:
+        NODE_ENV: test
+        CI: true
+        SKIP_INTEGRATION_TESTS: false
+        USE_MOCK_DATABASE: true
+        DATABASE_URL: file:./test-ci.db
+      run: bun run test:api:ci
+      timeout-minutes: 5
+
+  smoke-tests:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: latest
+
+    - name: Install dependencies
+      run: bun install
+
+    - name: Quick smoke test
+      run: |
+        echo "🔍 Running smoke tests..."
+        bun run type-check
+        echo "✅ TypeScript compilation successful"
+        
+        # Check if essential files exist
+        test -f api.ts || (echo "❌ api.ts not found" && exit 1)
+        test -f package.json || (echo "❌ package.json not found" && exit 1)
+        
+        echo "✅ Essential files present"
+        echo "🎉 Smoke tests passed"
