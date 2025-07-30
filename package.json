@@ -2,7 +2,7 @@
   "name": "591-crawler",
   "version": "2025.07.23",
   "description": "A Node.js web scraper for 591.com.tw rental properties with Discord notifications",
-  "main": "api.js",
+  "main": "dist/api.js",
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
@@ -23,7 +23,9 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "db:status": "prisma migrate status",
-    "prepare": "is-ci || (command -v husky >/dev/null 2>&1 && husky) || true"
+    "prepare": "./scripts/bun-only.sh && (is-ci || (command -v husky >/dev/null 2>&1 && husky) || true)",
+    "preinstall": "node scripts/check-package-manager.js",
+    "install": "bun install"
   },
   "keywords": [
     "591",
@@ -48,8 +50,12 @@
     "url": "https://github.com/iml885203/591/issues"
   },
   "engines": {
-    "bun": ">=1.0.0"
+    "bun": ">=1.0.0",
+    "npm": "Please use Bun instead of npm",
+    "yarn": "Please use Bun instead of yarn",
+    "pnpm": "Please use Bun instead of pnpm"
   },
+  "packageManager": "bun@1.0.0",
   "dependencies": {
     "@prisma/client": "^6.12.0",
     "axios": "^1.10.0",
@@ -68,15 +74,12 @@
     "@types/jest": "^30.0.0",
     "@types/jsdom": "^21.1.7",
     "@types/node": "^24.1.0",
-    "@types/supertest": "^6.0.3",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
     "husky": "^9.1.7",
     "jest": "^30.0.5",
     "jsdom": "^26.1.0",
-    "nock": "^14.0.6",
     "prisma": "^6.12.0",
-    "supertest": "^7.1.4",
     "ts-jest": "^29.4.0",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3"

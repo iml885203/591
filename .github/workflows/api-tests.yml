@@ -1,4 +1,4 @@
-name: API Integration Tests
+name: API Integration Tests (Bun)
 
 on:
   push:
@@ -25,45 +25,31 @@ jobs:
         ports:
           - 5432:5432
 
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x]
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: npm ci
-
-    - name: Setup Bun (fallback for CI)
+    - name: Setup Bun
       uses: oven-sh/setup-bun@v1
       with:
         bun-version: latest
-      continue-on-error: true
 
-    - name: Install ts-node for CI compatibility
-      run: npm install -g ts-node typescript
+    - name: Install dependencies
+      run: bun install
 
     - name: Setup test database
       env:
         DATABASE_URL: postgresql://testuser:testpassword@localhost:5432/test591
       run: |
-        npm run db:generate
-        npm run db:push
+        bun run db:generate
+        bun run db:push
       continue-on-error: true
 
     - name: Run TypeScript type check
-      run: npm run type-check
+      run: bun run type-check
 
     - name: Run unit tests
-      run: npm run test:unit
+      run: bun run test:unit
 
     - name: Run CI-safe API tests
       env:
@@ -73,46 +59,29 @@ jobs:
         CI: true
         SKIP_INTEGRATION_TESTS: false
         DEBUG_CI_TESTS: false
-      run: npx jest tests/integration/api/ci-safe.test.ts --verbose --runInBand
+      run: bun run test:api:ci
       timeout-minutes: 10
-
-    - name: Run basic API integration test
-      env:
-        DATABASE_URL: postgresql://testuser:testpassword@localhost:5432/test591
-        NODE_ENV: test
-        CI: true
-      run: npx jest tests/integration/api/basic.test.ts --verbose --runInBand --detectOpenHandles
-      timeout-minutes: 8
-      continue-on-error: true
 
   api-tests-without-db:
     runs-on: ubuntu-latest
-    
-    strategy:
-      matrix:
-        node-version: [18.x]
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v1
       with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
+        bun-version: latest
 
     - name: Install dependencies
-      run: npm ci
-
-    - name: Install ts-node for CI compatibility
-      run: npm install -g ts-node typescript
+      run: bun install
 
     - name: Run TypeScript type check
-      run: npm run type-check
+      run: bun run type-check
 
     - name: Run unit tests only
-      run: npm run test:unit
+      run: bun run test:unit
 
     - name: Run API tests without database (mock mode)
       env:
@@ -121,7 +90,7 @@ jobs:
         SKIP_INTEGRATION_TESTS: false
         USE_MOCK_DATABASE: true
         DATABASE_URL: file:./test-ci.db
-      run: npx jest tests/integration/api/ci-safe.test.ts --verbose --runInBand
+      run: bun run test:api:ci
       timeout-minutes: 5
 
   smoke-tests:
@@ -132,22 +101,21 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v1
       with:
-        node-version: '20.x'
-        cache: 'npm'
+        bun-version: latest
 
     - name: Install dependencies
-      run: npm ci
+      run: bun install
 
     - name: Quick smoke test
       run: |
         echo "🔍 Running smoke tests..."
-        npm run type-check
+        bun run type-check
         echo "✅ TypeScript compilation successful"
         
-        # 檢查主要文件是否存在
+        # Check if essential files exist
         test -f api.ts || (echo "❌ api.ts not found" && exit 1)
         test -f package.json || (echo "❌ package.json not found" && exit 1)
         

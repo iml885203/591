@@ -13,7 +13,12 @@ Node.js web scraper for 591.com.tw that monitors rental listings and sends Disco
 
 ## Quick Start
 
+⚠️ **Important: This project only uses Bun - do not use npm/yarn/pnpm**
+
 ```bash
+# Install Bun (if not installed)
+curl -fsSL https://bun.sh/install | bash
+
 # Install dependencies
 bun install
 
@@ -24,11 +29,10 @@ cp .env.example .env
 # Setup database
 bun run db:migrate
 
-# Run crawler
-bun cli.js "https://rent.591.com.tw/list?region=1&kind=0"
-
-# Or start API server
+# Start API server (CLI removed, use API only)
 bun run api
+
+# Test API
 curl -X POST http://localhost:3000/crawl \
   -H "Content-Type: application/json" \
   -H "x-api-key: your-api-key" \
