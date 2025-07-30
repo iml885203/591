@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  # 測試數據庫
+  test-db:
+    image: postgres:13-alpine
+    environment:
+      POSTGRES_DB: test591
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpassword
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U testuser -d test591"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - test_postgres_data:/var/lib/postgresql/data
+
+  # API 測試服務
+  api-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    depends_on:
+      test-db:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=test
+      - DATABASE_URL=postgresql://testuser:testpassword@test-db:5432/test591
+      - API_PORT=3000
+      - API_KEY=docker-test-key-12345
+      - DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/test/docker
+      - NOTIFICATION_DELAY=100
+      - DEBUG_LOGS=false
+    ports:
+      - "3100:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: >
+      sh -c "
+        echo '🚀 Starting API test environment...' &&
+        npm run db:generate &&
+        npm run db:push &&
+        echo '✅ Database setup complete' &&
+        npm run test:api:ci
+      "
+
+  # 簡化的 API 測試（無數據庫依賴）
+  api-test-standalone:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    environment:
+      - NODE_ENV=test
+      - USE_MOCK_DATABASE=true
+      - DATABASE_URL=file:./test.db
+      - API_PORT=3000
+      - API_KEY=docker-test-key-12345
+      - SKIP_INTEGRATION_TESTS=false
+    ports:
+      - "3101:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: >
+      sh -c "
+        echo '🚀 Starting standalone API test...' &&
+        npm run test:api:ci
+      "
+
+volumes:
+  test_postgres_data:
