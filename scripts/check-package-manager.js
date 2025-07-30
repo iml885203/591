@@ -1,5 +1,11 @@
 #!/usr/bin/env node
 
+// Skip check in CI environment
+if (process.env.CI === 'true') {
+  console.log('🤖 CI environment detected - skipping package manager check');
+  process.exit(0);
+}
+
 // Check if wrong package manager is being used
 const packageManager = process.env.npm_execpath || '';
 

@@ -23,9 +23,8 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "db:status": "prisma migrate status",
-    "prepare": "./scripts/bun-only.sh && (is-ci || (command -v husky >/dev/null 2>&1 && husky) || true)",
-    "preinstall": "node scripts/check-package-manager.js",
-    "install": "bun install"
+    "prepare": "is-ci || (command -v husky >/dev/null 2>&1 && husky) || true",
+    "preinstall": "node scripts/check-package-manager.js"
   },
   "keywords": [
     "591",
