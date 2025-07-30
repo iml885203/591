@@ -449,7 +449,7 @@ const swaggerDefinition: SwaggerDefinition = {
 const options: SwaggerOptions = {
   definition: swaggerDefinition,
   // Path to the API files
-  apis: ['./api.js', './lib/*.js']
+  apis: ['./api.ts', './lib/*.ts']
 };
 
 // Initialize swagger-jsdoc

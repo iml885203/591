@@ -10,8 +10,7 @@ import { PropertyId } from '../domain/PropertyId';
 import { logger, debugLog } from '../logger';
 import { DataComparator } from '../utils/DataComparator';
 
-// We'll import the DatabaseOptimizer as a JavaScript module since we're not converting all files
-const DatabaseOptimizer = require('./DatabaseOptimizer');
+import DatabaseOptimizer from './DatabaseOptimizer';
 
 interface RentalData {
   title: string;
