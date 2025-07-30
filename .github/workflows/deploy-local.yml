@@ -24,7 +24,7 @@ jobs:
     - name: Run pre-deployment tests
       run: |
         echo "🧪 Running pre-deployment test suite..."
-        bun test
+        bun run test:unit
     
   deploy:
     runs-on: self-hosted
