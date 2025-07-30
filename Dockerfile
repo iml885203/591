@@ -18,8 +18,9 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 
-# Copy package files
+# Copy package files and scripts (needed for postinstall hooks)
 COPY package.json bun.lock ./
+COPY scripts/ ./scripts/
 
 # Install dependencies
 RUN bun install --frozen-lockfile --production
