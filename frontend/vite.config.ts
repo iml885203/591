@@ -8,16 +8,26 @@ export default defineConfig({
   plugins: [
     vue(),
   ],
-  base: '/591-develop/', // Change this to match your GitHub repo name
+  base: '/591-develop/', // Change this to match your GitHub repo name or '/' for custom domain
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
+    sourcemap: false,
+    minify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ['vue', 'vue-router', 'pinia'],
           supabase: ['@supabase/supabase-js'],
           ui: ['element-plus', 'lucide-vue-next', '@vueuse/core']
+        },
+        assetFileNames: (assetInfo) => {
+          const info = assetInfo.name?.split('.') || []
+          const ext = info[info.length - 1]
+          if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(ext || '')) {
+            return `images/[name]-[hash][extname]`
+          }
+          return `assets/[name]-[hash][extname]`
         }
       }
     }

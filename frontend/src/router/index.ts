@@ -1,6 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import QueryList from '../components/QueryList.vue'
-import RentalList from '../components/RentalList.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -8,12 +6,12 @@ const router = createRouter({
     {
       path: '/',
       name: 'QueryList',
-      component: QueryList
+      component: () => import('../components/QueryList.vue')
     },
     {
       path: '/query/:queryId',
       name: 'RentalList', 
-      component: RentalList
+      component: () => import('../components/RentalList.vue')
     }
   ]
 })
