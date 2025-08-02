@@ -1,5 +1,4 @@
 import { fileURLToPath, URL } from 'node:url'
-import { resolve } from 'path'
 
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
@@ -9,18 +8,13 @@ export default defineConfig({
   plugins: [
     vue(),
   ],
-  root: '.', // Explicitly set root directory
   base: '/591/', // GitHub Pages base path for repository
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
     minify: 'esbuild',
-    commonjsOptions: {
-      esmExternals: true
-    },
     rollupOptions: {
-      input: resolve(__dirname, 'index.html'), // Use absolute path for index.html
       output: {
         manualChunks: {
           vendor: ['vue', 'vue-router', 'pinia'],
