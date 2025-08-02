@@ -19,6 +19,12 @@ export const useAuth = () => {
         throw new Error('Email 和密碼為必填欄位')
       }
       
+      // Email 格式驗證
+      const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
+      if (!emailRegex.test(email.trim())) {
+        throw new Error('Email 格式不正確')
+      }
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password

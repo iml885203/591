@@ -34,15 +34,21 @@ bunx prisma migrate deploy
 #### 1.4 建立管理員帳號（只執行一次）
 
 **方法 1: 使用環境變數（推薦）**
+
+⚠️ **重要**: 絕對不要在 production 環境使用預設密碼 `CHANGE_ME_IN_PRODUCTION`
+
+```bash
+# 在 Supabase SQL Editor 中設定管理員密碼
+SELECT set_config('app.admin_password', 'your-very-secure-password-here', false);
+
+# 然後執行 seed script（會自動使用環境變數中的密碼）
+```
+
+或在應用程式啟動前設定環境變數：
 ```bash
 # 設定管理員密碼環境變數
 export ADMIN_PASSWORD="your-very-secure-password-here"
-
-# 在 Supabase 中設定並執行 seed script
-SELECT set_config('app.admin_password', 'your-very-secure-password-here', false);
 ```
-
-然後執行 seed script 或手動執行：
 
 **方法 2: 手動建立（在 Supabase Dashboard > SQL Editor）**
 ```sql
@@ -68,6 +74,22 @@ INSERT INTO auth.users (
 **密碼設定建議：**
 - 建議使用強密碼以確保系統安全
 - 避免使用預設密碼 `CHANGE_ME_IN_PRODUCTION` 於正式環境
+- 密碼至少 12 字元，包含大小寫字母、數字和特殊字符
+
+**驗證密碼設定：**
+```sql
+-- 檢查管理員帳號是否已建立（不會顯示密碼）
+SELECT email, created_at, email_confirmed_at 
+FROM auth.users 
+WHERE email = 'admin@591crawler.com';
+
+-- 檢查環境變數設定（僅顯示是否已設定，不顯示密碼值）
+SELECT CASE 
+  WHEN current_setting('app.admin_password', true) = '' THEN '未設定'
+  WHEN current_setting('app.admin_password', true) = 'CHANGE_ME_IN_PRODUCTION' THEN '⚠️ 使用預設密碼'
+  ELSE '✅ 已設定自訂密碼'
+END as password_status;
+```
 
 ### 2. 後續更新部署
 
@@ -127,6 +149,13 @@ jobs:
 - [ ] ✅ 設定強密碼給管理員帳號
 - [ ] ✅ 確認 API keys 正確
 - [ ] ✅ 使用 HTTPS
+
+### 密碼安全檢查
+- [ ] ✅ 已透過環境變數設定管理員密碼
+- [ ] ✅ 密碼符合強度要求（至少12字元，包含大小寫、數字、特殊字符）
+- [ ] ✅ 未使用預設密碼 `CHANGE_ME_IN_PRODUCTION`
+- [ ] ✅ 已執行密碼設定驗證 SQL 查詢
+- [ ] ✅ 確認可以用新密碼成功登入
 
 ### 部署流程
 - [ ] ✅ 程式碼通過所有測試

@@ -21,9 +21,18 @@
               type="email"
               autocomplete="email"
               required
-              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+              :class="[
+                'appearance-none rounded-none relative block w-full px-3 py-2 border placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:z-10 sm:text-sm',
+                emailError ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+              ]"
               placeholder="Email 地址"
+              @blur="validateEmail"
+              @input="clearEmailError"
             />
+            <!-- Individual email error display -->
+            <div v-if="emailError" class="mt-1 text-red-600 text-xs">
+              {{ emailError }}
+            </div>
           </div>
           <div>
             <label for="password" class="sr-only">密碼</label>
@@ -85,21 +94,58 @@ const email = ref('')
 const password = ref('')
 const error = ref<AuthError | null>(null)
 const validationErrors = ref<string[]>([])
+const emailError = ref('')
 
-// 輸入驗證函數
+// Email 驗證函數
+const validateEmail = () => {
+  const emailValue = email.value.trim()
+  
+  if (!emailValue) {
+    emailError.value = 'Email 為必填欄位'
+    return false
+  }
+  
+  // 更強化的 Email 格式驗證
+  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
+  
+  if (!emailRegex.test(emailValue)) {
+    emailError.value = '請輸入有效的 Email 格式'
+    return false
+  }
+  
+  // 檢查常見錯誤
+  if (emailValue.length > 254) {
+    emailError.value = 'Email 地址過長'
+    return false
+  }
+  
+  if (emailValue.includes('..')) {
+    emailError.value = 'Email 格式不正確'
+    return false
+  }
+  
+  emailError.value = ''
+  return true
+}
+
+// 清除 Email 錯誤訊息
+const clearEmailError = () => {
+  if (emailError.value) {
+    emailError.value = ''
+  }
+}
+
+// 整體輸入驗證函數
 const validateInput = (): boolean => {
   const errors: string[] = []
   
-  // Email 格式驗證
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!email.value.trim()) {
-    errors.push('Email 為必填欄位')
-  } else if (!emailRegex.test(email.value)) {
-    errors.push('請輸入有效的 Email 格式')
+  // Email 驗證
+  if (!validateEmail()) {
+    errors.push(emailError.value)
   }
   
-  // 密碼必填驗證（移除強度要求）
-  if (!password.value) {
+  // 密碼必填驗證（只檢查是否為空）
+  if (!password.value.trim()) {
     errors.push('密碼為必填欄位')
   }
   
