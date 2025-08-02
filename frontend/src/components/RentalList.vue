@@ -68,7 +68,7 @@
             <!-- House Type Filter -->
             <select 
               v-model="filterHouseType" 
-              class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+              class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm text-gray-900 bg-white"
             >
               <option value="">所有房型</option>
               <option v-for="houseType in availableHouseTypes" :key="houseType" :value="houseType">
@@ -79,7 +79,7 @@
             <!-- Sorting -->
             <select 
               v-model="sortBy" 
-              class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+              class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm text-gray-900 bg-white"
             >
               <option value="firstSeen">最新發現</option>
               <option value="price">價格低到高</option>
@@ -131,13 +131,13 @@
             <div class="space-y-2">
               <div>
                 <span class="text-gray-600">房型：</span>
-                <span class="font-medium">{{ rental.rooms || rental.houseType }}</span>
+                <span class="font-medium text-gray-900">{{ rental.rooms || rental.houseType }}</span>
               </div>
               
               <div v-if="rental.metroTitle" class="flex items-center gap-1">
                 <Train class="w-4 h-4 text-blue-500" />
                 <span class="text-gray-600">捷運：</span>
-                <span class="font-medium">{{ rental.metroTitle }}</span>
+                <span class="font-medium text-gray-900">{{ rental.metroTitle }}</span>
                 <span v-if="rental.metroValue" class="text-blue-600">({{ rental.metroValue }})</span>
               </div>
             </div>
@@ -146,13 +146,13 @@
               <div class="flex items-center gap-1">
                 <Calendar class="w-4 h-4 text-gray-400" />
                 <span class="text-gray-600">首次發現：</span>
-                <span>{{ formatDate(rental.firstSeen) }}</span>
+                <span class="text-gray-900">{{ formatDate(rental.firstSeen) }}</span>
               </div>
               
               <div class="flex items-center gap-1">
                 <Calendar class="w-4 h-4 text-gray-400" />
                 <span class="text-gray-600">最後更新：</span>
-                <span>{{ formatDate(rental.lastSeen) }}</span>
+                <span class="text-gray-900">{{ formatDate(rental.lastSeen) }}</span>
               </div>
             </div>
             
@@ -165,7 +165,7 @@
                   :key="metro.id"
                   class="text-xs"
                 >
-                  <span class="font-medium">{{ metro.stationName }}</span>
+                  <span class="font-medium text-gray-900">{{ metro.stationName }}</span>
                   <span v-if="metro.distance" class="text-blue-600 ml-1">
                     ({{ formatDistance(metro.distance) }})
                   </span>

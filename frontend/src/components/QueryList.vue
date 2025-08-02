@@ -39,7 +39,7 @@
         <div class="flex gap-2">
           <select 
             v-model="filterRegion" 
-            class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
           >
             <option value="">所有地區</option>
             <option v-for="region in availableRegions" :key="region" :value="region">
@@ -49,7 +49,7 @@
           
           <select 
             v-model="sortBy" 
-            class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
           >
             <option value="updatedAt">最新更新</option>
             <option value="rentalCount">房源數量</option>

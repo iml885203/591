@@ -13,6 +13,7 @@ export const useRentals = (queryId: Ref<string>) => {
       isLoading.value = true
       error.value = null
 
+      // 修復查詢語法：移除有問題的關聯排序，改用簡單查詢
       const { data: rentalsData, error: rentalsError } = await supabase
         .from('rentals')
         .select(`
@@ -27,7 +28,7 @@ export const useRentals = (queryId: Ref<string>) => {
         `)
         .eq('query_rentals.queryId', queryId.value)
         .eq('isActive', true)
-        .order('query_rentals(firstAppeared)', { ascending: false })
+        .order('firstSeen', { ascending: false })
 
       if (rentalsError) throw rentalsError
 
