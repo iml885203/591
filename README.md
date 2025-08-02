@@ -1,10 +1,10 @@
-# 591 Rental Crawler
+# Rental Property Crawler
 
-Node.js web scraper for 591.com.tw that monitors rental listings and sends Discord notifications.
+Node.js web scraper that monitors rental listings and sends Discord notifications.
 
 ## Features
 
-- 🏠 **Auto-monitoring** - Crawls 591.com.tw for new rental listings
+- 🏠 **Auto-monitoring** - Crawls rental websites for new listings
 - 🔔 **Discord alerts** - Real-time notifications with rental details  
 - 🚇 **Distance filtering** - Silent notifications for rentals far from MRT
 - 🎯 **Smart detection** - Only notifies about genuinely new rentals
@@ -36,7 +36,7 @@ bun run api
 curl -X POST http://localhost:3000/crawl \
   -H "Content-Type: application/json" \
   -H "x-api-key: your-api-key" \
-  -d '{"url": "https://rent.591.com.tw/list?region=1&kind=0"}'
+  -d '{"url": "https://example-rental-site.com/list?region=1&kind=0"}'
 ```
 
 ## Configuration
@@ -83,6 +83,32 @@ bun run db:status    # Check migration status
 
 # See DEV-SETUP.md for detailed setup instructions
 ```
+
+## ⚖️ Legal Notice & Responsible Use
+
+**⚠️ Important Legal Disclaimer**
+
+### Disclaimer
+This project is intended for **educational and research purposes only**. Users are solely responsible for compliance with all applicable laws:
+
+- **Respect Copyright**: Please comply with target website's Terms of Service and usage policies
+- **Rate Limiting**: Avoid excessive requests - recommended minimum interval of 1-2 seconds between requests
+- **Personal Use Only**: Limited to personal learning use - commercial use or large-scale data collection is prohibited
+- **Legal Compliance**: Users must comply with local laws and regulations - developers assume no legal responsibility
+
+### Usage Guidelines
+```bash
+# Recommended reasonable delay settings
+NOTIFICATION_DELAY=2000  # 2-second interval
+
+# Avoid running multiple crawler instances simultaneously
+# Respect website resources and avoid service overload
+```
+
+### Contact & Reporting
+If any website operators or related parties have concerns about this project, please contact us through GitHub Issues and we will address them immediately.
+
+**By using this software, you agree to use it responsibly and in compliance with all applicable laws and terms of service.**
 
 ## License
 
