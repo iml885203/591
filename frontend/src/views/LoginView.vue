@@ -40,7 +40,16 @@
           </div>
         </div>
 
-        <!-- 錯誤訊息 -->
+        <!-- 驗證錯誤訊息 -->
+        <div v-if="validationErrors.length > 0" class="text-red-600 text-sm bg-red-50 border border-red-200 rounded-md p-3">
+          <ul class="list-disc list-inside space-y-1">
+            <li v-for="validationError in validationErrors" :key="validationError">
+              {{ validationError }}
+            </li>
+          </ul>
+        </div>
+
+        <!-- API 錯誤訊息 -->
         <div v-if="error" class="text-red-600 text-sm text-center bg-red-50 border border-red-200 rounded-md p-3">
           {{ getErrorMessage(error) }}
         </div>
@@ -75,9 +84,37 @@ const { signIn, loading } = useAuth()
 const email = ref('')
 const password = ref('')
 const error = ref<AuthError | null>(null)
+const validationErrors = ref<string[]>([])
+
+// 輸入驗證函數
+const validateInput = (): boolean => {
+  const errors: string[] = []
+  
+  // Email 格式驗證
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!email.value.trim()) {
+    errors.push('Email 為必填欄位')
+  } else if (!emailRegex.test(email.value)) {
+    errors.push('請輸入有效的 Email 格式')
+  }
+  
+  // 密碼必填驗證（移除強度要求）
+  if (!password.value) {
+    errors.push('密碼為必填欄位')
+  }
+  
+  validationErrors.value = errors
+  return errors.length === 0
+}
 
 const handleSubmit = async () => {
   error.value = null
+  validationErrors.value = []
+
+  // 前端驗證
+  if (!validateInput()) {
+    return
+  }
 
   try {
     const result = await signIn(email.value, password.value)

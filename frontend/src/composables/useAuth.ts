@@ -13,16 +13,44 @@ export const useAuth = () => {
   const signIn = async (email: string, password: string) => {
     try {
       loading.value = true
+      
+      // 基本輸入驗證
+      if (!email?.trim() || !password?.trim()) {
+        throw new Error('Email 和密碼為必填欄位')
+      }
+      
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password
       })
       
-      if (error) throw error
+      if (error) {
+        // 記錄錯誤以便監控
+        console.error('Authentication error:', {
+          message: error.message,
+          status: error.status,
+          timestamp: new Date().toISOString()
+        })
+        throw error
+      }
       
       return { user: data.user, session: data.session, error: null }
     } catch (error) {
-      return { user: null, session: null, error: error as AuthError }
+      const authError = error as AuthError
+      
+      // 提供更友善的錯誤訊息
+      let friendlyMessage = authError.message
+      if (authError.message?.includes('Invalid login credentials')) {
+        friendlyMessage = 'Invalid login credentials'
+      } else if (authError.message?.includes('Email not confirmed')) {
+        friendlyMessage = 'Email not confirmed'
+      }
+      
+      return { 
+        user: null, 
+        session: null, 
+        error: { ...authError, message: friendlyMessage } as AuthError 
+      }
     } finally {
       loading.value = false
     }

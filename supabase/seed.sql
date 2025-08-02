@@ -30,7 +30,7 @@ BEGIN
         'authenticated',
         'authenticated',
         'admin@591crawler.com',
-        crypt('admin123456', gen_salt('bf')),
+        crypt(COALESCE(nullif(current_setting('app.admin_password', true), ''), 'CHANGE_ME_IN_PRODUCTION'), gen_salt('bf')),
         NOW(),
         NOW(),
         '{"provider": "email", "providers": ["email"]}',

@@ -32,9 +32,22 @@ bunx prisma migrate deploy
 ```
 
 #### 1.4 建立管理員帳號（只執行一次）
-在 Supabase Dashboard > SQL Editor 執行：
+
+**方法 1: 使用環境變數（推薦）**
+```bash
+# 設定管理員密碼環境變數
+export ADMIN_PASSWORD="your-very-secure-password-here"
+
+# 在 Supabase 中設定並執行 seed script
+SELECT set_config('app.admin_password', 'your-very-secure-password-here', false);
+```
+
+然後執行 seed script 或手動執行：
+
+**方法 2: 手動建立（在 Supabase Dashboard > SQL Editor）**
 ```sql
 -- 只在首次部署時執行
+-- ⚠️ 請將 YOUR_SECURE_PASSWORD 替換為真正的強密碼
 INSERT INTO auth.users (
     instance_id, id, aud, role, email, encrypted_password,
     email_confirmed_at, last_sign_in_at, raw_app_meta_data,
@@ -51,6 +64,10 @@ INSERT INTO auth.users (
     '{}', NOW(), NOW(), '', '', '', ''
 ) ON CONFLICT (email) DO NOTHING;
 ```
+
+**密碼設定建議：**
+- 建議使用強密碼以確保系統安全
+- 避免使用預設密碼 `CHANGE_ME_IN_PRODUCTION` 於正式環境
 
 ### 2. 後續更新部署
 
