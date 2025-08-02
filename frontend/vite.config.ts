@@ -8,7 +8,7 @@ export default defineConfig({
   plugins: [
     vue(),
   ],
-  base: '/591-develop/', // Change this to match your GitHub repo name or '/' for custom domain
+  base: '/591/', // GitHub Pages base path for repository
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
