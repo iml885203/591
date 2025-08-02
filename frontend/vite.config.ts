@@ -8,6 +8,7 @@ export default defineConfig({
   plugins: [
     vue(),
   ],
+  root: '.', // Explicitly set root directory
   base: '/591/', // GitHub Pages base path for repository
   build: {
     outDir: 'dist',
