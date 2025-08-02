@@ -35,10 +35,9 @@ Thumbs.db
 *.seed
 *.pid.lock
 
-# HTML test/sample files (but allow samples/ directory and frontend entry point)
+# HTML test/sample files (but allow samples/ directory)
 *.html
 !samples/*.html
-!frontend/index.html
 
 # Test coverage
 coverage/

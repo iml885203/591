@@ -69,6 +69,13 @@ jobs:
         docker-compose -f docker-compose.production.yml down || true
         docker-compose -f docker-compose.production.yml up -d
         
+        echo "⏳ Waiting for container to be ready..."
+        sleep 10
+        
+        echo "🔄 Running database migrations..."
+        docker exec crawler-api-prod bun run db:migrate:deploy
+        echo "✅ Database migrations completed successfully"
+        
         echo "⏳ Waiting for API..."
         for i in {1..24}; do
           if curl -sf http://localhost:3001/health > /dev/null; then
