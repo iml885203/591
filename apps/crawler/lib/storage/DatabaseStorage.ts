@@ -645,7 +645,7 @@ export class DatabaseStorage {
       const total = await this.prisma.query.count({ where });
 
       return {
-        queries: queries.map(q => ({
+        queries: queries.map((q: any) => ({
           queryId: q.id,
           description: q.description,
           region: q.region,
@@ -697,7 +697,7 @@ export class DatabaseStorage {
       });
 
       const regionBreakdown: Record<string, number> = {};
-      regionStats.forEach(stat => {
+      regionStats.forEach((stat: any) => {
         regionBreakdown[stat.region || 'unknown'] = stat._count.region;
       });
 
@@ -785,7 +785,7 @@ export class DatabaseStorage {
         orderBy: { updatedAt: 'desc' },
       });
 
-      return similar.map(q => ({
+      return similar.map((q: any) => ({
         queryId: q.id,
         description: q.description,
         region: q.region,

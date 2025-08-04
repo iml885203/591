@@ -143,7 +143,7 @@ class DatabaseOptimizer {
         if (batch.length === 0) break;
 
         // Add to result set
-        batch.forEach(item => {
+        batch.forEach((item: any) => {
           propertyIds.add(item.rental.propertyId);
         });
 
@@ -186,7 +186,7 @@ class DatabaseOptimizer {
 
       try {
         const batchResult = await this.prisma.$transaction(
-          async (tx) => {
+          async (tx: any) => {
             const batchPromises = batch.map(rentalData => 
               this._optimizedUpsertRental(tx, rentalData, queryId)
             );
@@ -211,7 +211,7 @@ class DatabaseOptimizer {
         for (const rentalData of batch) {
           try {
             const individualResult = await this.prisma.$transaction(
-              async (tx) => this._optimizedUpsertRental(tx, rentalData, queryId)
+              async (tx: any) => this._optimizedUpsertRental(tx, rentalData, queryId)
             );
             results.push(individualResult);
           } catch (individualError: any) {
