@@ -39,8 +39,12 @@ graph TB
         F --> C
     end
     
-    subgraph "Interfaces"
-        G[Web Dashboard] --> D
+    subgraph "Frontend Interface"
+        G[Web Dashboard] --> N[Supabase Client]
+        N --> E
+    end
+    
+    subgraph "API Interface"
         H[Direct API Calls] --> D
         I[GitHub Actions] --> D
     end
@@ -56,6 +60,7 @@ graph TB
     style D fill:#f3e5f5
     style E fill:#e8f5e8
     style G fill:#fff3e0
+    style N fill:#e8f5e8
 ```
 
 ### Architecture Components

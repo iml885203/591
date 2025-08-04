@@ -39,8 +39,12 @@ graph TB
         F --> C
     end
     
-    subgraph "使用介面"
-        G[網頁儀表板] --> D
+    subgraph "前端介面"
+        G[網頁儀表板] --> N[Supabase Client]
+        N --> E
+    end
+    
+    subgraph "API 介面"
         H[直接 API 呼叫] --> D
         I[GitHub Actions] --> D
     end
@@ -56,6 +60,7 @@ graph TB
     style D fill:#f3e5f5
     style E fill:#e8f5e8
     style G fill:#fff3e0
+    style N fill:#e8f5e8
 ```
 
 ### 架構組件說明
