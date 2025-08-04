@@ -125,11 +125,11 @@ bun install
 cp .env.example .env
 # Edit .env with your configuration
 
-# 4. Run database migrations
-bun run db:migrate
+# 4. Run database migrations  
+cd apps/crawler && bun run db:migrate
 
 # 5. Start the API server
-bun run api
+bun run crawler:api
 
 # 6. Test the system
 curl -X POST http://localhost:3000/crawl \
@@ -209,8 +209,15 @@ Features:
 ### Available Commands
 
 ```bash
-# Development
-bun run api              # Start API server
+# Monorepo Commands (from root)
+bun run crawler:api      # Start crawler API server
+bun run crawler:build    # Build crawler package
+bun run crawler:test     # Test crawler package
+bun run frontend:dev     # Start frontend dev server
+bun run frontend:build   # Build frontend for production
+
+# Working in Crawler Package (cd apps/crawler)
+bun run api             # Start API server
 bun run build           # Compile TypeScript
 bun run type-check      # Type checking only
 
@@ -220,7 +227,7 @@ bun test               # All tests
 bun run test:coverage  # Coverage report
 bun run test:api       # API integration tests
 
-# Database
+# Database (from apps/crawler)
 bun run db:generate    # Generate Prisma client
 bun run db:migrate     # Run migrations
 bun run db:studio      # Database UI
@@ -230,20 +237,31 @@ bun run db:status      # Migration status
 ### Project Structure
 
 ```
-├── api.js                    # REST API server
-├── lib/                      # Core modules
-│   ├── crawlService.js      # Main orchestration
-│   ├── crawler.js           # Web scraping logic
-│   ├── multiStationCrawler.js # Multi-station handling
-│   ├── notification.js      # Discord webhooks
-│   ├── Rental.js           # Domain model
-│   └── domain/             # Domain models
-├── tests/                   # Test suite (105+ tests)
-│   ├── unit/               # Unit tests
-│   └── integration/        # Integration tests
-├── prisma/                 # Database schema & migrations
-├── samples/                # HTML test samples
-└── scripts/                # Build & deployment scripts
+├── apps/                     # Monorepo applications
+│   ├── crawler/             # Crawler backend package
+│   │   ├── api.ts           # REST API server
+│   │   ├── lib/             # Core modules
+│   │   │   ├── crawlService.ts    # Main orchestration
+│   │   │   ├── crawler.ts         # Web scraping logic
+│   │   │   ├── multiStationCrawler.ts # Multi-station handling
+│   │   │   ├── notification.ts    # Discord webhooks
+│   │   │   ├── Rental.ts         # Domain model
+│   │   │   └── domain/           # Domain models
+│   │   ├── tests/           # Test suite (105+ tests)
+│   │   │   ├── unit/        # Unit tests
+│   │   │   └── integration/ # Integration tests
+│   │   ├── prisma/          # Database schema & migrations
+│   │   ├── samples/         # HTML test samples
+│   │   ├── scripts/         # Build & deployment scripts
+│   │   ├── Dockerfile       # Container configuration
+│   │   └── package.json     # Crawler dependencies
+│   └── frontend/            # Vue.js frontend package
+│       ├── src/             # Vue.js source code
+│       ├── components/      # Vue components
+│       ├── composables/     # Vue composables
+│       └── package.json     # Frontend dependencies
+├── package.json             # Workspace root
+└── CLAUDE.md               # Development documentation
 ```
 
 ### Technology Stack
@@ -281,6 +299,7 @@ curl https://your-domain.com/health
 
 ```bash
 # Build and run production container
+cd apps/crawler
 docker-compose -f docker-compose.production.yml up -d
 
 # Check logs
