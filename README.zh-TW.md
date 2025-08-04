@@ -56,11 +56,11 @@ graph TB
         E --> M[爬取歷史]
     end
     
-    style B fill:#e1f5fe
-    style D fill:#f3e5f5
-    style E fill:#e8f5e8
-    style G fill:#fff3e0
-    style N fill:#e8f5e8
+    style B fill:#1a237e,stroke:#3f51b5,stroke-width:2px,color:#fff
+    style D fill:#4a148c,stroke:#7b1fa2,stroke-width:2px,color:#fff
+    style E fill:#1b5e20,stroke:#4caf50,stroke-width:2px,color:#fff
+    style G fill:#e65100,stroke:#ff9800,stroke-width:2px,color:#fff
+    style N fill:#1b5e20,stroke:#4caf50,stroke-width:2px,color:#fff
 ```
 
 ### 架構組件說明
