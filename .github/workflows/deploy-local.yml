@@ -69,7 +69,9 @@ jobs:
       run: |
         echo "🚀 Deploying..."
         cd apps/crawler
+        # Force cleanup of existing containers
         docker-compose -f docker-compose.production.yml down || true
+        docker container rm -f crawler-api-prod || true
         docker-compose -f docker-compose.production.yml up -d
         
         echo "⏳ Waiting for container to be ready..."
