@@ -326,6 +326,27 @@ Set these secrets in GitHub repository settings:
 
 ---
 
+## ⚠️ Disclaimer
+
+This project was developed entirely through **VibeCoding** - an experimental AI-driven development approach. It serves as a research and educational demonstration of AI capabilities in software development.
+
+**Important Notice:**
+- ⚠️ **Not for commercial use** - This project is intended for personal, educational, and academic purposes only
+- 🤖 **AI-Generated Code** - All code, architecture, and documentation were created through AI assistance
+- 🔬 **Experimental Nature** - This is a proof-of-concept for AI-powered development workflows
+- 📚 **Educational Purpose** - Designed to explore the possibilities and limitations of AI in software engineering
+
+**Usage Guidelines:**
+- ✅ Personal learning and experimentation
+- ✅ Academic research and study
+- ✅ Educational demonstrations
+- ❌ Commercial applications or services
+- ❌ Production systems without proper review and testing
+
+Users are responsible for ensuring compliance with all applicable laws, terms of service, and ethical guidelines when using this software.
+
+---
+
 ## 📄 License
 
 MIT License - see [LICENSE](LICENSE) file for details.
