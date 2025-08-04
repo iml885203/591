@@ -41,6 +41,7 @@ Thumbs.db
 # HTML test/sample files (but allow samples/ directory and frontend index.html)
 *.html
 !samples/*.html
+!apps/crawler/samples/*.html
 !apps/frontend/index.html
 
 # Test coverage
