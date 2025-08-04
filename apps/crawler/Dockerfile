@@ -18,15 +18,19 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 
-# Copy package files and scripts (needed for postinstall hooks)
+# Copy workspace root files for dependency management
 COPY package.json bun.lock ./
-COPY scripts/ ./scripts/
+COPY apps/crawler/package.json ./apps/crawler/
+COPY apps/crawler/scripts/ ./apps/crawler/scripts/
 
-# Install dependencies
-RUN bun install --frozen-lockfile --production
+# Install all workspace dependencies  
+RUN bun install
 
-# Copy application source code
-COPY . .
+# Copy crawler application source code
+COPY apps/crawler/ ./apps/crawler/
+
+# Set working directory to crawler
+WORKDIR /app/apps/crawler
 
 # Generate Prisma client
 RUN bun run db:generate
