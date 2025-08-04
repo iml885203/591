@@ -23,18 +23,21 @@ jobs:
       with:
         bun-version: latest
         
-    - name: Install dependencies
-      working-directory: ./frontend
+    - name: Install root dependencies
+      run: bun install
+        
+    - name: Install frontend dependencies
+      working-directory: ./apps/frontend
       run: bun install
         
     - name: Create .env.production
-      working-directory: ./frontend
+      working-directory: ./apps/frontend
       run: |
         echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}" >> .env.production
         echo "VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}" >> .env.production
         
     - name: Build
-      working-directory: ./frontend
+      working-directory: ./apps/frontend
       run: bun run build
         
     - name: Setup Pages
@@ -43,7 +46,7 @@ jobs:
     - name: Upload to GitHub Pages
       uses: actions/upload-pages-artifact@v3
       with:
-        path: ./frontend/dist
+        path: ./apps/frontend/dist
         
     - name: Deploy to GitHub Pages
       id: deployment

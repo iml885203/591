@@ -14,6 +14,8 @@
     "crawler:start": "bun run --filter=@591/crawler start",
     "crawler:api": "bun run --filter=@591/crawler api",
     "crawler:test": "bun run --filter=@591/crawler test",
+    "crawler:test:unit": "bun run --filter=@591/crawler test:unit",
+    "crawler:type-check": "bun run --filter=@591/crawler type-check",
     "frontend:dev": "bun run --filter=@591/frontend dev",
     "frontend:build": "bun run --filter=@591/frontend build"
   },

@@ -25,12 +25,12 @@ jobs:
     - name: Run tests
       run: |
         echo "🧪 Running unit test suite..."
-        bun run test:unit
+        bun run --filter=@591/crawler test:unit
         
     - name: Run test coverage
       run: |
         echo "📊 Running test coverage..."
-        bun run test:coverage
+        cd apps/crawler && bun run test:coverage
         
     - name: Test result notification
       if: always()

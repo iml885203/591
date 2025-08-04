@@ -41,15 +41,16 @@ jobs:
       env:
         DATABASE_URL: postgresql://testuser:testpassword@localhost:5432/test591
       run: |
+        cd apps/crawler
         bun run db:generate
         bun run db:push
       continue-on-error: true
 
     - name: Run TypeScript type check
-      run: bun run type-check
+      run: bun run --filter=@591/crawler type-check
 
     - name: Run unit tests
-      run: bun run test:unit
+      run: bun run --filter=@591/crawler test:unit
 
     - name: Run CI-safe API tests
       env:
@@ -59,7 +60,9 @@ jobs:
         CI: true
         SKIP_INTEGRATION_TESTS: false
         DEBUG_CI_TESTS: false
-      run: bun run test:api:ci
+      run: |
+        cd apps/crawler
+        bun run test:api:ci
       timeout-minutes: 10
 
   api-tests-without-db:
@@ -78,10 +81,10 @@ jobs:
       run: bun install
 
     - name: Run TypeScript type check
-      run: bun run type-check
+      run: bun run --filter=@591/crawler type-check
 
     - name: Run unit tests only
-      run: bun run test:unit
+      run: bun run --filter=@591/crawler test:unit
 
     - name: Run API tests without database (mock mode)
       env:
@@ -90,7 +93,9 @@ jobs:
         SKIP_INTEGRATION_TESTS: false
         USE_MOCK_DATABASE: true
         DATABASE_URL: file:./test-ci.db
-      run: bun run test:api:ci
+      run: |
+        cd apps/crawler
+        bun run test:api:ci
       timeout-minutes: 5
 
   smoke-tests:
@@ -112,12 +117,13 @@ jobs:
     - name: Quick smoke test
       run: |
         echo "🔍 Running smoke tests..."
-        bun run type-check
+        bun run --filter=@591/crawler type-check
         echo "✅ TypeScript compilation successful"
         
         # Check if essential files exist
-        test -f api.ts || (echo "❌ api.ts not found" && exit 1)
-        test -f package.json || (echo "❌ package.json not found" && exit 1)
+        test -f apps/crawler/api.ts || (echo "❌ apps/crawler/api.ts not found" && exit 1)
+        test -f apps/crawler/package.json || (echo "❌ apps/crawler/package.json not found" && exit 1)
+        test -f apps/frontend/package.json || (echo "❌ apps/frontend/package.json not found" && exit 1)
         
         echo "✅ Essential files present"
         echo "🎉 Smoke tests passed"

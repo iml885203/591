@@ -24,7 +24,7 @@ jobs:
     - name: Run pre-deployment tests
       run: |
         echo "🧪 Running pre-deployment test suite..."
-        bun run test:unit
+        bun run --filter=@591/crawler test:unit
     
   deploy:
     runs-on: self-hosted
@@ -42,6 +42,7 @@ jobs:
         
     - name: Create deployment env file
       run: |
+        cd apps/crawler
         cat > .env.production << EOF
         NODE_ENV=production
         DATABASE_PROVIDER=postgresql
@@ -61,11 +62,13 @@ jobs:
     - name: Build new images
       run: |
         echo "🔨 Building new images..."
+        cd apps/crawler
         docker-compose -f docker-compose.production.yml build
         
     - name: Deploy
       run: |
         echo "🚀 Deploying..."
+        cd apps/crawler
         docker-compose -f docker-compose.production.yml down || true
         docker-compose -f docker-compose.production.yml up -d
         
