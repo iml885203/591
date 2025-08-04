@@ -1,31 +1,41 @@
 # CLAUDE.md
 
-Node.js web scraper for 591.com.tw rental monitoring with Discord notifications and local Docker auto-deployment.
+Monorepo for 591.com.tw rental monitoring with crawler backend and Vue.js frontend.
 
 ## 🚀 Commands (Bun Only)
 
 ⚠️ **Important: This project exclusively uses Bun - do not use npm/yarn/pnpm**
 
 ```bash
-# Development Setup
-bun install         # Install dependencies + Git hooks via Husky
-bun run build       # Compile TypeScript  
-bun run type-check  # Type checking only
+# Monorepo Setup
+bun install         # Install all workspace dependencies + Git hooks via Husky
+bun run build       # Build all packages
+bun run test        # Test all packages
+bun run type-check  # Type check all packages
 
-# Development Server
-bun run api         # Start API server
-bun api            # Shorthand
+# Crawler Commands
+bun run crawler:build      # Build crawler package
+bun run crawler:api        # Start crawler API server
+bun run crawler:test       # Test crawler package
 
-# Testing
-bun run test:unit      # Unit tests (recommended daily)
-bun test              # All tests
-bun run test:coverage  # Test coverage
-bun run test:api       # API integration tests
+# Frontend Commands
+bun run frontend:dev       # Start frontend dev server
+bun run frontend:build     # Build frontend for production
 
-# Database
-bun run db:generate    # Generate Prisma client
-bun run db:migrate     # Run migrations
-bun run db:studio      # Database UI
+# Working within apps (cd into app directory)
+cd apps/crawler
+bun run api                # Start API server
+bun run test:unit          # Unit tests (recommended daily)
+bun run test:coverage      # Test coverage
+bun run test:api           # API integration tests
+bun run db:generate        # Generate Prisma client
+bun run db:migrate         # Run migrations
+bun run db:studio          # Database UI
+
+cd apps/frontend
+bun run dev                # Start dev server
+bun run build              # Build production
+bun run type-check         # Type check only
 
 # ❌ Prohibited (will show errors)
 npm install    # 💥 ERROR: This project only supports Bun!
@@ -33,6 +43,7 @@ yarn install   # 💥 ERROR: This project only supports Bun!
 pnpm install   # 💥 ERROR: This project only supports Bun!
 
 # Docker (manual deployment)
+cd apps/crawler
 docker-compose -f docker-compose.production.yml up -d
 
 # API
@@ -220,20 +231,31 @@ git push origin main
 ## 📁 Project Structure
 
 ```
-├── api.js              # REST API
-├── lib/                # Core modules
-│   ├── domain/         # Domain models
-│   ├── crawlService.js # Main orchestration
-│   ├── crawler.js      # Web scraping
-│   ├── multiStationCrawler.js  # Multi-station handling
-│   ├── notification.js # Discord webhooks
-│   └── Rental.js       # Property model
-├── tests/              # Test suite
-│   ├── unit/           # Unit tests
-│   └── integration/    # Integration tests
-├── dev/                # Dev scripts
-├── samples/            # HTML test samples (parser testing)
-└── scripts/            # Build scripts
+├── apps/
+│   ├── crawler/          # Crawler backend package
+│   │   ├── api.ts        # REST API
+│   │   ├── lib/          # Core modules
+│   │   │   ├── domain/   # Domain models
+│   │   │   ├── crawlService.ts # Main orchestration
+│   │   │   ├── crawler.ts # Web scraping
+│   │   │   ├── multiStationCrawler.ts # Multi-station handling
+│   │   │   ├── notification.ts # Discord webhooks
+│   │   │   └── Rental.ts # Property model
+│   │   ├── tests/        # Test suite
+│   │   │   ├── unit/     # Unit tests
+│   │   │   └── integration/ # Integration tests
+│   │   ├── samples/      # HTML test samples
+│   │   ├── scripts/      # Build scripts
+│   │   ├── prisma/       # Database schema & migrations
+│   │   ├── Dockerfile    # Container configuration
+│   │   └── package.json  # Crawler dependencies
+│   └── frontend/         # Vue.js frontend package
+│       ├── src/          # Vue.js source code
+│       ├── components/   # Vue components
+│       ├── composables/  # Vue composables
+│       └── package.json  # Frontend dependencies
+├── package.json          # Workspace root
+└── CLAUDE.md            # This file
 ```
 
 ## 🧠 Working Memory

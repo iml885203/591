@@ -1,52 +1,36 @@
 {
-  "name": "591-crawler",
+  "name": "591-monorepo",
   "version": "2025.07.23",
-  "description": "A Node.js web scraper for 591.com.tw rental properties with Discord notifications",
-  "main": "dist/api.js",
+  "description": "Monorepo for 591.com.tw rental monitoring with crawler and frontend",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
-    "build": "tsc",
-    "build:watch": "tsc --watch",
-    "start": "bun run scripts/start-server.ts",
-    "api": "bun run scripts/start-server.ts",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --selectProjects unit --coverage",
-    "test:unit": "jest --selectProjects unit",
-    "test:integration": "jest --config jest.integration.config.js",
-    "test:integration:ci": "jest --config jest.integration.config.js --testPathPatterns=ci-safe --runInBand",
-    "test:api": "jest --config jest.integration.config.js --testPathPatterns=api",
-    "test:api:ci": "SKIP_INTEGRATION_TESTS=false jest tests/integration/api/ci-safe.test.ts --runInBand",
-    "type-check": "tsc --noEmit",
-    "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:migrate": "prisma migrate dev",
-    "db:migrate:deploy": "prisma migrate deploy",
-    "db:studio": "prisma studio",
-    "db:status": "prisma migrate status",
-    "prepare": "is-ci || (command -v husky >/dev/null 2>&1 && husky) || true",
-    "preinstall": "node scripts/check-package-manager.js"
+    "build": "bun run --filter='*' build",
+    "test": "bun run --filter='*' test",
+    "type-check": "bun run --filter='*' type-check",
+    "crawler:build": "bun run --filter=@591/crawler build",
+    "crawler:start": "bun run --filter=@591/crawler start",
+    "crawler:api": "bun run --filter=@591/crawler api",
+    "crawler:test": "bun run --filter=@591/crawler test",
+    "frontend:dev": "bun run --filter=@591/frontend dev",
+    "frontend:build": "bun run --filter=@591/frontend build"
   },
   "keywords": [
     "591",
     "taiwan",
     "property",
     "rental",
+    "monorepo",
     "crawler",
-    "scraper",
-    "discord",
-    "notification",
-    "real-estate",
-    "monitoring"
+    "frontend"
   ],
   "author": "iml885203",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/iml885203/591.git"
-  },
-  "homepage": "https://github.com/iml885203/591#readme",
-  "bugs": {
-    "url": "https://github.com/iml885203/591/issues"
   },
   "engines": {
     "bun": ">=1.0.0",
@@ -55,32 +39,8 @@
     "pnpm": "Please use Bun instead of pnpm"
   },
   "packageManager": "bun@1.0.0",
-  "dependencies": {
-    "@prisma/client": "^6.12.0",
-    "axios": "^1.10.0",
-    "cheerio": "^1.1.2",
-    "dotenv": "^17.2.0",
-    "express": "^4.21.2",
-    "fs-extra": "^11.3.0",
-    "is-ci": "^4.1.0",
-    "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1"
-  },
   "devDependencies": {
-    "@types/cheerio": "^1.0.0",
-    "@types/express": "^5.0.3",
-    "@types/fs-extra": "^11.0.4",
-    "@types/jest": "^30.0.0",
-    "@types/jsdom": "^21.1.7",
-    "@types/node": "^24.1.0",
-    "@types/swagger-jsdoc": "^6.0.4",
-    "@types/swagger-ui-express": "^4.1.8",
     "husky": "^9.1.7",
-    "jest": "^30.0.5",
-    "jsdom": "^26.1.0",
-    "prisma": "^6.12.0",
-    "ts-jest": "^29.4.0",
-    "tsx": "^4.20.3",
-    "typescript": "^5.8.3"
+    "is-ci": "^4.1.0"
   }
 }

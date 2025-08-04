@@ -1,1 +1,1 @@
-bun run test:unit
+bun run --filter=@591/crawler test:unit
